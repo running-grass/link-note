@@ -1,5 +1,6 @@
 'use strict';
 
+require('babel-polyfill');
 const main = require('./Main.purs')
 const app = document.querySelector("#halogen-app");
 if (app) {

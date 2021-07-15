@@ -1,21 +1,26 @@
 # learn-purs
 
 ## 用到的技术栈
-1. purescript
-2. spago
-3. halogen
-4. nix-shell（可选）
-5. pnpm
-6. ipfs
-7. orbit-db
-8. webpack
-9. nodejs
-10. direnv
 
+4. nix-shell 搭建本地开发环境，提供各种开发需要的命令行程序，独立于系统已安装的程序。 不会有任何冲突
+10. direnv 当进入项目目录的时候，自动执行nix-shell来进入开发环境
+
+1. purescript 主语言
+2. spago purescript的包管理工具，类似npm
+3. halogen purescript语言下的ui框架，类似于react
+
+2. javascript 辅助语言、引入各种已有的js库
+5. pnpm npm/yarn的代替品，用来大幅度降低磁盘使用情况，让不同的项目可以复用node_modules，增加安全性
+
+9. nodejs webpack的依赖
+8. webpack 最终把js和purs集成打包到一起的工具
+
+6. ipfs 分布式文件传输协议，类似于bt+git
+7. orbit-db 基于ipfs的分布式数据库
 
 ## 搭建开发环境
 
-### (可选) 安装nix
+### (可选) 安装nix
 相关文档 https://nixos.org/manual/nix/stable/#sec-nix-shell
 ``` bash
 sh <(curl -L https://nixos.org/nix/install) --daemon

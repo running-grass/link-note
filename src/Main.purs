@@ -2,32 +2,30 @@ module Main where
 
 import Prelude
 
-import App.Button as Button
+import App as App
+
 import Data.Maybe (maybe)
 import Effect (Effect)
 import Effect.Aff (Aff, throwError)
 import Effect.Exception (error)
 import Halogen.Aff (awaitLoad, selectElement)
 import Halogen.Aff as HA
+
 import Halogen.VDom.Driver (runUI)
-import Test (getdb)
+import Orbitdb as OD
 import Web.DOM.ParentNode (QuerySelector(..))
 import Web.HTML (HTMLElement)
 
-
 -- | Waits for the document to load and then finds the `body` element.
-awaitApp :: Aff HTMLElement
-awaitApp = do
+awaitRoot :: Aff HTMLElement
+awaitRoot = do
   awaitLoad
   ele <- selectElement (QuerySelector "#halogen-app")
   maybe (throwError (error "找不到根节点！")) pure ele
 
 main :: Effect Unit
--- main = HA.runHalogenAff do
---   app <- awaitApp
---   runUI Button.component unit app
 main = do
-  getdb "key-val"
+  OD.getdb "key-val"
   HA.runHalogenAff do
-    app <- awaitApp
-    runUI Button.component unit app
+    app <- awaitRoot
+    runUI App.component unit app

@@ -1,17 +1,10 @@
+// import IPFS from "ipfs";
+// import OrbitDB from 'orbit-db';
 
-const IPFS = require('ipfs')
-const OrbitDB = require('orbit-db')
-
-
-exports.write = function (html) {
-    return function () {
-        document.writeln(html);
-    }
-}
-
+const IPFS = require('ipfs');
+const OrbitDB = require('orbit-db');
 
 exports.getdb = function main(dbname) {
-
     return async function () {
         const ipfsOptions = {
             repo: './ipfs',
@@ -30,7 +23,7 @@ exports.getdb = function main(dbname) {
         }
         
         let ipfs;
-        if (!window?.ipfs?.isOnline()) {
+        if (!window.ipfs || !window.ipfs.isOnline()) {
              ipfs = await IPFS.create(ipfsOptions)
         }
 
@@ -41,8 +34,5 @@ exports.getdb = function main(dbname) {
         window.ipfs = ipfs;
         window.db = db;
         console.log(db.address.toString())
-
     }
 }
-// exports.getdb = () => main
-// exports.add1 = function(x) { return x + 1;}

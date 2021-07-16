@@ -5,7 +5,6 @@ const main = require('./Main.purs')
 const app = document.querySelector("#halogen-app");
 if (app) {
   app.innerHTML = '';
-  
 }
 
 main.main();

@@ -3,16 +3,16 @@ const IPFS = require('ipfs')
 const OrbitDB = require('orbit-db')
 
 
-exports.write = function(html) {
-    return function() {
+exports.write = function (html) {
+    return function () {
         document.writeln(html);
     }
-} 
+}
 
 
-exports.getdb = function main (dbname) {
+exports.getdb = function main(dbname) {
 
-    return function () {
+    return async function () {
         const ipfsOptions = {
             repo: './ipfs',
             config: {
@@ -22,23 +22,26 @@ exports.getdb = function main (dbname) {
                         '/dns4/wrtc-star2.sjc.dwebops.pub/tcp/443/wss/p2p-webrtc-star',
                         '/ip4/127.0.0.1/tcp/44005',
                         '/ip6/::/tcp/44005'
+
                     ],
 
                 },
             }
         }
-        IPFS.create(ipfsOptions).then(ipfs => {
-            OrbitDB.createInstance(ipfs).then(orbitdb => {
-                orbitdb.keyvalue(dbname).then(db => {
+        
+        let ipfs;
+        if (!window?.ipfs?.isOnline()) {
+             ipfs = await IPFS.create(ipfsOptions)
+        }
 
-                    window.orbit = orbitdb;
-                    window.ipfs = ipfs;
-                    window.db = db;
-                    console.log(db.address.toString())
-                })
-            })
+        const orbitdb = await OrbitDB.createInstance(ipfs)
+        const db = await orbitdb.keyvalue(dbname);
 
-        })
+        window.orbit = orbitdb;
+        window.ipfs = ipfs;
+        window.db = db;
+        console.log(db.address.toString())
+
     }
 }
 // exports.getdb = () => main

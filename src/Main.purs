@@ -28,3 +28,6 @@ main :: Effect Unit
 --   runUI Button.component unit app
 main = do
   getdb "key-val"
+  HA.runHalogenAff do
+    app <- awaitApp
+    runUI Button.component unit app

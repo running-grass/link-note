@@ -1,3 +1,4 @@
 .spago
 node_modules
 output
+*.log

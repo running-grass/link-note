@@ -23,6 +23,8 @@ render :: forall cs m. State -> H.ComponentHTML Action cs m
 render state =
   HH.div_
     [ HH.p_
+        [ HH.text $ "打开控制e台，查12看是否有 Swarm listening on 。。。。。。" ]
+    , HH.p_
         [ HH.text $ "You clicked " <> show state.count <> " times" ]
     , HH.button
         [ HE.onClick \_ -> Increment ]

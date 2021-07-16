@@ -2,7 +2,7 @@
 
 ## 用到的技术栈
 
-4. nix-shell 搭建本地开发环境，提供各种开发需要的命令行程序，独立于系统已安装的程序。 不会有任何冲突
+1. nix-shell 搭建本地开发环境，提供各种开发需要的命令行程序，独立于系统已安装的程序。 不会有任何冲突
 10. direnv 当进入项目目录的时候，自动执行nix-shell来进入开发环境
 
 1. purescript 主语言
@@ -38,7 +38,6 @@ nix-env -iA nixpkgs.direnv
 
 安装好了direnv之后， 在项目根目录执行 `direnv allow`，
 并且在shell中配置好钩子，参考 https://direnv.net/docs/hook.html
-
 
 ### 使用spago编译purs文件
 ```bash

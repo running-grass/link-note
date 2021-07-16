@@ -20,6 +20,8 @@ module.exports = {
   devtool: 'eval-source-map',
 
   devServer: {
+    noInfo: true,
+    open: true,
     contentBase: path.resolve(__dirname, 'dist'),
     port: 4008,
     stats: 'errors-only'
@@ -34,6 +36,16 @@ module.exports = {
 
   module: {
     rules: [
+      {
+        test: /\.m?js$/,
+        exclude: /node_modules/,
+        use: {
+          loader: "babel-loader",
+          options: {
+            presets: ['@babel/preset-env']
+          }
+        }
+      },
       {
         test: /\.purs$/,
         use: [

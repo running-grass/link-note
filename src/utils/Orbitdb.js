@@ -13,6 +13,23 @@ exports.getdbByIpfs_ = function main(ipfs, dbname) {
 
         window.orbit = orbitdb;
         window.db = db;
-        console.log(db.address.toString())
+        db.load();
+        console.log(db.address.toString());
+
+        return db;
     };
 };
+
+exports.saveVal_ = function(key) {
+        return function(val) {
+            return function() {
+                window.db.put(key, val);
+            }
+        }
+    }
+
+exports.getVal_ = function(key) {
+    return function() {
+        return window.db.get(key);
+    }
+}

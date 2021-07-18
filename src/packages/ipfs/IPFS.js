@@ -1,5 +1,8 @@
 const IPFS = require('ipfs');
 
+
+// exports._create = function() {}
+
 exports.getIpfs = function() {
     return async function () {
         const ipfsOptions = {
@@ -28,3 +31,4 @@ exports.getIpfs = function() {
         return ipfs;
     }
 }
+

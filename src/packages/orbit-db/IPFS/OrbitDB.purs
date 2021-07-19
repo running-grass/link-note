@@ -1,35 +1,42 @@
-module Orbitdb where
+module IPFS.Orbitdb where
 
 
 import Prelude
 
-import Control.Monad.Trans.Class (lift)
 import Control.Promise (Promise, toAffE)
-import Data.Function.Uncurried (Fn2, runFn2)
 import Effect (Effect)
-import Effect.Aff (Aff, launchAff_)
-import Effect.Aff.Class (liftAff)
-import Effect.Class (liftEffect)
-import Effect.Console (log, logShow)
-import IPFS (IPFS, getIpfs, getIpfs')
+import Effect.Aff (Aff)
+import IPFS (IPFS)
+import Option (Option, fromRecord)
 
 foreign import data OrbitDB :: Type
+foreign import data Keystore :: Type
+foreign import data Cache :: Type
+foreign import data Identity :: Type
 
--- type OrbitDBP = Promise Or
 
-foreign import getdbByIpfs_ :: IPFS -> String -> (Effect (Promise OrbitDB))
-foreign import saveVal_ :: String -> String -> (Effect Unit)
-foreign import getVal_ :: String -> Effect String
+type OrbitDBOption = Option 
+    ( directory :: String
+    , peerId :: String
+    , keystore :: Keystore
+    , cache :: Cache  
+    , identity :: Identity
+    , offline :: Boolean
+)
 
-getdbByIpfs :: IPFS -> String -> Aff OrbitDB
-getdbByIpfs i dbname = toAffE $  getdbByIpfs_ i dbname
 
-ipfs :: Aff IPFS
-ipfs = getIpfs' unit
+data DBNameOrAddr = DBName String | DBAddr String
 
-getdb :: String -> Effect Unit
-getdb name = launchAff_ do 
-    ipfs_ <- ipfs
-    liftEffect $ logShow "ipfs_"
-    _ <- getdbByIpfs ipfs_ name
-    pure unit
+instance showDBNameOrAddr :: Show DBNameOrAddr where
+    show (DBName x) = x 
+    show (DBAddr y) = y
+
+
+foreign import createInstance :: IPFS -> OrbitDBOption -> Effect (Promise OrbitDB)
+
+createInstanceA :: IPFS -> OrbitDBOption -> Aff OrbitDB
+createInstanceA ipfs option = toAffE $  createInstance ipfs option 
+
+createInstanceA_ :: IPFS -> Aff OrbitDB
+createInstanceA_ ipfs = createInstanceA ipfs (fromRecord {}) 
+

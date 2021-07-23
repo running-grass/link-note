@@ -21,8 +21,11 @@
     "webpack-dev-server": "^3.11.2"
   },
   "dependencies": {
-    "babel-polyfill": "^6.26.0",
+    "@babel/polyfill": "^7.12.1",
     "ipfs": "^0.55.4",
-    "orbit-db": "^0.26.1"
+    "orbit-db": "^0.26.1",
+    "pouchdb-adapter-idb": "^7.2.2",
+    "rxdb": "^10.0.2",
+    "rxjs": "^7.2.0"
   }
 }

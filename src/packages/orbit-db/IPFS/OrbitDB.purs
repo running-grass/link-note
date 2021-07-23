@@ -1,6 +1,5 @@
 module IPFS.Orbitdb where
 
-
 import Prelude
 
 import Control.Promise (Promise, toAffE)

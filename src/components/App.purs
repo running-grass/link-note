@@ -1,7 +1,6 @@
 module App where
 
 
-import IPFS.OrbitDB.Docs (DocStore)
 import Prelude
 
 import Data.Array (head)
@@ -14,6 +13,7 @@ import Halogen.HTML as HH
 import Halogen.HTML.Events as HE
 import Halogen.HTML.Properties as HP
 import IPFS as IPFS
+import IPFS.OrbitDB.Docs (DocStore)
 import IPFS.OrbitDB.Docs as ODocs
 import IPFS.Orbitdb as OD
 
@@ -48,8 +48,6 @@ getDocs = do
         odb <- OD.createInstanceA_ ipfs 
         ODocs.docsA_ odb "notes"
  
-
-
 handleAction :: forall cs o m . MonadAff m =>  Action → H.HalogenM State Action cs o m Unit
 handleAction = case _ of
   SetNote note -> do
@@ -84,6 +82,6 @@ component =
     , render
     , eval: H.mkEval H.defaultEval { 
       handleAction = handleAction
-      , initialize = Just InitNote
+      -- , initialize = Just InitNote
        }
     }

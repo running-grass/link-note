@@ -5,9 +5,9 @@ import Prelude
 
 import Data.Array (head)
 import Data.Maybe (Maybe(..))
+import Data.UUID as UUID
 import Effect.Aff (Aff)
 import Effect.Aff.Class (class MonadAff)
-import Effect.Console (logShow, warnShow)
 import Halogen as H
 import Halogen.HTML as HH
 import Halogen.HTML.Events as HE
@@ -16,11 +16,16 @@ import IPFS as IPFS
 import IPFS.OrbitDB.Docs (DocStore)
 import IPFS.OrbitDB.Docs as ODocs
 import IPFS.Orbitdb as OD
+import RxDB.RxCollection (insertA)
+import RxDB.Type (RxCollection)
+
+type Input = { coll :: RxCollection }
 
 type State = { 
     note :: String, 
-    db :: Maybe ODocs.DocStore 
+    coll :: RxCollection
     }
+
 
 data Action
   = Submit | SetNote String | InitNote
@@ -52,29 +57,25 @@ handleAction :: forall cs o m . MonadAff m =>  Action → H.HalogenM State Actio
 handleAction = case _ of
   SetNote note -> do
     H.modify_ _ { note = note }
-  Submit -> do 
+  Submit ->  do 
     note <- H.gets _.note
-    db <- H.gets _.db
-    case db of
-        Nothing -> do
-          H.liftEffect $ warnShow "db未加载成功"
-          pure unit
-        Just db' -> do
-          _ <-  H.liftAff $ ODocs.putA db' {_id: "first", content: note}
-          H.liftEffect $ logShow $ "保存成功:" <> note
-          pure unit
+    coll <- H.gets _.coll
+    uuid <- H.liftEffect UUID.genUUID
+    void $ H.liftAff $ insertA coll { content: note,  noteId: (UUID.toString uuid)}
+    H.modify_  _ { note = ""}
+    -- pure unit
   InitNote -> do
     db <- H.liftAff getDocs
     rs <- H.liftEffect $ ODocs.get db "first"
     case head rs of
       Nothing -> pure unit
       Just doc -> do
-        H.modify_  _ { db = Just db, note =  doc.content }
+        H.modify_  _ { note =  doc.content }
 
-initialState :: forall i. i -> State
-initialState _ = { note: "", db: Nothing }
+initialState :: Input-> State
+initialState input = { note: "", coll: input.coll }
 
-component :: forall q i o m. MonadAff m => H.Component q i o m
+component :: forall q  o m. MonadAff m => H.Component q Input o m
 component =
   H.mkComponent
     { 

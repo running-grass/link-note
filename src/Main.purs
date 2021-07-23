@@ -40,8 +40,7 @@ main :: Effect Unit
 main = do
   launchAff_ do
     db <- initRxDBA unit
-    getNotesCollectionA db  
-
-  HA.runHalogenAff do
+    coll <- getNotesCollectionA db  
     app <- awaitRoot
-    runUI App.component unit app
+    runUI App.component { coll } app
+

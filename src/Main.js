@@ -2,28 +2,32 @@
 const {
     getRxStoragePouch,
     createRxDatabase,
-    addPouchPlugin
+    addPouchPlugin,
+    removeRxDatabase,
 } = require('rxdb');
 
 const pouchdbAdapterIdb = require('pouchdb-adapter-idb');
+const { async } = require('rxjs');
 
 exports.logAny = a => () => {
     console.log(a);
 }
 
-exports.initRxDB = () => () => {
+exports.initRxDB = () =>  () => {
     addPouchPlugin(pouchdbAdapterIdb);
+
     return createRxDatabase({
-        name: 'sis',
+        name: 'ais'  + new Date().getTime(),
         storage: getRxStoragePouch('idb'),
         password: 'myPassword', 
-        multiInstance: false,
+        multiInstance: true,
         eventReduce: false,
     }).then(db => {
         window.db = db;
         return db;
     });
 };
+
 exports.getNotesCollection = (db) => () => {
     return db.addCollections({
         notes: {
@@ -39,12 +43,10 @@ exports.getNotesCollection = (db) => () => {
                         type: 'string'
                     }
                 },
-                // primaryKey is always required
-                required: ['nodeId']
             }
         }
     }).then(colls => {
         window.notes = colls.notes;
-        return colls;
+        return colls.notes;
     });
 };

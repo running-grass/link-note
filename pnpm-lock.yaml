@@ -13,6 +13,7 @@ specifiers:
   purs-loader: ^3.7.2
   rxdb: ^10.0.2
   rxjs: ^7.2.0
+  uuid: ^8.3.2
   webpack: ^4.46.0
   webpack-cli: ^3.3.12
   webpack-dev-server: ^3.11.2
@@ -24,6 +25,7 @@ dependencies:
   pouchdb-adapter-idb: 7.2.2
   rxdb: 10.0.2_rxjs@7.2.0
   rxjs: 7.2.0
+  uuid: 8.3.2
 
 devDependencies:
   '@babel/core': 7.14.8
@@ -12243,6 +12245,11 @@ packages:
 
   /uuid/8.1.0:
     resolution: {integrity: sha512-CI18flHDznR0lq54xBycOVmphdCYnQLKn8abKn7PXUiKUGdEd+/l9LWNJmugXel4hXq7S+RMNl34ecyC9TntWg==}
+    hasBin: true
+    dev: false
+
+  /uuid/8.3.2:
+    resolution: {integrity: sha512-+NYs2QeMWy+GWFOEm9xnn6HCDp0l7QBD7ml8zLUmJ+93Q5NF0NocErnwkTkXVFNiX3/fpC6afS8Dhb/gz7R7eg==}
     hasBin: true
     dev: false
 

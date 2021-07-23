@@ -4,17 +4,30 @@ module Main
 import Prelude
 
 import App as App
+import Control.Promise (Promise, toAffE)
 import Data.Maybe (maybe)
 import Effect (Effect)
-import Effect.Aff (Aff, throwError)
+import Effect.Aff (Aff, launchAff_, throwError)
 import Effect.Exception (error)
 import Halogen.Aff (awaitLoad, selectElement)
 import Halogen.Aff as HA
 import Halogen.VDom.Driver (runUI)
+import RxDB.Type (RxCollection, RxDatabase)
 import Web.DOM.ParentNode (QuerySelector(..))
 import Web.HTML (HTMLElement)
 
 foreign import logAny :: forall a . a -> Effect Unit
+
+foreign import initRxDB :: Unit -> Effect (Promise RxDatabase)
+
+initRxDBA :: Unit -> Aff RxDatabase
+initRxDBA unit = toAffE $ initRxDB unit
+
+
+foreign import getNotesCollection :: RxDatabase -> Effect (Promise RxCollection)
+
+getNotesCollectionA :: RxDatabase -> Aff RxCollection
+getNotesCollectionA db = toAffE $ getNotesCollection db
 
 -- | Waits for the document to load and then finds the `body` element.
 awaitRoot :: Aff HTMLElement
@@ -25,12 +38,9 @@ awaitRoot = do
 
 main :: Effect Unit
 main = do
-  -- launchAff_ do
-  --   ipfs <- IPFS.getGlobalIPFSA unit
-  --   odb <- OD.createInstanceA ipfs (fromRecord {})
-  --   db <- ODocs.docsA odb (OD.DBName "notes") (fromRecord {}) 
-  --   liftEffect $ logAny db
-  --   -- pure unit
-  HA.runHalogenAff do
+  launchAff_ do
+    db <- initRxDBA unit
+    coll <- getNotesCollectionA db  
     app <- awaitRoot
-    runUI App.component unit app
+    runUI App.component { coll } app
+

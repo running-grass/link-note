@@ -1,8 +1,19 @@
 'use strict';
 
-require('babel-polyfill');
+require('@babel/polyfill');
+
+// import '@babel/polyfill';
 
 const main = require('./Main.purs')
+if (!window) {
+  window = {};
+}
+
+window.global = window;
+window.process = {
+    env: { DEBUG: undefined },
+};
+
 const app = document.querySelector("#halogen-app");
 if (app) {
   app.innerHTML = '';

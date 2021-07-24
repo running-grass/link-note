@@ -1,27 +1,33 @@
 {
   "name": "learn-purs",
-  "version": "1.0.0",
+  "version": "0.0.1",
   "description": "",
-  "main": "index.js",
+  "main": "./src/index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "debug": "webpack-dev-server --progress --inline --hot"
+    "debug": "webpack-dev-server --progress --inline --hot",
+    "build": "webpack",
+    "release": "dotenv release-it --"
   },
   "author": "",
   "license": "ISC",
   "devDependencies": {
     "@babel/core": "^7.14.8",
     "@babel/preset-env": "^7.14.8",
+    "@release-it/keep-a-changelog": "^2.3.0",
     "babel-loader": "^8.2.2",
+    "dotenv-cli": "^4.0.0",
     "html-webpack-plugin": "^4.5.2",
     "purescript-psa": "^0.8.2",
     "purs-loader": "^3.7.2",
+    "release-it": "^14.10.1",
     "webpack": "^4.46.0",
     "webpack-cli": "^3.3.12",
     "webpack-dev-server": "^3.11.2"
   },
   "dependencies": {
     "@babel/polyfill": "^7.12.1",
+    "filemanager-webpack-plugin": "^6.1.4",
     "ipfs": "^0.55.4",
     "orbit-db": "^0.26.1",
     "pouchdb-adapter-idb": "^7.2.2",

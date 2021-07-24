@@ -3,6 +3,8 @@
 const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const webpack = require('webpack');
+const FileManagerWebpackPlugin = require('filemanager-webpack-plugin')
+
 const isWebpackDevServer = process.argv.some(a => path.basename(a) === 'webpack-dev-server');
 const isWatch = process.argv.some(a => a === '--watch');
 
@@ -86,9 +88,19 @@ module.exports = {
       debug: true
     }),
     new HtmlWebpackPlugin({
-      title: 'purescript-webpack-example',
-      template: 'index.html',
+      title: 'ais',
+      template: 'public/index.html',
       inject: false  // See stackoverflow.com/a/38292765/3067181
-    })
+    }),
+    new FileManagerWebpackPlugin ({ events: { 
+      onEnd: {
+         delete: [
+              './release', // 删除之前已经存在的压缩包
+          ],
+         archive: [
+              { source: './dist', destination: './release/web.zip'},
+          ]
+      }
+    }}),
   ].concat(plugins)
 };

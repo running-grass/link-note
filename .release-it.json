@@ -1,0 +1,18 @@
+{
+  "npm": {
+    "publish": false
+  },
+  "git": {
+    "commitMessage": "chore: release v${version}",
+    "requireBranch": "main"
+  },
+  "github": {
+    "release": true,
+    "assets": ["release/*.zip"]
+  },
+  "plugins": {
+    "@release-it/keep-a-changelog": {
+      "filename": "CHANGELOG.md"
+    }
+  }
+}

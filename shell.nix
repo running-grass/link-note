@@ -7,5 +7,7 @@ mkShell {
     purescript
     spago
     nodePackages.pnpm
+
+    ipfs
   ];
 }

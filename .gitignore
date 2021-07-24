@@ -3,3 +3,6 @@ node_modules
 output
 *.log
 .psc-ide-port
+dist
+.env
+release

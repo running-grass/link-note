@@ -13,6 +13,7 @@ exports.logAny = a => () => {
     console.log(a);
 }
 
+
 exports.initRxDB = () =>  () => {
     addPouchPlugin(pouchdbAdapterIdb);
 

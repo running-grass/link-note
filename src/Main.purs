@@ -3,6 +3,7 @@ module Main
 
 import Prelude
 
+import App (Note)
 import App as App
 import Control.Promise (Promise, toAffE)
 import Data.Maybe (maybe)
@@ -24,9 +25,9 @@ initRxDBA :: Unit -> Aff RxDatabase
 initRxDBA unit = toAffE $ initRxDB unit
 
 
-foreign import getNotesCollection :: RxDatabase -> Effect (Promise RxCollection)
+foreign import getNotesCollection :: RxDatabase -> Effect (Promise (RxCollection Note))
 
-getNotesCollectionA :: RxDatabase -> Aff RxCollection
+getNotesCollectionA :: RxDatabase -> Aff (RxCollection Note)
 getNotesCollectionA db = toAffE $ getNotesCollection db
 
 -- | Waits for the document to load and then finds the `body` element.

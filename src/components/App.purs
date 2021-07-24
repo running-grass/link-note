@@ -1,13 +1,18 @@
 module App where
 
-
 import Prelude
 
+import Control.Monad.State (state)
 import Data.Array (head)
+import Data.Either (note)
 import Data.Maybe (Maybe(..))
 import Data.UUID as UUID
-import Effect.Aff (Aff)
-import Effect.Aff.Class (class MonadAff)
+import Effect (Effect)
+import Effect.Aff (Aff, launchAff_)
+import Effect.Aff.Class (class MonadAff, liftAff)
+import Effect.Console (logShow)
+import Effect.Unsafe (unsafePerformEffect)
+import Halogen (liftEffect)
 import Halogen as H
 import Halogen.HTML as HH
 import Halogen.HTML.Events as HE
@@ -16,16 +21,21 @@ import IPFS as IPFS
 import IPFS.OrbitDB.Docs (DocStore)
 import IPFS.OrbitDB.Docs as ODocs
 import IPFS.Orbitdb as OD
-import RxDB.RxCollection (insertA)
-import RxDB.Type (RxCollection)
+import RxDB.RxCollection (find, insertA)
+import RxDB.RxDocument (toJSON)
+import RxDB.RxQuery (execA)
+import RxDB.Type (RxCollection, RxDocument, emptyQueryObject)
+import Web.DOM.CharacterData (toNode)
 
-type Input = { coll :: RxCollection }
+type Input = { coll :: RxCollection Note}
+
+type Note = { noteId :: String , content :: String }
 
 type State = { 
     note :: String, 
-    coll :: RxCollection
+    coll :: RxCollection Note,
+    noteList :: Array Note 
     }
-
 
 data Action
   = Submit | SetNote String | InitNote
@@ -41,10 +51,16 @@ render state =
             , HE.onValueInput \val -> SetNote val
             , HP.value state.note ]
           ]
-    -- , HH.button [ HE.onClick \_ -> InitNote ] [ HH.text "加载" ]
+    , HH.button [ HE.onClick \_ -> InitNote ] [ HH.text "加载" ]
     , HH.button [ HE.onClick \_ -> Submit ] [ HH.text "保存" ]
-
+    , HH.ul_ $ (state.noteList <#> \note -> (HH.li_ [HH.text note.content]))
     ]
+
+toNotes :: Array (RxDocument Note) ->  Array Note
+toNotes ds = ds <#> toNote 
+          
+toNote  :: RxDocument Note -> Note 
+toNote d = unsafePerformEffect $ toJSON d
 
 -- ren :: Maybe Doc -> 
 getDocs :: Aff DocStore
@@ -65,15 +81,19 @@ handleAction = case _ of
     H.modify_  _ { note = ""}
     -- pure unit
   InitNote -> do
-    db <- H.liftAff getDocs
-    rs <- H.liftEffect $ ODocs.get db "first"
-    case head rs of
-      Nothing -> pure unit
-      Just doc -> do
-        H.modify_  _ { note =  doc.content }
+    coll <- H.gets _.coll
+    query <-  H.liftEffect $ find coll emptyQueryObject
+    docs <- H.liftAff $  execA query
+    let notes  = toNotes docs
+    H.modify_  _ { noteList = notes }
+
 
 initialState :: Input-> State
-initialState input = { note: "", coll: input.coll }
+initialState input = { 
+  note : "",
+  coll : input.coll,
+  noteList : []
+  }
 
 component :: forall q  o m. MonadAff m => H.Component q Input o m
 component =
@@ -82,7 +102,7 @@ component =
       initialState
     , render
     , eval: H.mkEval H.defaultEval { 
-      handleAction = handleAction
-      -- , initialize = Just InitNote
-       }
+        handleAction = handleAction
+      , initialize = Just InitNote
+      }
     }

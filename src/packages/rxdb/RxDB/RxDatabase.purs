@@ -46,9 +46,7 @@ foreign import remove :: RxDatabase -> Effect (Promise Unit)
 removeA :: RxDatabase -> Aff Unit
 removeA db = toAffE $ remove db 
 
-
 foreign import requestIdlePromise :: RxDatabase -> Effect (Promise Unit)
 
 requestIdlePromiseA :: RxDatabase -> Aff Unit
 requestIdlePromiseA db = toAffE $ requestIdlePromise db 
-

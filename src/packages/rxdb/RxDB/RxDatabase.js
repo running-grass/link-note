@@ -2,7 +2,7 @@ const { isRxDatabase, createRxDatabase } = require('rxdb');
 
 const withRxDdatabase = (db, callback) => isRxDatabase(db)
     ? callback()
-    : Promise.reject("数据库不存在！");
+    : Promise.reject(new TypeError("数据库类型不正确！"));
 
 exports.isRxDatabase = db => () => isRxDatabase(db);
 

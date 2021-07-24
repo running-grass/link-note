@@ -18,6 +18,10 @@ const withCollectionE = coll => () => {
 
 exports.insert = coll => json => () => withCollection(coll, () => coll.insert(json));
 
+exports.upsert = coll => json => () => withCollection(coll, () => coll.upsert(json));
+
 exports.find = coll => queryObj => () => withCollection(coll, () => coll.find(queryObj))
 
 exports.findOne = coll => queryObj => () => withCollection(coll, () => coll.findOne(queryObj))
+
+exports.bulkRemove = coll => ids => () => withCollection(coll, () => coll.bulkRemove(ids));

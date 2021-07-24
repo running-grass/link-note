@@ -1,4 +1,3 @@
-const { isRxQuery } = require('rxdb');
 const {
     isRxDocument
 } = require('rxdb');

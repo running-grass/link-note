@@ -20,6 +20,17 @@ foreign import insert :: forall doc . RxCollection doc -> doc -> Effect (Promise
 insertA :: forall doc . RxCollection doc -> doc -> Aff (RxDocument doc)
 insertA coll json = toAffE $ insert coll json
 
+foreign import upsert :: forall doc . RxCollection doc -> doc -> Effect (Promise (RxDocument doc))
+
+upsertA :: forall doc . RxCollection doc -> doc -> Aff (RxDocument doc)
+upsertA coll json = toAffE $ upsert coll json
+
 foreign import find :: forall doc . (RxCollection doc)-> QueryObject -> Effect (RxQuery (Array (RxDocument doc)))
 
-foreign import findOne :: forall doc. RxCollection  doc -> QueryObject -> Effect (RxQuery (Maybe (RxDocument doc)))
+foreign import findOne :: forall doc. RxCollection  doc -> QueryObject -> Effect (RxQuery (RxDocument doc))
+
+
+foreign import bulkRemove :: forall a. RxCollection a -> Array String -> Effect (Promise Unit)
+
+bulkRemoveA :: forall a. RxCollection a -> Array String -> Aff Unit
+bulkRemoveA coll ids = toAffE $ bulkRemove coll ids

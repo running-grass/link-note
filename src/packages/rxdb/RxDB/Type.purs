@@ -10,7 +10,5 @@ foreign import data RxQuery :: Type -> Type
 foreign import data RxSchema :: Type
 foreign import data QueryObject :: Type 
 
-foreign import emptyQueryObject :: QueryObject
-
 -- 插件模块
 foreign import data PouchPlugin :: Type

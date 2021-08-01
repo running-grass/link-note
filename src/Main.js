@@ -3,26 +3,59 @@ const {
     getRxStoragePouch,
     createRxDatabase,
     addPouchPlugin,
-    removeRxDatabase,
 } = require('rxdb');
 
-const pouchdbAdapterIdb = require('pouchdb-adapter-idb');
-const { async } = require('rxjs');
+const { getIpfs, providers } = require('ipfs-provider');
+const { httpClient, jsIpfs, windowIpfs } = providers;
 
+const pouchdbAdapterIdb = require('pouchdb-adapter-idb');
+const ipfsCore = require('ipfs-core');
+
+const ipfsHttpClient = require('ipfs-http-client');
 exports.logAny = a => () => {
     console.log(a);
 }
 
+exports.getGlobalIPFS = () => {
+    return getIpfs({
+        loadHttpClientModule: function () { return ipfsHttpClient.create },
+        loadJsIpfsModule: function () { return ipfsCore },
+        providers: [
+            windowIpfs(),
+            // httpClient(), // try "/api/v0/" on the same Origin as the page
+            httpClient({
+                apiAddress: 'http://127.0.0.1:45005'
+            }),
+            httpClient({
+                apiAddress: 'http://127.0.0.1:5001'
+            }),
+            httpClient({
+                apiAddress: 'https://ipfs-api.grass.work:30443/'
+            }),
+            jsIpfs(),
+        ]
+    }).then(({ ipfs, provider, apiAddress }) => {
+        window.ipfs = ipfs;
 
-exports.initRxDB = () =>  () => {
+        console.log('IPFS API is provided by: ' + provider)
+        if (provider === 'httpClient') {
+            console.log('HTTP API address: ' + apiAddress)
+        }
+
+        return ipfs;
+    })
+}
+
+
+exports.initRxDB = () => () => {
     addPouchPlugin(pouchdbAdapterIdb);
     if (window.db) {
         return Promise.resolve(window.db);
     }
     return createRxDatabase({
-        name: 'ais' , // + new Date().getTime(),
+        name: 'ais', // + new Date().getTime(),
         storage: getRxStoragePouch('idb'),
-        password: 'myPassword', 
+        password: 'myPassword',
         multiInstance: true,
         eventReduce: false,
     }).then(db => {
@@ -48,7 +81,11 @@ exports.getNotesCollection = (db) => () => {
                     },
                     content: {
                         type: 'string'
+                    },
+                    type: {
+                        type: 'string'
                     }
+
                 },
             }
         }

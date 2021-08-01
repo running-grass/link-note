@@ -1,6 +1,7 @@
 module Main 
   where
 
+import IPFS
 import Prelude
 
 import App (Note)
@@ -9,6 +10,7 @@ import Control.Promise (Promise, toAffE)
 import Data.Maybe (maybe)
 import Effect (Effect)
 import Effect.Aff (Aff, launchAff_, throwError)
+import Effect.Class (liftEffect)
 import Effect.Exception (error)
 import Halogen.Aff (awaitLoad, selectElement)
 import Halogen.Aff as HA
@@ -25,7 +27,14 @@ initRxDBA :: Unit -> Aff RxDatabase
 initRxDBA unit = toAffE $ initRxDB unit
 
 
+
+foreign import getGlobalIPFS :: Effect (Promise IPFS)
+
+getGlobalIPFSA ::  Aff IPFS
+getGlobalIPFSA  = toAffE $ getGlobalIPFS 
+
 foreign import getNotesCollection :: RxDatabase -> Effect (Promise (RxCollection Note))
+
 
 getNotesCollectionA :: RxDatabase -> Aff (RxCollection Note)
 getNotesCollectionA db = toAffE $ getNotesCollection db
@@ -40,8 +49,10 @@ awaitRoot = do
 main :: Effect Unit
 main = do
   launchAff_ do
+    ipfs <- getGlobalIPFSA
     db <- initRxDBA unit
     coll <- getNotesCollectionA db  
     app <- awaitRoot
-    runUI App.component { coll } app
+    runUI App.component { ipfs , coll } app
+  pure unit
 

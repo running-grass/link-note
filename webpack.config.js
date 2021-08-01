@@ -4,6 +4,8 @@ const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const webpack = require('webpack');
 const FileManagerWebpackPlugin = require('filemanager-webpack-plugin')
+const HardSourceWebpackPlugin = require('hard-source-webpack-plugin')
+
 
 const isWebpackDevServer = process.argv.some(a => path.basename(a) === 'webpack-dev-server');
 const isWatch = process.argv.some(a => a === '--watch');
@@ -40,17 +42,22 @@ module.exports = {
     rules: [
       {
         test: /\.m?js$/,
-        exclude: /node_modules/,
-        use: {
-          loader: "babel-loader",
-          options: {
-            presets: ['@babel/preset-env']
-          }
-        }
+        exclude: {
+          // and: [/node_modules/],
+          or: [/node_modules/],
+          not: [/ipfs-http-client/],
+        },
+        // include: /node_modules\/ipfs-http-client/,
+        use: ['cache-loader', 'babel-loader'],
+
+        // use: {
+        //   loader: "babel-loader",
+        // }
       },
       {
         test: /\.purs$/,
         use: [
+          "cache-loader",
           {
             loader: 'purs-loader',
             options: {
@@ -84,6 +91,7 @@ module.exports = {
   },
 
   plugins: [
+    new HardSourceWebpackPlugin(),
     new webpack.LoaderOptionsPlugin({
       debug: true
     }),

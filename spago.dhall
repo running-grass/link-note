@@ -25,6 +25,7 @@ to generate this file without the comments in this block.
   , "prelude"
   , "psci-support"
   , "tailrec"
+  , "uri"
   , "uuid"
   , "web-dom"
   , "web-html"

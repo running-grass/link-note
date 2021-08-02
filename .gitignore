@@ -1,9 +1,27 @@
-.spago
-node_modules
-output
-*.log
+# purescript
+
+# purescript 依赖包目录 
+.spago/
+# 使用prescript repl产生的包
+.psci_modules/
 .psc-ide-port
+# purescript编译输出
+output/
+
+
+# js相关
+
+node_modules
 dist
-.env
+
+# 版本构建
 release
-.psci_modules
+
+# 编辑器相关
+.vscode
+
+# log文件
+*.log
+ 
+# 本地配置
+.env*.local

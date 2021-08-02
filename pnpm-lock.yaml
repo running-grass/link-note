@@ -7,7 +7,11 @@ specifiers:
   '@release-it/keep-a-changelog': ^2.3.0
   babel-loader: ^8.2.2
   cache-loader: ^4.1.0
+  cross-env: ^7.0.3
+  debug: ^4.3.2
+  dotenv: ^10.0.0
   dotenv-cli: ^4.0.0
+  dotenv-expand: ^5.1.0
   filemanager-webpack-plugin: ^6.1.4
   hard-source-webpack-plugin: ^0.13.1
   html-webpack-plugin: ^4.5.2
@@ -30,6 +34,10 @@ specifiers:
 
 dependencies:
   '@babel/polyfill': 7.12.1
+  cross-env: 7.0.3
+  debug: 4.3.2
+  dotenv: 10.0.0
+  dotenv-expand: 5.1.0
   filemanager-webpack-plugin: 6.1.4_webpack@4.46.0
   ipfs: 0.55.4
   ipfs-core: 0.9.1
@@ -4164,6 +4172,14 @@ packages:
       safe-buffer: 5.2.1
       sha.js: 2.4.11
 
+  /cross-env/7.0.3:
+    resolution: {integrity: sha512-+/HKd6EgcQCJGh2PSjZuUitQBQynKor4wrFbRg4DtAgS1aWO+gU52xpH7M9ScGgXSYmAVS9bIJ8EzuaGw0oNAw==}
+    engines: {node: '>=10.14', npm: '>=6', yarn: '>=1'}
+    hasBin: true
+    dependencies:
+      cross-spawn: 7.0.3
+    dev: false
+
   /cross-spawn/3.0.1:
     resolution: {integrity: sha1-ElYDfsufDF9549bvE14wdwGEuYI=}
     dependencies:
@@ -4847,7 +4863,11 @@ packages:
 
   /dotenv-expand/5.1.0:
     resolution: {integrity: sha512-YXQl1DSa4/PQyRfgrv6aoNjhasp/p4qs9FjJ4q4cQk+8m4r6k4ZSiEyytKG8f8W9gi8WsQtIObNmKd+tMzNTmA==}
-    dev: true
+
+  /dotenv/10.0.0:
+    resolution: {integrity: sha512-rlBi9d8jpv9Sf1klPjNfFAuWDjKLwTIJJ/VxtoTwIR6hnZxcEOQCZg2oIL3MWBYw5GpUDKOEnND7LXTbIpQ03Q==}
+    engines: {node: '>=10'}
+    dev: false
 
   /dotenv/8.6.0:
     resolution: {integrity: sha512-IrPdXQsk2BbzvCBGBOTmmSH5SodmqZNt4ERAZDmW4CT+tL8VtvinqywuANaFu4bOMWki16nqf0e4oC0QIaDr/g==}

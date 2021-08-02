@@ -5,9 +5,9 @@
   "main": "./src/index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "debug": "webpack-dev-server --progress --inline --hot",
-    "build": "webpack",
-    "release": "dotenv release-it --"
+    "debug": "cross-env mode=development DEBUG=true webpack-dev-server --progress --inline --hot",
+    "build": "cross-env mode=production webpack",
+    "release": "dotenv release-it -e .env.local --"
   },
   "author": "",
   "license": "ISC",
@@ -29,6 +29,10 @@
   },
   "dependencies": {
     "@babel/polyfill": "^7.12.1",
+    "cross-env": "^7.0.3",
+    "debug": "^4.3.2",
+    "dotenv": "^10.0.0",
+    "dotenv-expand": "^5.1.0",
     "filemanager-webpack-plugin": "^6.1.4",
     "ipfs": "^0.55.4",
     "ipfs-core": "^0.9.1",

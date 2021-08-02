@@ -1,27 +1,69 @@
 'use strict';
 
+const debug = require('debug')
 const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const webpack = require('webpack');
 const FileManagerWebpackPlugin = require('filemanager-webpack-plugin')
 const HardSourceWebpackPlugin = require('hard-source-webpack-plugin')
+const dotenv = require('dotenv')
+const dotenvExpand = require('dotenv-expand')
 
+function loadEnv(mode) {
+  const logger = debug('vue:env')
+  const basePath = path.resolve('./', `.env${mode ? `.${mode}` : ``}`)
+  const localPath = `${basePath}.local`
 
-const isWebpackDevServer = process.argv.some(a => path.basename(a) === 'webpack-dev-server');
-const isWatch = process.argv.some(a => a === '--watch');
+  const load = path => {
+    try {
+      const env = dotenv.config({ path, debug: process.env.DEBUG })
+      dotenvExpand(env)
+      logger(path, env)
+    } catch (err) {
+      // only ignore error if file is not found
+      if (err.toString().indexOf('ENOENT') < 0) {
+        error(err)
+      }
+    }
+  }
+
+  load(localPath);
+  load(basePath);
+}
+// load mode .env
+if (process.env.mode) {
+    loadEnv(process.env.mode)
+}
+// load base .env
+loadEnv()
+
+const isDebug = process.env.mode === 'development';
 
 const plugins =
-  isWebpackDevServer || !isWatch ? [] : [
-    function(){
-      this.plugin('done', function(stats){
+  isDebug ? [
+    function () {
+      this.plugin('done', function (stats) {
         process.stderr.write(stats.toString('errors-only'));
       });
-    }
-  ]
-;
+    },
+  ] : [
+      new FileManagerWebpackPlugin({
+        events: {
+          onEnd: {
+            delete: [
+              './release', // 删除之前已经存在的压缩包
+            ],
+            archive: [
+              { source: './dist', destination: './release/web.zip' },
+            ]
+          }
+        }
+      }),
+    ]
+  ;
 
 module.exports = {
-  devtool: 'eval-source-map',
+  devtool: isDebug ? 'eval-source-map' : 'none',
 
   devServer: {
     // noInfo: true,
@@ -65,7 +107,7 @@ module.exports = {
                 'src/**/*.purs'
               ],
               spago: true,
-              watch: isWebpackDevServer || isWatch,
+              watch: isDebug,
               pscIde: true
             }
           }
@@ -86,29 +128,19 @@ module.exports = {
   },
 
   resolve: {
-    modules: [ 'node_modules' ],
-    extensions: [ '.purs', '.js']
+    modules: ['node_modules'],
+    extensions: ['.purs', '.js']
   },
 
   plugins: [
     new HardSourceWebpackPlugin(),
     new webpack.LoaderOptionsPlugin({
-      debug: true
+      debug: isDebug
     }),
     new HtmlWebpackPlugin({
       title: 'ais',
       template: 'public/index.html',
       inject: false  // See stackoverflow.com/a/38292765/3067181
     }),
-    new FileManagerWebpackPlugin ({ events: { 
-      onEnd: {
-         delete: [
-              './release', // 删除之前已经存在的压缩包
-          ],
-         archive: [
-              { source: './dist', destination: './release/web.zip'},
-          ]
-      }
-    }}),
   ].concat(plugins)
 };

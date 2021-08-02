@@ -14,7 +14,6 @@ to generate this file without the comments in this block.
 , dependencies =
   [ "aff"
   , "aff-promise"
-  , "arrays"
   , "console"
   , "effect"
   , "exceptions"
@@ -25,9 +24,9 @@ to generate this file without the comments in this block.
   , "prelude"
   , "psci-support"
   , "tailrec"
-  , "uri"
   , "uuid"
   , "web-dom"
+  , "web-file"
   , "web-html"
   ]
 , packages = ./packages.dhall

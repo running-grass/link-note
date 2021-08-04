@@ -6,32 +6,50 @@ import Prelude
 import Control.Monad.Rec.Class (forever)
 import Control.Promise (Promise, toAffE)
 import Data.Maybe (Maybe(..), fromMaybe)
+import Data.String.Regex (Regex, test, replace)
+import Data.String.Regex.Flags (global)
+import Data.String.Regex.Unsafe (unsafeRegex)
 import Data.UUID as UUID
 import Effect (Effect)
 import Effect.Aff (Aff, Milliseconds(..), delay, forkAff)
 import Effect.Aff.Class (class MonadAff)
-import Effect.Console (logShow)
 import Effect.Unsafe (unsafePerformEffect)
 import Halogen as H
 import Halogen.HTML as HH
 import Halogen.HTML.Events as HE
 import Halogen.HTML.Properties as HP
 import Halogen.Subscription as HS
-import Option as Option
+import Html.Renderer.Halogen as RH
 import RxDB.RxCollection (bulkRemoveA, find, findOne, upsertA)
 import RxDB.RxDocument (isRxDocument, toJSON)
 import RxDB.RxQuery (emptyQueryObject, execA, primaryQuery)
 import RxDB.Type (RxCollection, RxDocument)
 
-type Input = { coll :: RxCollection Note, ipfs :: IPFS }
 
-type Note =  Record ( noteId :: String , content :: String, type :: String )
+type Input = { 
+  coll :: RxCollection Note, 
+  collFile :: RxCollection File,
+  ipfs :: IPFS 
+  }
 
+type Note =  Record ( 
+  id :: String , 
+  content :: String, 
+  type :: String 
+  )
+
+type File = Record (
+  id :: String , 
+  cid :: String, 
+  mime :: String,
+  type :: String 
+)
 
 type State = { 
     currentId :: Maybe String,
     note :: String, 
     coll :: RxCollection Note,
+    collFile :: RxCollection File,
     noteList :: Array Note,
     ipfs :: IPFS,
     ipfsGatway :: Maybe String
@@ -53,20 +71,29 @@ foreign import addPasteListenner ::  IPFS -> (Function String (Effect Unit)) -> 
 foreign import getGatewayUri :: IPFS -> Effect (Promise String)
 
 
+regFileLink :: Regex
+regFileLink = unsafeRegex "\\[\\[file-(.*?)\\]\\]" global
+
 getGatewayUriA :: IPFS -> Aff String
 getGatewayUriA ipfs = toAffE $ getGatewayUri ipfs 
+
+
 
 renderNote :: forall  a. String ->  Note  -> HH.HTML a Action
 renderNote ipfsGatway  note = 
   HH.li_ 
     [
-      HH.button [ HE.onClick \_ -> Delete note.noteId ] [ HH.text "删除" ]
-      , HH.button [ HE.onClick \_ -> Edit note.noteId ] [ HH.text "编辑" ]
-      , if note.type == "ipfs" 
-        then HH.img [ HP.src $ ipfsGatway <> note.content,
-        HP.width 200]
+      HH.button [ HE.onClick \_ -> Delete note.id ] [ HH.text "删除" ]
+      , HH.button [ HE.onClick \_ -> Edit note.id ] [ HH.text "编辑" ]
+      , if test regFileLink note.content 
+        then RH.render_ $ replace regFileLink ("<img src=\"" <> ipfsGatway <> "$1\">") note.content 
+        -- then HH.text $ replace regFileLink ("<img src=\"" <> ipfsGatway <> "$&\">") note.content 
+        --  HH.img [ HP.src $ ipfsGatway <> note.content,
+        -- HP.width 200]
         else  HH.text $ " " <> note.content
     ]
+
+
 
 render :: forall cs m. State -> H.ComponentHTML Action cs m
 render state =
@@ -79,7 +106,7 @@ render state =
             , HE.onValueInput \val -> SetNote val
             , HP.value state.note ]
           ]
-    , HH.button [ HE.onClick \_ -> InitNote ] [ HH.text "加载" ]
+    -- , HH.button [ HE.onClick \_ -> InitNote ] [ HH.text "加载" ]
     , HH.button [ HE.onClick \_ -> Submit ] [ HH.text "保存" ]
     , HH.ul_ $ state.noteList <#> renderNote (fromMaybe "ipfs://" state.ipfsGatway)
     ]
@@ -101,16 +128,15 @@ handleAction = case _ of
     currentId <- H.gets _.currentId
     uuid <- H.liftEffect UUID.genUUID
     let noteId = fromMaybe (UUID.toString uuid) currentId
-    void $ H.liftAff $ upsertA coll { content: note,  noteId: noteId, type: "text" }
+    void $ H.liftAff $ upsertA coll { content: note,  id: noteId, type: "text" }
     H.modify_  _ { note = ""}
   SubmitIpfs path -> do
-    -- note <- H.gets _.note
-    coll <- H.gets _.coll
-    -- currentId <- H.gets _.currentId
-    uuid <- H.liftEffect UUID.genUUID
-    let noteId = UUID.toString uuid
-    void $ H.liftAff $ upsertA coll { content: path,  noteId: noteId, type: "ipfs" }
-    H.modify_  _ { note = ""}
+    note <- H.gets _.note
+    collFile <- H.gets _.collFile
+    let fileId = "file-" <> path
+    void $ H.liftAff $ upsertA collFile { cid: path,  id: fileId, mime: "", type: "" }
+    let newNote = note <> "[[" <> fileId <> "]]"
+    H.modify_  _ { note = newNote }
   InitComp -> do
     ipfs <- H.gets _.ipfs
     _ <- H.subscribe =<< timer InitNote
@@ -134,7 +160,7 @@ handleAction = case _ of
     isDoc <- H.liftEffect $ isRxDocument doc'
     when isDoc do
       note <- H.liftEffect $ toJSON doc'
-      H.modify_  _ { currentId = Just note.noteId, note = note.content }
+      H.modify_  _ { currentId = Just note.id, note = note.content }
 
 initialState :: Input-> State
 initialState input = { 
@@ -142,6 +168,7 @@ initialState input = {
   ipfsGatway: Nothing,
   note : "",
   coll : input.coll,
+  collFile : input.collFile,
   ipfs : input.ipfs,
   noteList : []
   }

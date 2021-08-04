@@ -22,7 +22,7 @@ exports.getGlobalIPFS = () => {
         loadJsIpfsModule: function () { return ipfsCore },
         providers: [
             windowIpfs(),
-            // httpClient(), // try "/api/v0/" on the same Origin as the page
+            httpClient(), // try "/api/v0/" on the same Origin as the page
             httpClient({
                 apiAddress: 'http://127.0.0.1:45005'
             }),
@@ -32,7 +32,7 @@ exports.getGlobalIPFS = () => {
             httpClient({
                 apiAddress: 'https://ipfs-api.grass.work:30443/'
             }),
-            jsIpfs(),
+            // jsIpfs(),
         ]
     }).then(({ ipfs, provider, apiAddress }) => {
         window.ipfs = ipfs;
@@ -60,7 +60,50 @@ exports.initRxDB = () => () => {
         eventReduce: false,
     }).then(db => {
         window.db = db;
-        return db;
+        return db.addCollections({
+            notes: {
+                schema: {
+                    version: 0,
+                    primaryKey: 'id',
+                    type: 'object',
+                    properties: {
+                        id: {
+                            type: 'string'
+                        },
+                        content: {
+                            type: 'string'
+                        },
+                        type: {
+                            type: 'string'
+                        }
+                    },
+                }
+            },
+            file: {
+                schema: {
+                    version: 0,
+                    primaryKey: 'id',
+                    type: 'object',
+                    properties: {
+                        id: {
+                            type: 'string'
+                        },
+                        cid: {
+                            type: 'string'
+                        },
+                        mime: {
+                            type: 'string',
+                            default: 'unknow'
+                        },
+                        type: {
+                            type: 'string'
+                        }
+                    },
+                }
+            }
+        }).then(() => {
+            return db;
+        });
     });
 };
 
@@ -69,28 +112,25 @@ exports.getNotesCollection = (db) => () => {
     if (window.notes) {
         return Promise.resolve(window.notes);
     }
-    return db.addCollections({
-        notes: {
-            schema: {
-                version: 0,
-                primaryKey: 'noteId',
-                type: 'object',
-                properties: {
-                    noteId: {
-                        type: 'string'
-                    },
-                    content: {
-                        type: 'string'
-                    },
-                    type: {
-                        type: 'string'
-                    }
+    
+    if (db.collections.notes) {
+        window.notes = db.collections.notes;
+        return Promise.resolve(window.notes);
+    } else {
+        return Promise.reject('note collection not exist！');
+    }
+};
 
-                },
-            }
-        }
-    }).then(colls => {
-        window.notes = colls.notes;
-        return colls.notes;
-    });
+exports.getFileCollection = (db) => () => {
+
+    if (window.collFile) {
+        return Promise.resolve(window.collFile);
+    }
+    
+    if (db.collections.file) {
+        window.collFile = db.collections.file;
+        return Promise.resolve(window.collFile);
+    } else {
+        return Promise.reject('file collection not exist！');
+    }
 };

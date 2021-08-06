@@ -22,3 +22,11 @@ exports.addPasteListenner = (ipfs) => (callback) => () => {
 exports.getGatewayUri = (ipfs) => () => {
     return ipfs.config.get("Addresses.Gateway").then(gateway => gateway ? gateway : Promise.reject("没有获取到网关值")).then(toUri);
 }
+
+exports.doBlur = (target) => () => {
+    target.blur();
+}
+exports.innerText = (target) => () => {
+    console.log('newText', target.innerText)
+    return target.innerText || '';
+}

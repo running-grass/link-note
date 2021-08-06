@@ -2,6 +2,7 @@ module App where
 
 import Control.Monad.Rec.Class (forever)
 import Control.Promise (Promise, toAffE)
+import DOM.HTML.Indexed (FocusEvents)
 import Data.Array (length, null)
 import Data.Maybe (Maybe(..), fromMaybe, isNothing)
 import Data.String.Regex (Regex, test, replace)
@@ -12,6 +13,7 @@ import Effect (Effect)
 import Effect.Aff (Aff, Milliseconds(..), delay, forkAff)
 import Effect.Aff.Class (class MonadAff)
 import Effect.Unsafe (unsafePerformEffect)
+import Halogen (PropName(..))
 import Halogen as H
 import Halogen.HTML as HH
 import Halogen.HTML.Events as HE
@@ -24,7 +26,17 @@ import RxDB.RxCollection (bulkRemoveA, find, upsertA)
 import RxDB.RxDocument (toJSON)
 import RxDB.RxQuery (emptyQueryObject, execA)
 import RxDB.Type (RxCollection, RxDocument)
+import Web.Clipboard.ClipboardEvent (toEvent)
+import Web.Event.Event (currentTarget)
+import Web.Event.Internal.Types (EventTarget)
+import Web.HTML.Event.EventTypes (blur, offline)
+import Web.HTML.HTMLElement (blur, contentEditable)
+import Web.UIEvent.FocusEvent (FocusEvent, relatedTarget)
 import Web.UIEvent.KeyboardEvent as KE
+
+
+foreign import doBlur :: EventTarget -> Effect Unit
+foreign import innerText :: EventTarget -> Effect String
 
 
 type Input = { 
@@ -62,11 +74,12 @@ data Action
   | SetNote String 
   | InitNote 
   | New
-  | HandleKeyUp KE.KeyboardEvent
+  | HandleKeyUp String KE.KeyboardEvent
   | InitComp
   | SubmitIpfs String
   | Delete String 
-  | Edit String String
+  | Edit String
+  | HandleBLur String FocusEvent
 
 
 
@@ -81,35 +94,24 @@ regFileLink = unsafeRegex "\\[\\[file-(.*?)\\]\\]" global
 getGatewayUriA :: IPFS -> Aff String
 getGatewayUriA ipfs = toAffE $ getGatewayUri ipfs 
 
-renderViewNote :: forall a . String -> Note -> HH.HTML a Action
-renderViewNote ipfsGatway note = if test regFileLink note.content 
-        then RH.render_ $ replace regFileLink ("<img src=\"" <> ipfsGatway <> "$1\">") note.content 
-        else  HH.text $ " " <> note.content
-
-renderEditNote :: forall a . Note -> HH.HTML a Action
-renderEditNote note = HH.div_ [
-  HH.textarea [ 
-    HP.placeholder "请在这里输入笔记内容！" 
-    , HP.rows 3
-    , HE.onValueInput \val -> Submit note.id val
-    , HE.onKeyUp \kbe -> HandleKeyUp kbe
-    , HP.value note.content 
-    ]
-  ]
-
-
 renderNote :: forall  a. String -> Maybe String ->  Note  -> HH.HTML a Action
 renderNote ipfsGatway currentId note = 
   HH.li_ 
     [
       HH.button [ HE.onClick \_ -> Delete note.id ] [ HH.text "删除" ]
-      , HH.button [ HE.onClick \_ -> Edit note.id note.content ] [ HH.text "编辑" ]
-      , case currentId of
-        Nothing -> renderViewNote ipfsGatway note
-        Just id -> if id == note.id then renderEditNote note  else renderViewNote ipfsGatway note
+      -- , HH.button [ HE.onClick \_ -> Edit note.id ] [ HH.text "编辑" ]
+      , HH.div [ 
+          HP.prop (PropName "contentEditable") true
+        , HE.onKeyUp \kbe -> HandleKeyUp note.id kbe
+        , HE.onFocusIn \_ -> Edit note.id 
+        , HP.style "    min-width: 100px;    min-height: 30px;"
+        -- , HE.onFocusOut \fe -> HandleBLur note.id fe
+      ] [ 
+        case currentId of 
+        Just id | id == note.id -> HH.text note.content
+        _ -> RH.render_ $ replace regFileLink ("<img src=\"" <> ipfsGatway <> "$1\">") note.content 
+      ]
     ]
-
-
 
 render :: forall cs m. State -> H.ComponentHTML Action cs m
 render state =
@@ -174,12 +176,28 @@ handleAction = case _ of
     coll <- H.gets _.coll
     H.liftAff $ bulkRemoveA coll [noteId]
     H.modify_ _ { currentId = Nothing, currentNote = Nothing }
-  HandleKeyUp kbe 
-    | KE.key kbe == "Enter" -> handleAction New
-    | KE.key kbe == "Escape" -> H.modify_ _ { currentId = Nothing, currentNote = Nothing }
+  HandleKeyUp id kbe 
+    | KE.key kbe == "Enter" -> do 
+      handleAction New
+    | KE.key kbe == "Escape" -> do 
+        let maybeTarget = currentTarget $ KE.toEvent kbe
+        case maybeTarget of
+          Just target -> do 
+            text <-  H.liftEffect $ innerText target  
+            handleAction $ Submit id text
+            H.liftEffect $ doBlur target  
+          Nothing -> pure unit
+        H.modify_ _ { currentId = Nothing, currentNote = Nothing }
     | otherwise -> pure unit
-  Edit noteId content -> do
-    H.modify_ _ { currentId = Just noteId, currentNote = Just content }
+  HandleBLur id fe -> do
+    let maybeTarget = relatedTarget fe
+    case maybeTarget of
+      Just target -> do 
+        text <-  H.liftEffect $ innerText target  
+        handleAction $ Submit id text
+      Nothing -> pure unit
+  Edit noteId  -> do
+    H.modify_ _ { currentId = Just noteId }
 
 initialState :: Input-> State
 initialState input = { 

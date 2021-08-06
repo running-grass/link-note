@@ -1,7 +1,7 @@
 module App where
 
-import IPFS
-import Prelude
+import IPFS (IPFS)
+import Prelude (Unit, bind, discard, otherwise, pure, unit, void, ($), (<#>), (<>), (=<<), (==))
 
 import Control.Monad.Rec.Class (forever)
 import Control.Promise (Promise, toAffE)

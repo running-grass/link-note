@@ -1,10 +1,4 @@
-'use strict';
-
-require('@babel/polyfill');
-
-// import '@babel/polyfill';
-
-const main = require('./Main.purs')
+const Main = require('./Main.purs')
 if (!window) {
   window = {};
 }
@@ -18,9 +12,9 @@ const app = document.querySelector("#halogen-app");
 if (app) {
   app.innerHTML = '';
 }
-window.main = main;
+window.Main = Main;
 
-main.main();
+window.Main.main();
 
 if (module.hot) {
   module.hot.accept();

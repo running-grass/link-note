@@ -2,7 +2,6 @@ lockfileVersion: 5.3
 
 specifiers:
   '@babel/core': ^7.14.8
-  '@babel/polyfill': ^7.12.1
   '@babel/preset-env': ^7.14.8
   '@release-it/keep-a-changelog': ^2.3.0
   babel-loader: ^8.2.2
@@ -33,7 +32,6 @@ specifiers:
   webpack-dev-server: ^3.11.2
 
 dependencies:
-  '@babel/polyfill': 7.12.1
   cross-env: 7.0.3
   debug: 4.3.2
   dotenv: 10.0.0
@@ -67,11 +65,6 @@ devDependencies:
   webpack-dev-server: 3.11.2_46edf965869dcc7c8d09e022f331d1ea
 
 packages:
-
-  /@achingbrain/node-fetch/2.6.7:
-    resolution: {integrity: sha512-iTASGs+HTFK5E4ZqcMsHmeJ4zodyq8L38lZV33jwqcBJYoUt3HjN4+ot+O9/0b+ke8ddE7UgOtVuZN/OkV19/g==}
-    engines: {node: 4.x || >=6.0.0}
-    dev: false
 
   /@assemblyscript/loader/0.9.4:
     resolution: {integrity: sha512-HazVq9zwTVwGmqdwYzu7WyQ6FQVZ7SwET0KKQuKm55jD0IfUpZgN0OPIiZG3zV1iSrVYcN0bdwLRXI/VNCYsUA==}
@@ -1040,14 +1033,6 @@ packages:
       '@babel/helper-create-regexp-features-plugin': 7.14.5_@babel+core@7.14.8
       '@babel/helper-plugin-utils': 7.14.5
     dev: true
-
-  /@babel/polyfill/7.12.1:
-    resolution: {integrity: sha512-X0pi0V6gxLi6lFZpGmeNa4zxtwEmCs42isWLNjZZDE0Y8yVfgu0T2OAHlzBbdYlqbW/YXVvoBHpATEM+goCj8g==}
-    deprecated: 🚨 This package has been deprecated in favor of separate inclusion of a polyfill and regenerator-runtime (when needed). See the @babel/polyfill docs (https://babeljs.io/docs/en/babel-polyfill) for more information.
-    dependencies:
-      core-js: 2.6.12
-      regenerator-runtime: 0.13.7
-    dev: false
 
   /@babel/preset-env/7.14.8_@babel+core@7.14.8:
     resolution: {integrity: sha512-a9aOppDU93oArQ51H+B8M1vH+tayZbuBqzjOhntGetZVa+4tTu5jp+XTwqHGG2lxslqomPYVSjIxQkFwXzgnxg==}
@@ -4071,12 +4056,6 @@ packages:
       browserslist: 4.16.6
       semver: 7.0.0
     dev: true
-
-  /core-js/2.6.12:
-    resolution: {integrity: sha512-Kb2wC0fvsWfQrgk8HU5lW6U/Lcs8+9aaYcy4ZFc6DDlo4nZ7n70dEgE5rtR0oG6ufKDUnrwfWL1mXR5ljDatrQ==}
-    deprecated: core-js@<3.3 is no longer maintained and not recommended for usage due to the number of issues. Because of the V8 engine whims, feature detection in old core-js versions could cause a slowdown up to 100x even if nothing is polyfilled. Please, upgrade your dependencies to the actual version of core-js.
-    requiresBuild: true
-    dev: false
 
   /core-util-is/1.0.2:
     resolution: {integrity: sha1-tf1UIgqivFq1eqtxQMlAdUUDwac=}
@@ -7727,7 +7706,7 @@ packages:
       nanoid: 3.1.23
       native-abort-controller: 1.0.3_abort-controller@3.0.0
       native-fetch: 3.0.0_@achingbrain+node-fetch@2.6.7
-      node-fetch: /@achingbrain/node-fetch/2.6.7
+      node-fetch: registry.nlark.com/@achingbrain/node-fetch/2.6.7
       react-native-fetch-api: 2.0.0
       stream-to-it: 0.2.4
     dev: false
@@ -10583,7 +10562,7 @@ packages:
     peerDependencies:
       node-fetch: '*'
     dependencies:
-      node-fetch: /@achingbrain/node-fetch/2.6.7
+      node-fetch: registry.nlark.com/@achingbrain/node-fetch/2.6.7
     dev: false
 
   /native-fetch/3.0.0_node-fetch@2.6.1:
@@ -14771,3 +14750,10 @@ packages:
     engines: {node: '>=0.6'}
     dev: false
     optional: true
+
+  registry.nlark.com/@achingbrain/node-fetch/2.6.7:
+    resolution: {integrity: sha1-G11il48u0HuZRE9k8N85+WCm000=, registry: https://registry.npm.taobao.org/, tarball: https://registry.nlark.com/@achingbrain/node-fetch/download/@achingbrain/node-fetch-2.6.7.tgz}
+    name: '@achingbrain/node-fetch'
+    version: 2.6.7
+    engines: {node: 4.x || >=6.0.0}
+    dev: false

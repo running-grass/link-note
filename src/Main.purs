@@ -1,8 +1,8 @@
 module Main 
   where
 
-import IPFS
-import Prelude
+import IPFS (IPFS)
+import Prelude (Unit, bind, discard, pure, unit, ($))
 
 import App (Note, File)
 import App as App
@@ -10,10 +10,8 @@ import Control.Promise (Promise, toAffE)
 import Data.Maybe (maybe)
 import Effect (Effect)
 import Effect.Aff (Aff, launchAff_, throwError)
-import Effect.Class (liftEffect)
 import Effect.Exception (error)
 import Halogen.Aff (awaitLoad, selectElement)
-import Halogen.Aff as HA
 import Halogen.VDom.Driver (runUI)
 import RxDB.Type (RxCollection, RxDatabase)
 import Web.DOM.ParentNode (QuerySelector(..))

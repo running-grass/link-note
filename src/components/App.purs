@@ -1,10 +1,8 @@
 module App where
 
-import IPFS (IPFS)
-import Prelude (Unit, bind, discard, otherwise, pure, unit, void, ($), (<#>), (<>), (=<<), (==))
-
 import Control.Monad.Rec.Class (forever)
 import Control.Promise (Promise, toAffE)
+import Data.Array (length, null)
 import Data.Maybe (Maybe(..), fromMaybe, isNothing)
 import Data.String.Regex (Regex, test, replace)
 import Data.String.Regex.Flags (global)
@@ -20,6 +18,8 @@ import Halogen.HTML.Events as HE
 import Halogen.HTML.Properties as HP
 import Halogen.Subscription as HS
 import Html.Renderer.Halogen as RH
+import IPFS (IPFS)
+import Prelude (Unit, bind, discard, otherwise, pure, unit, void, ($), (<#>), (<>), (=<<), (==))
 import RxDB.RxCollection (bulkRemoveA, find, upsertA)
 import RxDB.RxDocument (toJSON)
 import RxDB.RxQuery (emptyQueryObject, execA)
@@ -167,7 +167,9 @@ handleAction = case _ of
     query <-  H.liftEffect $ find coll emptyQueryObject
     docs <- H.liftAff $  execA query
     let notes  = toNotes docs
-    H.modify_  _ { noteList = notes }
+    if null notes 
+      then handleAction New 
+      else H.modify_  _ { noteList = notes }
   Delete noteId -> do
     coll <- H.gets _.coll
     H.liftAff $ bulkRemoveA coll [noteId]

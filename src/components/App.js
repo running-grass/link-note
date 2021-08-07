@@ -52,7 +52,7 @@ exports.insertText = (text) => () => {
 exports.autoFocus  = (id) => () => {
     setTimeout(() => {
         const tar = document.querySelector(`li#${id} textarea`);
-        console.log(tar);
+        // console.log(tar);
         tar.focus();
     })
 }

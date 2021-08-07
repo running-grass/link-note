@@ -36,6 +36,7 @@ import Web.Event.Event (Event, EventType(..), currentTarget, preventDefault, tar
 import Web.Event.Internal.Types (EventTarget)
 import Web.HTML.Event.EventTypes (blur, offline)
 import Web.HTML.HTMLElement (blur, contentEditable)
+import Web.HTML.HTMLTextAreaElement as HTAE
 import Web.UIEvent.FocusEvent (FocusEvent, relatedTarget)
 import Web.UIEvent.KeyboardEvent as KE
 
@@ -69,7 +70,6 @@ type File = Record (
 
 type State = { 
     currentId :: Maybe String,
-    note :: String, 
     coll :: RxCollection Note,
     collFile :: RxCollection File,
     noteList :: Array Note,
@@ -79,7 +79,6 @@ type State = {
 
 data Action
   = Submit String String 
-  | SetNote String 
   | InitNote 
   | New
   | IgnorePaste CE.ClipboardEvent
@@ -89,7 +88,6 @@ data Action
   | SubmitIpfs String
   | Delete String 
   | Edit String
-  | Log String 
   | EditNote Event String 
   | ChangeEditID (Maybe String)
 
@@ -119,8 +117,8 @@ renderNote ipfsGatway currentId note =
         , HE.onKeyUp \kbe -> HandleKeyUp note.id kbe
         , HE.onKeyDown \kbe -> HandleKeyDown note.id kbe
         , HE.onPaste IgnorePaste
-        , HE.onValueChange \val -> Submit note.id val
-        -- , HE.onBlur \_ -> InitNote
+        , HE.onValueInput \val -> Submit note.id val
+        -- , HE.onBlur \_ -> ChangeEditID Nothing
         -- , HE.handler (EventType "input") \str -> EditNote str note.id
       ]
 
@@ -152,11 +150,12 @@ getTextFromEvent ev = do
   case maybeTarget of 
     Nothing -> pure Nothing
     Just target -> do
-      let maybeEle = fromEventTarget target
-      case maybeEle of 
-        Nothing -> pure Nothing 
+      
+      let maybeInput = HTAE.fromEventTarget target
+      case maybeInput of 
+        Nothing -> pure $ Just "-1" 
         Just el -> do 
-          text <- H.liftEffect $ textContent $ toNode el
+          text <- H.liftEffect $ HTAE.value el
           pure $ Just text
  
 handleAction :: forall cs o m . MonadAff m =>  Action → H.HalogenM State Action cs o m Unit
@@ -174,12 +173,10 @@ handleAction = case _ of
     let noteId = "note-" <> UUID.toString uuid
     void $ H.liftAff $ insertA coll { content: "",  id: noteId }
     handleAction $ ChangeEditID $ Just noteId
-  SetNote note -> do
-    H.modify_ _ { note = note }
   Submit noteId note->  do
     coll <- H.gets _.coll
     void $ H.liftAff $ upsertA coll { content: note,  id: noteId }
-    H.modify_  _ { note = "" }
+    pure unit 
   SubmitIpfs path -> do
     collFile <- H.gets _.collFile
 
@@ -218,40 +215,37 @@ handleAction = case _ of
     | KE.key kbe == "Enter" -> do 
       H.liftEffect $ preventDefault $ KE.toEvent kbe
       handleAction New
-    -- | KE.key kbe == "Escape" -> do 
-    --     handleAction $ ChangeEditID Nothing
-    --     let maybeTarget = currentTarget $ KE.toEvent kbe
-    --     case maybeTarget of
-    --       Just target -> do 
-    --         H.liftEffect $ doBlur target
-    --       Nothing -> pure unit
+    | KE.key kbe == "Escape" -> do 
+        handleAction $ ChangeEditID Nothing
+        let maybeTarget = currentTarget $ KE.toEvent kbe
+        case maybeTarget of
+          Just target -> do 
+            H.liftEffect $ doBlur target
+          Nothing -> pure unit
 
-    -- | KE.key kbe == "Backspace" -> do 
-    --   maybeText <- H.liftEffect $ getTextFromEvent $ KE.toEvent kbe
-    --   case maybeText of 
-    --     Nothing -> pure unit
-    --     Just text 
-    --       | "" == text -> handleAction $ Delete id 
-    --       | otherwise -> pure unit 
+    | KE.key kbe == "Backspace" -> do 
+      maybeText <- H.liftEffect $ getTextFromEvent $ KE.toEvent kbe
+
+      case maybeText of 
+        Nothing -> pure unit
+        Just text 
+          | "" == text -> handleAction $ Delete id 
+          | otherwise -> pure unit 
     | otherwise -> pure unit
   EditNote ev id -> do 
     maybeText <- H.liftEffect $ getTextFromEvent ev
     case maybeText of 
       Nothing -> pure unit
       Just text -> do
-        _ <- pure $ logAny text
         handleAction $ Submit id text
   Edit noteId  -> do
     handleAction $ ChangeEditID $ Just noteId
-  Log str -> do 
-    H.liftEffect $ logShow str 
   IgnorePaste ev -> H.liftEffect $ preventDefault $ CE.toEvent ev
 
 initialState :: Input-> State
 initialState input = { 
   currentId: Nothing,
   ipfsGatway: Nothing,
-  note : "",
   coll : input.coll,
   collFile : input.collFile,
   ipfs : input.ipfs,

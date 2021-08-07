@@ -17,8 +17,6 @@ import RxDB.Type (RxCollection, RxDatabase)
 import Web.DOM.ParentNode (QuerySelector(..))
 import Web.HTML (HTMLElement)
 
-foreign import logAny :: forall a . a -> Effect Unit
-
 foreign import initRxDB :: Unit -> Effect (Promise RxDatabase)
 
 initRxDBA :: Unit -> Aff RxDatabase

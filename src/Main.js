@@ -12,9 +12,6 @@ const pouchdbAdapterIdb = require('pouchdb-adapter-idb');
 const ipfsCore = require('ipfs-core');
 
 const ipfsHttpClient = require('ipfs-http-client');
-exports.logAny = a => () => {
-    console.log(a);
-}
 
 exports.getGlobalIPFS = () => {
     return getIpfs({

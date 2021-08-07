@@ -4,6 +4,7 @@ import Control.Monad.Rec.Class (forever)
 import Control.Promise (Promise, toAffE)
 import DOM.HTML.Indexed (FocusEvents)
 import Data.Array (length, null)
+import Data.Codec.Argonaut.Common (maybe)
 import Data.Maybe (Maybe(..), fromMaybe, isNothing)
 import Data.String.Regex (Regex, test, replace)
 import Data.String.Regex.Flags (global)
@@ -12,6 +13,7 @@ import Data.UUID as UUID
 import Effect (Effect)
 import Effect.Aff (Aff, Milliseconds(..), delay, forkAff)
 import Effect.Aff.Class (class MonadAff)
+import Effect.Console (logShow)
 import Effect.Unsafe (unsafePerformEffect)
 import Halogen (PropName(..))
 import Halogen as H
@@ -26,8 +28,11 @@ import RxDB.RxCollection (bulkRemoveA, find, upsertA)
 import RxDB.RxDocument (toJSON)
 import RxDB.RxQuery (emptyQueryObject, execA)
 import RxDB.Type (RxCollection, RxDocument)
+import Util (logAny)
 import Web.Clipboard.ClipboardEvent (toEvent)
-import Web.Event.Event (currentTarget)
+import Web.DOM.Element (fromEventTarget, toNode)
+import Web.DOM.Node (textContent)
+import Web.Event.Event (Event, EventType(..), currentTarget, target)
 import Web.Event.Internal.Types (EventTarget)
 import Web.HTML.Event.EventTypes (blur, offline)
 import Web.HTML.HTMLElement (blur, contentEditable)
@@ -79,7 +84,8 @@ data Action
   | SubmitIpfs String
   | Delete String 
   | Edit String
-  | HandleBLur String FocusEvent
+  | Log String 
+  | EditNote Event String 
 
 
 
@@ -104,8 +110,8 @@ renderNote ipfsGatway currentId note =
           HP.prop (PropName "contentEditable") true
         , HE.onKeyUp \kbe -> HandleKeyUp note.id kbe
         , HE.onFocusIn \_ -> Edit note.id 
+        , HE.handler (EventType "input") \str -> EditNote str note.id
         , HP.style "    min-width: 100px;    min-height: 30px;"
-        -- , HE.onFocusOut \fe -> HandleBLur note.id fe
       ] [ 
         case currentId of 
         Just id | id == note.id -> HH.text note.content
@@ -159,8 +165,9 @@ handleAction = case _ of
       handleAction $ Submit id' newNote
 
   InitComp -> do
+    handleAction InitNote
     ipfs <- H.gets _.ipfs
-    _ <- H.subscribe =<< timer InitNote
+    -- _ <- H.subscribe =<< timer InitNote
     _ <- H.subscribe =<< subscriptPaste ipfs
     host <- H.liftAff $ getGatewayUriA ipfs
     H.modify_ _ { ipfsGatway = Just (host <> "/ipfs/") }
@@ -183,21 +190,33 @@ handleAction = case _ of
         let maybeTarget = currentTarget $ KE.toEvent kbe
         case maybeTarget of
           Just target -> do 
-            text <-  H.liftEffect $ innerText target  
-            handleAction $ Submit id text
             H.liftEffect $ doBlur target  
           Nothing -> pure unit
+        handleAction InitNote
         H.modify_ _ { currentId = Nothing, currentNote = Nothing }
     | otherwise -> pure unit
-  HandleBLur id fe -> do
-    let maybeTarget = relatedTarget fe
-    case maybeTarget of
-      Just target -> do 
-        text <-  H.liftEffect $ innerText target  
-        handleAction $ Submit id text
+  EditNote ev id -> do 
+    let maybeTarget = target ev
+    case maybeTarget of 
       Nothing -> pure unit
+      Just target -> do
+        let maybeEle = fromEventTarget target
+        case maybeEle of 
+          Nothing -> pure unit 
+          Just el -> do 
+            text <- H.liftEffect $ textContent $ toNode el 
+            handleAction $ Submit id text
+            -- let et = logAny maybeText 
+            -- pure unit  
+
+        -- let et = logAny ele 
+        -- pure unit
+    -- `bind` fromEventTarget $ ev 
+    -- logShow maybeTarget
   Edit noteId  -> do
     H.modify_ _ { currentId = Just noteId }
+  Log str -> do 
+    H.liftEffect $ logShow str 
 
 initialState :: Input-> State
 initialState input = { 

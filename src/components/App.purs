@@ -42,7 +42,7 @@ import Web.UIEvent.KeyboardEvent as KE
 
 foreign import doBlur :: EventTarget -> Effect Unit
 foreign import innerText :: EventTarget -> Effect String
-
+foreign import insertText :: String -> Effect Boolean 
 
 type Input = { 
   coll :: RxCollection Note, 
@@ -105,16 +105,14 @@ renderNote :: forall  a. String -> Maybe String ->  Note  -> HH.HTML a Action
 renderNote ipfsGatway currentId note = 
   HH.li_ 
     [
-      -- HH.button [ HE.onClick \_ -> Delete note.id ] [ HH.text "删除" ]
-      -- , HH.button [ HE.onClick \_ -> Edit note.id ] [ HH.text "编辑" ]
       HH.div [ 
           HP.prop (PropName "contentEditable") true
         , HE.onKeyUp \kbe -> HandleKeyUp note.id kbe
         , HE.onKeyDown \kbe -> HandleKeyDown note.id kbe
 
-        , HE.onFocusIn \_ -> Edit note.id 
+        , HE.onFocus \_ -> Edit note.id 
         , HE.handler (EventType "input") \str -> EditNote str note.id
-        , HP.style "    min-width: 100px;    min-height: 30px;"
+        , HP.style "min-width: 100px;min-height: 30px;"
       ] [ 
         case currentId of 
         Just id | id == note.id -> HH.text note.content
@@ -147,7 +145,6 @@ getTextFromEvent ev = do
         Nothing -> pure Nothing 
         Just el -> do 
           text <- H.liftEffect $ textContent $ toNode el
-          _ <- pure $ logAny text
           pure $ Just text
  
 handleAction :: forall cs o m . MonadAff m =>  Action → H.HalogenM State Action cs o m Unit
@@ -171,16 +168,20 @@ handleAction = case _ of
     let fileId = "file-" <> path
     void $ H.liftAff $ upsertA collFile { cid: path,  id: fileId, mime: "", type: "" }
     
-    note <- H.gets _.currentNote
-    id <- H.gets _.currentId
+    let appendText = "[[" <> fileId <> "]]"
+    _ <- H.liftEffect $ insertText appendText
+    pure unit 
 
-    if isNothing id 
-    then pure unit 
-    else do
-      let note' = fromMaybe "" note
-      let id' = fromMaybe "" id 
-      let newNote = note' <> "[[" <> fileId <> "]]"
-      handleAction $ Submit id' newNote
+    -- note <- H.gets _.currentNote
+    -- id <- H.gets _.currentId
+
+    -- if isNothing id 
+    -- then pure unit 
+    -- else do
+    --   let note' = fromMaybe "" note
+    --   let id' = fromMaybe "" id 
+    --   let newNote = note' <> 
+    --   handleAction $ Submit id' newNote
 
   InitComp -> do
     handleAction InitNote

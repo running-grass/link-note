@@ -9,6 +9,7 @@ exports.addPasteListenner = (ipfs) => (callback) => () => {
         for (index in items) {
             var item = items[index];
             if (item.kind === 'file') {
+                event.preventDefault();
                 var blob = item.getAsFile();
 
                 ipfs.add(blob).then(obj => callback(obj.path)()).then(console.log);
@@ -29,4 +30,8 @@ exports.doBlur = (target) => () => {
 exports.innerText = (target) => () => {
     console.log('newText', target.innerText)
     return target.innerText || '';
+}
+
+exports.insertText = (text) => () => {
+    return document.execCommand("insertText", false, text);
 }

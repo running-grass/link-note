@@ -15,7 +15,7 @@ import Effect.Aff (Aff, Milliseconds(..), delay, forkAff)
 import Effect.Aff.Class (class MonadAff)
 import Effect.Console (logShow)
 import Effect.Unsafe (unsafePerformEffect)
-import Halogen (PropName(..))
+import Halogen (ClassName(..), PropName(..))
 import Halogen as H
 import Halogen.HTML as HH
 import Halogen.HTML.Events as HE
@@ -24,12 +24,12 @@ import Halogen.Subscription as HS
 import Html.Renderer.Halogen as RH
 import IPFS (IPFS)
 import Prelude (Unit, bind, discard, otherwise, pure, unit, void, ($), (<#>), (<>), (=<<), (==))
-import RxDB.RxCollection (bulkRemoveA, find, upsertA)
+import RxDB.RxCollection (bulkRemoveA, find, insertA, upsertA)
 import RxDB.RxDocument (toJSON)
 import RxDB.RxQuery (emptyQueryObject, execA)
 import RxDB.Type (RxCollection, RxDocument)
 import Util (logAny)
-import Web.Clipboard.ClipboardEvent (toEvent)
+import Web.Clipboard.ClipboardEvent as CE
 import Web.DOM.Element (fromEventTarget, toNode)
 import Web.DOM.Node (textContent)
 import Web.Event.Event (Event, EventType(..), currentTarget, preventDefault, target)
@@ -39,10 +39,11 @@ import Web.HTML.HTMLElement (blur, contentEditable)
 import Web.UIEvent.FocusEvent (FocusEvent, relatedTarget)
 import Web.UIEvent.KeyboardEvent as KE
 
-
 foreign import doBlur :: EventTarget -> Effect Unit
 foreign import innerText :: EventTarget -> Effect String
 foreign import insertText :: String -> Effect Boolean 
+foreign import autoFocus :: String -> Effect Unit 
+foreign import nowTime :: Effect Int 
 
 type Input = { 
   coll :: RxCollection Note, 
@@ -50,11 +51,14 @@ type Input = {
   ipfs :: IPFS 
   }
 
-type Note =  Record ( 
+type Note =  NoteBase ()
+
+type NoteBase r = {
   id :: String , 
-  content :: String, 
-  type :: String 
-  )
+  content :: String| r
+}
+
+type NoteExtend = NoteBase (created :: Int)
 
 type File = Record (
   id :: String , 
@@ -65,7 +69,6 @@ type File = Record (
 
 type State = { 
     currentId :: Maybe String,
-    currentNote :: Maybe String,
     note :: String, 
     coll :: RxCollection Note,
     collFile :: RxCollection File,
@@ -79,6 +82,7 @@ data Action
   | SetNote String 
   | InitNote 
   | New
+  | IgnorePaste CE.ClipboardEvent
   | HandleKeyUp String KE.KeyboardEvent
   | HandleKeyDown String KE.KeyboardEvent
   | InitComp
@@ -87,8 +91,7 @@ data Action
   | Edit String
   | Log String 
   | EditNote Event String 
-
-
+  | ChangeEditID (Maybe String)
 
 foreign import addPasteListenner ::  IPFS -> (Function String (Effect Unit)) -> Effect Unit
 
@@ -103,20 +106,29 @@ getGatewayUriA ipfs = toAffE $ getGatewayUri ipfs
 
 renderNote :: forall  a. String -> Maybe String ->  Note  -> HH.HTML a Action
 renderNote ipfsGatway currentId note = 
-  HH.li_ 
+  HH.li [ 
+    HP.id note.id 
+    , HE.onClick \_ -> Edit note.id 
+    ] 
     [
-      HH.div [ 
-          HP.prop (PropName "contentEditable") true
+      case currentId of 
+      Just id | id == note.id -> HH.textarea [
+        HP.value note.content
+        -- , HP.autofocus true
+        , HP.style "min-width: 100px;min-height: 30px;" 
         , HE.onKeyUp \kbe -> HandleKeyUp note.id kbe
         , HE.onKeyDown \kbe -> HandleKeyDown note.id kbe
+        , HE.onPaste IgnorePaste
+        , HE.onValueChange \val -> Submit note.id val
+        -- , HE.onBlur \_ -> InitNote
+        -- , HE.handler (EventType "input") \str -> EditNote str note.id
+      ]
 
-        , HE.onFocus \_ -> Edit note.id 
-        , HE.handler (EventType "input") \str -> EditNote str note.id
-        , HP.style "min-width: 100px;min-height: 30px;"
+      _ -> HH.div [ 
+        HP.class_ $ ClassName "head"
+
       ] [ 
-        case currentId of 
-        Just id | id == note.id -> HH.text note.content
-        _ -> RH.render_ $ replace regFileLink ("<img src=\"" <> ipfsGatway <> "$1\">") note.content 
+        RH.render_ $ replace regFileLink ("<img src=\"" <> ipfsGatway <> "$1\">") note.content 
       ]
     ]
 
@@ -149,18 +161,24 @@ getTextFromEvent ev = do
  
 handleAction :: forall cs o m . MonadAff m =>  Action → H.HalogenM State Action cs o m Unit
 handleAction = case _ of
+  ChangeEditID mb -> do 
+    handleAction InitNote
+    H.modify_ _ { currentId = mb}
+    case mb of 
+      Just id -> H.liftEffect $ autoFocus id
+      Nothing -> pure unit
   New -> do
     coll <- H.gets _.coll
+    now <- H.liftEffect nowTime
     uuid <- H.liftEffect UUID.genUUID
     let noteId = "note-" <> UUID.toString uuid
-    void $ H.liftAff $ upsertA coll { content: "",  id: noteId, type: "text"  }
-    handleAction InitNote
-    H.modify_  _ { currentId = Just noteId, currentNote = Just "" }
+    void $ H.liftAff $ insertA coll { content: "",  id: noteId }
+    handleAction $ ChangeEditID $ Just noteId
   SetNote note -> do
     H.modify_ _ { note = note }
   Submit noteId note->  do
     coll <- H.gets _.coll
-    void $ H.liftAff $ upsertA coll { content: note,  id: noteId, type: "text"  }
+    void $ H.liftAff $ upsertA coll { content: note,  id: noteId }
     H.modify_  _ { note = "" }
   SubmitIpfs path -> do
     collFile <- H.gets _.collFile
@@ -172,28 +190,16 @@ handleAction = case _ of
     _ <- H.liftEffect $ insertText appendText
     pure unit 
 
-    -- note <- H.gets _.currentNote
-    -- id <- H.gets _.currentId
-
-    -- if isNothing id 
-    -- then pure unit 
-    -- else do
-    --   let note' = fromMaybe "" note
-    --   let id' = fromMaybe "" id 
-    --   let newNote = note' <> 
-    --   handleAction $ Submit id' newNote
-
   InitComp -> do
     handleAction InitNote
     ipfs <- H.gets _.ipfs
-    -- _ <- H.subscribe =<< timer InitNote
     _ <- H.subscribe =<< subscriptPaste ipfs
     host <- H.liftAff $ getGatewayUriA ipfs
     H.modify_ _ { ipfsGatway = Just (host <> "/ipfs/") }
   InitNote -> do
     coll <- H.gets _.coll
     query <-  H.liftEffect $ find coll emptyQueryObject
-    docs <- H.liftAff $  execA query
+    docs <- H.liftAff $ execA query
     let notes  = toNotes docs
     if null notes 
       then handleAction New 
@@ -201,30 +207,32 @@ handleAction = case _ of
   Delete noteId -> do
     coll <- H.gets _.coll
     H.liftAff $ bulkRemoveA coll [noteId]
-    handleAction InitNote
-    H.modify_ _ { currentId = Nothing, currentNote = Nothing }
+    handleAction $ ChangeEditID $ Nothing
   HandleKeyDown id kbe 
     | KE.key kbe == "Enter" -> do 
       H.liftEffect $ preventDefault $ KE.toEvent kbe
-      handleAction New
+      -- handleAction New
     | otherwise -> pure unit
 
   HandleKeyUp id kbe 
-    | KE.key kbe == "Escape" -> do 
-        let maybeTarget = currentTarget $ KE.toEvent kbe
-        case maybeTarget of
-          Just target -> do 
-            H.liftEffect $ doBlur target  
-          Nothing -> pure unit
-        handleAction InitNote
-        H.modify_ _ { currentId = Nothing, currentNote = Nothing }
-    | KE.key kbe == "Backspace" -> do 
-      maybeText <- H.liftEffect $ getTextFromEvent $ KE.toEvent kbe
-      case maybeText of 
-        Nothing -> pure unit
-        Just text 
-          | "" == text -> handleAction $ Delete id 
-          | otherwise -> pure unit 
+    | KE.key kbe == "Enter" -> do 
+      H.liftEffect $ preventDefault $ KE.toEvent kbe
+      handleAction New
+    -- | KE.key kbe == "Escape" -> do 
+    --     handleAction $ ChangeEditID Nothing
+    --     let maybeTarget = currentTarget $ KE.toEvent kbe
+    --     case maybeTarget of
+    --       Just target -> do 
+    --         H.liftEffect $ doBlur target
+    --       Nothing -> pure unit
+
+    -- | KE.key kbe == "Backspace" -> do 
+    --   maybeText <- H.liftEffect $ getTextFromEvent $ KE.toEvent kbe
+    --   case maybeText of 
+    --     Nothing -> pure unit
+    --     Just text 
+    --       | "" == text -> handleAction $ Delete id 
+    --       | otherwise -> pure unit 
     | otherwise -> pure unit
   EditNote ev id -> do 
     maybeText <- H.liftEffect $ getTextFromEvent ev
@@ -234,15 +242,14 @@ handleAction = case _ of
         _ <- pure $ logAny text
         handleAction $ Submit id text
   Edit noteId  -> do
-    H.modify_ _ { currentId = Just noteId }
-    handleAction InitNote
+    handleAction $ ChangeEditID $ Just noteId
   Log str -> do 
     H.liftEffect $ logShow str 
+  IgnorePaste ev -> H.liftEffect $ preventDefault $ CE.toEvent ev
 
 initialState :: Input-> State
 initialState input = { 
   currentId: Nothing,
-  currentNote: Nothing,
   ipfsGatway: Nothing,
   note : "",
   coll : input.coll,

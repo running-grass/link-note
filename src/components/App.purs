@@ -32,7 +32,7 @@ import Util (logAny)
 import Web.Clipboard.ClipboardEvent (toEvent)
 import Web.DOM.Element (fromEventTarget, toNode)
 import Web.DOM.Node (textContent)
-import Web.Event.Event (Event, EventType(..), currentTarget, target)
+import Web.Event.Event (Event, EventType(..), currentTarget, preventDefault, target)
 import Web.Event.Internal.Types (EventTarget)
 import Web.HTML.Event.EventTypes (blur, offline)
 import Web.HTML.HTMLElement (blur, contentEditable)
@@ -80,6 +80,7 @@ data Action
   | InitNote 
   | New
   | HandleKeyUp String KE.KeyboardEvent
+  | HandleKeyDown String KE.KeyboardEvent
   | InitComp
   | SubmitIpfs String
   | Delete String 
@@ -104,11 +105,13 @@ renderNote :: forall  a. String -> Maybe String ->  Note  -> HH.HTML a Action
 renderNote ipfsGatway currentId note = 
   HH.li_ 
     [
-      HH.button [ HE.onClick \_ -> Delete note.id ] [ HH.text "删除" ]
+      -- HH.button [ HE.onClick \_ -> Delete note.id ] [ HH.text "删除" ]
       -- , HH.button [ HE.onClick \_ -> Edit note.id ] [ HH.text "编辑" ]
-      , HH.div [ 
+      HH.div [ 
           HP.prop (PropName "contentEditable") true
         , HE.onKeyUp \kbe -> HandleKeyUp note.id kbe
+        , HE.onKeyDown \kbe -> HandleKeyDown note.id kbe
+
         , HE.onFocusIn \_ -> Edit note.id 
         , HE.handler (EventType "input") \str -> EditNote str note.id
         , HP.style "    min-width: 100px;    min-height: 30px;"
@@ -132,6 +135,20 @@ toNotes ds = ds <#> toNote
           
 toNote  :: RxDocument Note -> Note 
 toNote d = unsafePerformEffect $ toJSON d
+
+getTextFromEvent :: Event -> Effect (Maybe String)
+getTextFromEvent ev = do
+  let maybeTarget = target ev
+  case maybeTarget of 
+    Nothing -> pure Nothing
+    Just target -> do
+      let maybeEle = fromEventTarget target
+      case maybeEle of 
+        Nothing -> pure Nothing 
+        Just el -> do 
+          text <- H.liftEffect $ textContent $ toNode el
+          _ <- pure $ logAny text
+          pure $ Just text
  
 handleAction :: forall cs o m . MonadAff m =>  Action → H.HalogenM State Action cs o m Unit
 handleAction = case _ of
@@ -140,6 +157,7 @@ handleAction = case _ of
     uuid <- H.liftEffect UUID.genUUID
     let noteId = "note-" <> UUID.toString uuid
     void $ H.liftAff $ upsertA coll { content: "",  id: noteId, type: "text"  }
+    handleAction InitNote
     H.modify_  _ { currentId = Just noteId, currentNote = Just "" }
   SetNote note -> do
     H.modify_ _ { note = note }
@@ -182,10 +200,15 @@ handleAction = case _ of
   Delete noteId -> do
     coll <- H.gets _.coll
     H.liftAff $ bulkRemoveA coll [noteId]
+    handleAction InitNote
     H.modify_ _ { currentId = Nothing, currentNote = Nothing }
-  HandleKeyUp id kbe 
+  HandleKeyDown id kbe 
     | KE.key kbe == "Enter" -> do 
+      H.liftEffect $ preventDefault $ KE.toEvent kbe
       handleAction New
+    | otherwise -> pure unit
+
+  HandleKeyUp id kbe 
     | KE.key kbe == "Escape" -> do 
         let maybeTarget = currentTarget $ KE.toEvent kbe
         case maybeTarget of
@@ -194,27 +217,24 @@ handleAction = case _ of
           Nothing -> pure unit
         handleAction InitNote
         H.modify_ _ { currentId = Nothing, currentNote = Nothing }
+    | KE.key kbe == "Backspace" -> do 
+      maybeText <- H.liftEffect $ getTextFromEvent $ KE.toEvent kbe
+      case maybeText of 
+        Nothing -> pure unit
+        Just text 
+          | "" == text -> handleAction $ Delete id 
+          | otherwise -> pure unit 
     | otherwise -> pure unit
   EditNote ev id -> do 
-    let maybeTarget = target ev
-    case maybeTarget of 
+    maybeText <- H.liftEffect $ getTextFromEvent ev
+    case maybeText of 
       Nothing -> pure unit
-      Just target -> do
-        let maybeEle = fromEventTarget target
-        case maybeEle of 
-          Nothing -> pure unit 
-          Just el -> do 
-            text <- H.liftEffect $ textContent $ toNode el 
-            handleAction $ Submit id text
-            -- let et = logAny maybeText 
-            -- pure unit  
-
-        -- let et = logAny ele 
-        -- pure unit
-    -- `bind` fromEventTarget $ ev 
-    -- logShow maybeTarget
+      Just text -> do
+        _ <- pure $ logAny text
+        handleAction $ Submit id text
   Edit noteId  -> do
     H.modify_ _ { currentId = Just noteId }
+    handleAction InitNote
   Log str -> do 
     H.liftEffect $ logShow str 
 

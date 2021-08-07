@@ -6,6 +6,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### 新功能
+- 可以粘贴文件到笔记中，会保存到配置好的IPFS中
+- 自动对图片类型文件进行解析
+
+### 优化
+- 可以在笔记点击编辑，ESC退出编辑，回车删除
+- 优化打包后的体积，从10M降为3M
+- 简单的适配移动端
+
 
 ## [0.1.0] - 2021-07-24
 

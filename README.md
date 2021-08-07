@@ -16,9 +16,12 @@
 8. webpack 最终把js和purs集成打包到一起的工具
 
 6. ipfs 分布式文件传输协议，类似于bt+git
-7. orbit-db 基于ipfs的分布式数据库
+7. rxdb 基于pouchdb的离线优先数据库
 
 ## 搭建开发环境
+
+最好基于Brave浏览器开发
+并且本地需要启动IPFS节点，并且配置API的跨域为*
 
 ### (可选) 安装nix
 相关文档 https://nixos.org/manual/nix/stable/#sec-nix-shell

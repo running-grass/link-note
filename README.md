@@ -1,5 +1,12 @@
 # learn-purs
 
+项目名称未定
+
+## try me
+最新版(v0.2.2)IPFS链接：
+IPFS协议： ipfs://bafybeidst3lnobpo4k2oeciamfefrzztu6xwvquwtioe6gqzsg4u3tht64/
+DWeb网关： https://bafybeidst3lnobpo4k2oeciamfefrzztu6xwvquwtioe6gqzsg4u3tht64.ipfs.dweb.link/
+
 ## 用到的技术栈
 
 1. nix-shell 搭建本地开发环境，提供各种开发需要的命令行程序，独立于系统已安装的程序。 不会有任何冲突

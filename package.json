@@ -7,7 +7,8 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "debug": "cross-env mode=development DEBUG=true webpack-dev-server --progress --inline --hot",
     "build": "cross-env mode=production webpack",
-    "release": "dotenv release-it -e .env.local --"
+    "publish": "node deployToPage.js",
+    "release": "pnpm run build && dotenv release-it -e .env.local -- && pnpm run publish"
   },
   "author": "",
   "license": "ISC",
@@ -18,6 +19,7 @@
     "babel-loader": "^8.2.2",
     "cache-loader": "^4.1.0",
     "dotenv-cli": "^4.0.0",
+    "gh-pages": "^3.2.3",
     "hard-source-webpack-plugin": "^0.13.1",
     "html-webpack-plugin": "^4.5.2",
     "purescript-psa": "^0.8.2",

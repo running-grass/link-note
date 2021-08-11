@@ -1,11 +1,15 @@
-# learn-purs
+# link-note
 
-项目名称未定
 
 ## try me
 最新版(v0.2.2)IPFS链接：
-IPFS协议： ipfs://bafybeidst3lnobpo4k2oeciamfefrzztu6xwvquwtioe6gqzsg4u3tht64/
+HTTP版本： https://link-note.app/
+IPFS版本： ipfs://bafybeidst3lnobpo4k2oeciamfefrzztu6xwvquwtioe6gqzsg4u3tht64/
 DWeb网关： https://bafybeidst3lnobpo4k2oeciamfefrzztu6xwvquwtioe6gqzsg4u3tht64.ipfs.dweb.link/
+
+## 开发进度
+https://sharing.clickup.com/b/h/4-7810727-2/4eeed303c8bfb07
+
 
 ## 用到的技术栈
 

@@ -97,7 +97,7 @@ module.exports = {
   },
 
   plugins: [
-    new HardSourceWebpackPlugin(),
+    // new HardSourceWebpackPlugin(),
     new webpack.LoaderOptionsPlugin({
       debug: isDebug
     }),

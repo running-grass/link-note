@@ -1,18 +1,23 @@
 module Main 
   where
 
-import IPFS (IPFS)
-import Prelude (Unit, bind, discard, pure, unit, ($))
-
-import App (Note, File)
-import App as App
 import Control.Promise (Promise, toAffE)
-import Data.Maybe (maybe)
+import Data.Maybe (Maybe(..), maybe)
 import Effect (Effect)
 import Effect.Aff (Aff, launchAff_, throwError)
+import Effect.Class (liftEffect)
 import Effect.Exception (error)
+import Halogen as H
 import Halogen.Aff (awaitLoad, selectElement)
 import Halogen.VDom.Driver (runUI)
+import IPFS (IPFS)
+import LinkNote.Component.AppM (runAppM)
+import LinkNote.Component.Router as Router
+import LinkNote.Data.Route (routeCodec)
+import LinkNote.Page.Home (Note, File)
+import Prelude (Unit, bind, discard, pure, unit, void, when, ($), (/=))
+import Routing.Duplex (parse)
+import Routing.Hash (matchesWith)
 import RxDB.Type (RxCollection, RxDatabase)
 import Web.DOM.ParentNode (QuerySelector(..))
 import Web.HTML (HTMLElement)
@@ -36,6 +41,8 @@ foreign import getFileCollection :: RxDatabase -> Effect (Promise (RxCollection 
 getFileCollectionA :: RxDatabase -> Aff (RxCollection File)
 getFileCollectionA db = toAffE $ getFileCollection db
 
+
+
 -- | Waits for the document to load and then finds the `body` element.
 awaitRoot :: Aff HTMLElement
 awaitRoot = do
@@ -51,5 +58,8 @@ main = do
     coll <- getNotesCollectionA db    
     collFile <- getFileCollectionA db  
     app <- awaitRoot
-    runUI App.component { ipfs , coll, collFile } app
-  pure unit
+    rootComponent <- runAppM {currentUser : Nothing} Router.component
+    halogenIO <- runUI rootComponent { ipfs , coll, collFile } app
+    void $ liftEffect $ matchesWith (parse routeCodec) \old new ->
+      when (old /= Just new) do
+        launchAff_ $ halogenIO.query $ H.mkTell $ Router.Navigate new

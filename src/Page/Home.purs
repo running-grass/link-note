@@ -1,21 +1,18 @@
-module App where
+module LinkNote.Page.Home where
 
 import Control.Monad.Rec.Class (forever)
 import Control.Promise (Promise, toAffE)
-import DOM.HTML.Indexed (FocusEvents)
-import Data.Array (length, null)
-import Data.Codec.Argonaut.Common (maybe)
-import Data.Maybe (Maybe(..), fromMaybe, isNothing)
-import Data.String.Regex (Regex, test, replace)
+import Data.Array (null)
+import Data.Maybe (Maybe(..), fromMaybe)
+import Data.String.Regex (Regex, replace)
 import Data.String.Regex.Flags (global)
 import Data.String.Regex.Unsafe (unsafeRegex)
 import Data.UUID as UUID
 import Effect (Effect)
 import Effect.Aff (Aff, Milliseconds(..), delay, forkAff)
 import Effect.Aff.Class (class MonadAff)
-import Effect.Console (logShow)
 import Effect.Unsafe (unsafePerformEffect)
-import Halogen (ClassName(..), PropName(..))
+import Halogen (ClassName(..))
 import Halogen as H
 import Halogen.HTML as HH
 import Halogen.HTML.Events as HE
@@ -28,17 +25,12 @@ import RxDB.RxCollection (bulkRemoveA, find, insertA, upsertA)
 import RxDB.RxDocument (toJSON)
 import RxDB.RxQuery (emptyQueryObject, execA)
 import RxDB.Type (RxCollection, RxDocument)
-import Util (logAny)
 import Web.Clipboard.ClipboardEvent as CE
-import Web.DOM.Element (fromEventTarget, toNode)
-import Web.DOM.Node (textContent)
-import Web.Event.Event (Event, EventType(..), currentTarget, preventDefault, target)
+import Web.Event.Event (Event, currentTarget, preventDefault, target)
 import Web.Event.Internal.Types (EventTarget)
-import Web.HTML.Event.EventTypes (blur, offline)
-import Web.HTML.HTMLElement (blur, contentEditable)
 import Web.HTML.HTMLTextAreaElement as HTAE
-import Web.UIEvent.FocusEvent (FocusEvent, relatedTarget)
 import Web.UIEvent.KeyboardEvent as KE
+
 
 foreign import doBlur :: EventTarget -> Effect Unit
 foreign import innerText :: EventTarget -> Effect String
@@ -168,7 +160,7 @@ handleAction = case _ of
       Nothing -> pure unit
   New -> do
     coll <- H.gets _.coll
-    now <- H.liftEffect nowTime
+    -- now <- H.liftEffect nowTime
     uuid <- H.liftEffect UUID.genUUID
     let noteId = "note-" <> UUID.toString uuid
     void $ H.liftAff $ insertA coll { content: "",  id: noteId }

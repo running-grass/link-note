@@ -1,4 +1,3 @@
-
 const {
     getRxStoragePouch,
     createRxDatabase,
@@ -18,17 +17,17 @@ exports.getGlobalIPFS = () => {
         loadHttpClientModule: function () { return ipfsHttpClient.create },
         loadJsIpfsModule: function () { return ipfsCore },
         providers: [
-            windowIpfs(),
-            httpClient(), // try "/api/v0/" on the same Origin as the page
+            // windowIpfs(),
+            // httpClient(), // try "/api/v0/" on the same Origin as the page
             httpClient({
                 apiAddress: 'http://127.0.0.1:45005'
             }),
-            httpClient({
-                apiAddress: 'http://127.0.0.1:5001'
-            }),
-            httpClient({
-                apiAddress: 'https://ipfs-api.grass.work:30443/'
-            }),
+            // httpClient({
+            //     apiAddress: 'http://127.0.0.1:5001'
+            // }),
+            // // httpClient({
+            // //     apiAddress: 'https://ipfs-api.grass.work:30443/'
+            // // }),
             // jsIpfs(),
         ]
     }).then(({ ipfs, provider, apiAddress }) => {

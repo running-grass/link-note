@@ -14,24 +14,32 @@ to generate this file without the comments in this block.
 , dependencies =
   [ "aff"
   , "aff-promise"
-  , "console"
+  , "arrays"
   , "effect"
+  , "either"
   , "exceptions"
   , "halogen"
+  , "halogen-store"
   , "halogen-subscriptions"
   , "html-parser-halogen"
   , "maybe"
   , "option"
   , "prelude"
   , "psci-support"
+  , "routing"
+  , "routing-duplex"
+  , "safe-coerce"
   , "strings"
   , "tailrec"
+  , "transformers"
   , "uuid"
+  , "web-clipboard"
   , "web-dom"
+  , "web-events"
   , "web-file"
   , "web-html"
   , "web-uievents"
   ]
 , packages = ./packages.dhall
-, sources = [ "src/**/*.purs", "test/**/*.purs" ]
+, sources = [ "src/**/*.purs" ]
 }

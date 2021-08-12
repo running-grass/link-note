@@ -1,5 +1,6 @@
 const toUri = require('multiaddr-to-uri')
 
+
 exports.addPasteListenner = (ipfs) => (callback, callbackText) => () => {
     // window.addEventListener('paste', ... or
     console.log(ipfs);

@@ -12,8 +12,10 @@ import Halogen.HTML as HH
 import IPFS (IPFS)
 import LinkNote.Component.Navigate (class Navigate, navigate)
 import LinkNote.Data.Route (Route(..), routeCodec)
+import LinkNote.Data.Setting (IPFSInstanceType(..))
 import LinkNote.Page.Home (Note, File)
 import LinkNote.Page.Home as Home
+import LinkNote.Page.Setting as Setting
 import Routing.Duplex as RD
 import Routing.Hash (getHash)
 import RxDB.Type (RxCollection)
@@ -92,8 +94,9 @@ component = H.mkComponent
     Just r -> case r of
       Home ->
         HH.slot_ (Proxy :: _ "home") unit Home.component {ipfs, coll, collFile}
-      Setting -> HH.div_ [ HH.text "I will be a setting page." ]
-        -- HH.slot_ (Proxy :: _ "setting") unit Home.component {ipfs, coll, collFile}
+      Setting ->
+        -- HH.div_ [ HH.text "I will be a setting page." ]
+        HH.slot_ (Proxy :: _ "setting") unit Setting.component { ipfsInstanceType: JsIPFS } 
       -- _ -> HH.div_ [ HH.text "error route" ]
     Nothing ->
       HH.div_ [ HH.text "Oh yeah! You get a 404 page." ]

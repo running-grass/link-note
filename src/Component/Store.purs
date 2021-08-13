@@ -3,8 +3,6 @@ module LinkNote.Component.Store where
 import Prelude
 import Data.Maybe (Maybe(..))
 
-
-
 data LogLevel = Dev | Prod
 
 derive instance eqLogLevel :: Eq LogLevel

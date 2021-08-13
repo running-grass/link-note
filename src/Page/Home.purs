@@ -20,6 +20,7 @@ import Halogen.HTML.Properties as HP
 import Halogen.Subscription as HS
 import Html.Renderer.Halogen as RH
 import IPFS (IPFS)
+import LinkNote.Component.HTML.Header (header)
 import Prelude (Unit, bind, discard, otherwise, pure, unit, void, ($), (<#>), (<>), (=<<), (==))
 import RxDB.RxCollection (bulkRemoveA, find, insertA, upsertA)
 import RxDB.RxDocument (toJSON)
@@ -125,7 +126,7 @@ renderNote ipfsGatway currentId note =
 render :: forall cs m. State -> H.ComponentHTML Action cs m
 render state =
   HH.div_
-    [ 
+    [ header,
     HH.ul_ $ state.noteList <#> renderNote (fromMaybe "ipfs://" state.ipfsGatway) state.currentId
     ]
     

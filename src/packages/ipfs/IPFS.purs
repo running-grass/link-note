@@ -6,6 +6,7 @@ import Control.Promise (Promise, toAffE)
 import Effect (Effect)
 import Effect.Aff (Aff)
 import Option (Option, fromRecord)
+import Record (equal)
 
 -- data IPFS = IPFS
 foreign import data IPFS :: Type
@@ -21,6 +22,8 @@ type IPFSOption = Option (
   config :: IPFSConfig,
   repo :: String
 )
+
+-- foreign import equals :: IPFS -> IPFS -> Boolean 
 
 foreign import getDefaultIpfsConfig :: Unit -> IPFSConfig
 

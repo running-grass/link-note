@@ -32,6 +32,7 @@ to generate this file without the comments in this block.
   , "strings"
   , "tailrec"
   , "transformers"
+  , "unsafe-reference"
   , "uuid"
   , "web-clipboard"
   , "web-dom"

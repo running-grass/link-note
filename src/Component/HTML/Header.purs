@@ -9,14 +9,11 @@ import LinkNote.Data.Route (Route(..))
 header :: forall i p. HH.HTML i p
 header =
   HH.nav
-    [ css "mb-4" ]
-    [ HH.div
-        [  ]
-        [  HH.ul
-            [ css "flex space-x-4" ]
-            [ navItem Home  [ HH.text "首页" ]
-            , navItem Setting  [ HH.text "设置" ]
-            ]
+    [ css "mb-4 px-2 bg-gray-200 rounded" ]
+    [  HH.ul
+        [ css "flex space-x-4" ]
+        [ navItem Home  [ HH.text "首页" ]
+        , navItem Setting  [ HH.text "设置" ]
         ]
     ]
 

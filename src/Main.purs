@@ -14,6 +14,7 @@ import IPFS (IPFS)
 import LinkNote.Component.AppM (runAppM)
 import LinkNote.Component.Router as Router
 import LinkNote.Data.Route (routeCodec)
+import LinkNote.Data.Setting (IPFSApiAddress(..), IPFSInstanceType(..))
 import LinkNote.Page.Home (Note, File)
 import Prelude (Unit, bind, discard, pure, unit, void, when, ($), (/=))
 import Routing.Duplex (parse)
@@ -28,10 +29,6 @@ initRxDBA :: Unit -> Aff RxDatabase
 initRxDBA unit = toAffE $ initRxDB unit
 
 
-foreign import getGlobalIPFS :: Effect (Promise IPFS)
-
-getGlobalIPFSA ::  Aff IPFS
-getGlobalIPFSA  = toAffE $ getGlobalIPFS 
 
 foreign import getNotesCollection :: RxDatabase -> Effect (Promise (RxCollection Note))
 getNotesCollectionA :: RxDatabase -> Aff (RxCollection Note)
@@ -41,8 +38,6 @@ foreign import getFileCollection :: RxDatabase -> Effect (Promise (RxCollection 
 getFileCollectionA :: RxDatabase -> Aff (RxCollection File)
 getFileCollectionA db = toAffE $ getFileCollection db
 
-
-
 -- | Waits for the document to load and then finds the `body` element.
 awaitRoot :: Aff HTMLElement
 awaitRoot = do
@@ -50,16 +45,16 @@ awaitRoot = do
   ele <- selectElement (QuerySelector "#halogen-app")
   maybe (throwError (error "找不到根节点！")) pure ele
 
+
 main :: Effect Unit
 main = do
   launchAff_ do
-    ipfs <- getGlobalIPFSA
     db <- initRxDBA unit
     coll <- getNotesCollectionA db    
     collFile <- getFileCollectionA db  
     app <- awaitRoot
     rootComponent <- runAppM {currentUser : Nothing} Router.component
-    halogenIO <- runUI rootComponent { ipfs , coll, collFile } app
+    halogenIO <- runUI rootComponent { ipfs: Nothing , coll : coll, collFile : collFile } app
     void $ liftEffect $ matchesWith (parse routeCodec) \old new ->
       when (old /= Just new) do
         launchAff_ $ halogenIO.query $ H.mkTell $ Router.Navigate new

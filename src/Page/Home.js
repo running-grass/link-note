@@ -1,9 +1,9 @@
 const toUri = require('multiaddr-to-uri')
 
-
-exports.addPasteListenner = (ipfs) => (callback, callbackText) => () => {
+exports.addPasteListenner = (fromMaybe) => (maybeIpfs) => (callback, callbackText) => () => {
     // window.addEventListener('paste', ... or
-    console.log(ipfs);
+    const ipfs = fromMaybe(null)(maybeIpfs);
+
     document.onpaste = function (event) {
         event.preventDefault();
         const clipboardData = (event.clipboardData || event.originalEvent.clipboardData);
@@ -11,7 +11,7 @@ exports.addPasteListenner = (ipfs) => (callback, callbackText) => () => {
         maybeText = clipboardData.getData('text');
 
         if (maybeText) {
-            console.log(maybeText)
+            // console.log(maybeText)
             exports.insertText(maybeText)();
             return;
         }
@@ -24,6 +24,10 @@ exports.addPasteListenner = (ipfs) => (callback, callbackText) => () => {
             console.log(item.kind);
 
             if (item.kind === 'file') {
+                if (!ipfs) {
+                    window.alert("您未配置IPFS实例，暂不提供文件服务！");
+                    return;
+                }
                 var blob = item.getAsFile();
 
                 ipfs.add(blob).then(obj => callback(obj.path)()).then(console.log);

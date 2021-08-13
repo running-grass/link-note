@@ -11,7 +11,6 @@ type Input = {
   ipfsInstanceType :: IPFSInstanceType
 }
 
-
 type State = { 
     ipfsInstanceType :: IPFSInstanceType
 }

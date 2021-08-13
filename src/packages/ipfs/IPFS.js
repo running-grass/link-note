@@ -6,6 +6,8 @@ exports.create = function create(options) {
     }
 };
 
+// exports.equals = a => b => () => a === b
+
 exports.getGlobalIPFS = function getGlobalIPFS() {
     return async function() {
         if (window.ipfs && window.ipfs.isOnline()) {

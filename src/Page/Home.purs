@@ -21,11 +21,13 @@ import Halogen.Subscription as HS
 import Html.Renderer.Halogen as RH
 import IPFS (IPFS)
 import LinkNote.Component.HTML.Header (header)
-import Prelude (Unit, bind, discard, otherwise, pure, unit, void, ($), (<#>), (<>), (=<<), (==))
+import LinkNote.Component.Util (logAny)
+import Prelude (Unit, bind, discard, not, otherwise, pure, unit, void, when, ($), (<#>), (<<<), (<>), (=<<), (==))
 import RxDB.RxCollection (bulkRemoveA, find, insertA, upsertA)
 import RxDB.RxDocument (toJSON)
 import RxDB.RxQuery (emptyQueryObject, execA)
 import RxDB.Type (RxCollection, RxDocument)
+import Unsafe.Reference (unsafeRefEq)
 import Web.Clipboard.ClipboardEvent as CE
 import Web.Event.Event (Event, currentTarget, preventDefault, target)
 import Web.Event.Internal.Types (EventTarget)
@@ -42,7 +44,7 @@ foreign import nowTime :: Effect Int
 type Input = { 
   coll :: RxCollection Note, 
   collFile :: RxCollection File,
-  ipfs :: IPFS 
+  ipfs :: Maybe IPFS 
   }
 
 type Note =  NoteBase ()
@@ -66,7 +68,7 @@ type State = {
     coll :: RxCollection Note,
     collFile :: RxCollection File,
     noteList :: Array Note,
-    ipfs :: IPFS,
+    ipfs :: Maybe IPFS,
     ipfsGatway :: Maybe String
     }
 
@@ -78,16 +80,16 @@ data Action
   | HandleKeyUp String KE.KeyboardEvent
   | HandleKeyDown String KE.KeyboardEvent
   | InitComp
+  | Receive Input
   | SubmitIpfs String
   | Delete String 
   | Edit String
   | EditNote Event String 
   | ChangeEditID (Maybe String)
 
-foreign import addPasteListenner ::  IPFS -> (Function String (Effect Unit)) -> Effect Unit
+foreign import addPasteListenner :: (forall a. a -> Maybe a -> a) -> Maybe IPFS -> (Function String (Effect Unit)) -> Effect Unit
 
 foreign import getGatewayUri :: IPFS -> Effect (Promise String)
-
 
 regFileLink :: Regex
 regFileLink = unsafeRegex "\\[\\[file-(.*?)\\]\\]" global
@@ -105,19 +107,16 @@ renderNote ipfsGatway currentId note =
       case currentId of 
       Just id | id == note.id -> HH.textarea [
         HP.value note.content
-        -- , HP.autofocus true
         , HP.style "min-width: 100px;min-height: 30px;" 
         , HE.onKeyUp \kbe -> HandleKeyUp note.id kbe
         , HE.onKeyDown \kbe -> HandleKeyDown note.id kbe
         , HE.onPaste IgnorePaste
         , HE.onValueInput \val -> Submit note.id val
-        -- , HE.onBlur \_ -> ChangeEditID Nothing
-        -- , HE.handler (EventType "input") \str -> EditNote str note.id
+        , HE.onBlur \_ -> ChangeEditID Nothing
       ]
 
       _ -> HH.div [ 
         HP.class_ $ ClassName "head"
-
       ] [ 
         RH.render_ $ replace regFileLink ("<img src=\"" <> ipfsGatway <> "$1\">") note.content 
       ]
@@ -182,10 +181,14 @@ handleAction = case _ of
 
   InitComp -> do
     handleAction InitNote
-    ipfs <- H.gets _.ipfs
-    _ <- H.subscribe =<< subscriptPaste ipfs
-    host <- H.liftAff $ getGatewayUriA ipfs
-    H.modify_ _ { ipfsGatway = Just (host <> "/ipfs/") }
+    maybeIpfs <- H.gets _.ipfs
+    _ <- H.subscribe =<< subscriptPaste maybeIpfs
+    case maybeIpfs of 
+      Just ipfs -> do
+        host <- H.liftAff $ getGatewayUriA ipfs
+        H.modify_ _ { ipfsGatway = Just (host <> "/ipfs/") }
+      _ -> do
+        pure unit
   InitNote -> do
     coll <- H.gets _.coll
     query <-  H.liftEffect $ find coll emptyQueryObject
@@ -201,7 +204,6 @@ handleAction = case _ of
   HandleKeyDown id kbe 
     | KE.key kbe == "Enter" -> do 
       H.liftEffect $ preventDefault $ KE.toEvent kbe
-      -- handleAction New
     | otherwise -> pure unit
 
   HandleKeyUp id kbe 
@@ -234,6 +236,18 @@ handleAction = case _ of
   Edit noteId  -> do
     handleAction $ ChangeEditID $ Just noteId
   IgnorePaste ev -> H.liftEffect $ preventDefault $ CE.toEvent ev
+  Receive input -> do
+    ipfs <- H.gets _.ipfs 
+    let ipfs' = input.ipfs
+    when (isUpdate ipfs ipfs') do
+      H.modify_ _ { ipfs = ipfs' }
+      handleAction InitComp
+    pure unit
+    where
+      isUpdate :: Maybe IPFS -> Maybe IPFS -> Boolean
+      isUpdate Nothing Nothing = false
+      isUpdate (Just x) (Just y) = not $ unsafeRefEq (logAny x) (logAny y)
+      isUpdate _ _ = true
 
 initialState :: Input-> State
 initialState input = { 
@@ -253,10 +267,10 @@ timer val = do
     H.liftEffect $ HS.notify listener val
   pure emitter
 
-subscriptPaste :: forall m. MonadAff m => IPFS -> m (HS.Emitter Action)
+subscriptPaste :: forall m. MonadAff m => Maybe IPFS -> m (HS.Emitter Action)
 subscriptPaste ipfs = do
   { emitter, listener } <- H.liftEffect HS.create
-  _ <- H.liftEffect $ addPasteListenner ipfs (\path -> HS.notify listener $ SubmitIpfs path)
+  _ <- H.liftEffect $ addPasteListenner fromMaybe ipfs (\path -> HS.notify listener $ SubmitIpfs path)
   pure emitter
 
 component :: forall q  o m. MonadAff m => H.Component q Input o m
@@ -268,5 +282,6 @@ component =
     , eval: H.mkEval H.defaultEval { 
         handleAction = handleAction
       , initialize = Just InitComp
+      , receive = Just <<< Receive
       }
     }

@@ -102,6 +102,7 @@ renderNote ipfsGatway currentId note =
   HH.li [ 
     HP.id note.id 
     , HE.onClick \_ -> Edit note.id 
+    , HP.style "min-height: 30px;"
     ] 
     [
       case currentId of 
@@ -112,7 +113,7 @@ renderNote ipfsGatway currentId note =
         , HE.onKeyDown \kbe -> HandleKeyDown note.id kbe
         , HE.onPaste IgnorePaste
         , HE.onValueInput \val -> Submit note.id val
-        , HE.onBlur \_ -> ChangeEditID Nothing
+        -- , HE.onBlur \_ -> ChangeEditID Nothing
       ]
 
       _ -> HH.div [ 
@@ -125,7 +126,7 @@ renderNote ipfsGatway currentId note =
 render :: forall cs m. State -> H.ComponentHTML Action cs m
 render state =
   HH.div_
-    [ header,
+    [
     HH.ul_ $ state.noteList <#> renderNote (fromMaybe "ipfs://" state.ipfsGatway) state.currentId
     ]
     
@@ -153,8 +154,8 @@ getTextFromEvent ev = do
 handleAction :: forall cs o m . MonadAff m =>  Action → H.HalogenM State Action cs o m Unit
 handleAction = case _ of
   ChangeEditID mb -> do 
-    handleAction InitNote
     H.modify_ _ { currentId = mb}
+    handleAction InitNote
     case mb of 
       Just id -> H.liftEffect $ autoFocus id
       Nothing -> pure unit

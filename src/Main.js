@@ -5,9 +5,6 @@ const {
 } = require('rxdb');
 const pouchdbAdapterIdb = require('pouchdb-adapter-idb');
 
-
-
-
 exports.initRxDB = () => () => {
     addPouchPlugin(pouchdbAdapterIdb);
     if (window.db) {

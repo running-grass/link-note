@@ -8,13 +8,11 @@ import Effect.Aff (Aff, launchAff_, throwError)
 import Effect.Class (liftEffect)
 import Effect.Exception (error)
 import Halogen as H
-import Halogen.Aff (awaitLoad, selectElement)
+import Halogen.Aff (awaitLoad, runHalogenAff, selectElement)
 import Halogen.VDom.Driver (runUI)
-import IPFS (IPFS)
 import LinkNote.Component.AppM (runAppM)
 import LinkNote.Component.Router as Router
 import LinkNote.Data.Route (routeCodec)
-import LinkNote.Data.Setting (IPFSApiAddress(..), IPFSInstanceType(..))
 import LinkNote.Page.Home (Note, File)
 import Prelude (Unit, bind, discard, pure, unit, void, when, ($), (/=))
 import Routing.Duplex (parse)
@@ -27,8 +25,6 @@ foreign import initRxDB :: Unit -> Effect (Promise RxDatabase)
 
 initRxDBA :: Unit -> Aff RxDatabase
 initRxDBA unit = toAffE $ initRxDB unit
-
-
 
 foreign import getNotesCollection :: RxDatabase -> Effect (Promise (RxCollection Note))
 getNotesCollectionA :: RxDatabase -> Aff (RxCollection Note)
@@ -47,8 +43,7 @@ awaitRoot = do
 
 
 main :: Effect Unit
-main = do
-  launchAff_ do
+main = runHalogenAff do
     db <- initRxDBA unit
     coll <- getNotesCollectionA db    
     collFile <- getFileCollectionA db  

@@ -6,8 +6,9 @@ const ipfsCore = require('ipfs-core');
 
 const ipfsHttpClient = require('ipfs-http-client');
 
-exports.getGlobalIPFS = (addr) => () => {
+exports.getGlobalIPFS = just => nothing => (addr) => () => {
     let provider = null;
+    console.log(addr, 'ipfs');
     switch (addr) {
         case 'none':
             break;
@@ -21,7 +22,7 @@ exports.getGlobalIPFS = (addr) => () => {
             provider = httpClient({ apiAddress: addr });
     }
     if (!provider) {
-        return Promise.reject("无IPFS");
+        return Promise.resolve(nothing);
     }
     return getIpfs({
         loadHttpClientModule: function () { return ipfsHttpClient.create },
@@ -29,7 +30,10 @@ exports.getGlobalIPFS = (addr) => () => {
         providers: [
             provider,
         ]
-    }).then(({ ipfs, provider, apiAddress }) => {
+    }).then((res) => {
+        if (!res) return nothing;
+
+        const { ipfs, provider, apiAddress } = res;
         window.ipfs = ipfs;
 
         console.log('IPFS API is provided by: ' + provider)
@@ -37,6 +41,6 @@ exports.getGlobalIPFS = (addr) => () => {
             console.log('HTTP API address: ' + apiAddress)
         }
 
-        return ipfs;
+        return just(ipfs);
     })
 }

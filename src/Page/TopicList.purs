@@ -1,4 +1,4 @@
-module LinkNote.Page.Setting where
+module LinkNote.Page.TopicList where
 
 import Effect.Aff.Class (class MonadAff)
 import Halogen as H
@@ -20,7 +20,7 @@ data Action = Submit
 render :: forall cs m. State -> H.ComponentHTML Action cs m
 render _ =
   HH.div_ [
-    HH.text "I am a setting"
+    HH.text "I am a topic list"
   ]
 
 handleAction :: forall cs o m . MonadAff m =>  Action → H.HalogenM State Action cs o m Unit

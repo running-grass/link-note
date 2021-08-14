@@ -17,11 +17,16 @@ import Halogen as H
 import Halogen.HTML as HH
 import Halogen.HTML.Events as HE
 import Halogen.HTML.Properties as HP
+import Halogen.Store.Connect (Connected, connect)
+import Halogen.Store.Monad (class MonadStore)
+import Halogen.Store.Select (selectAll)
 import Halogen.Subscription as HS
 import Html.Renderer.Halogen as RH
 import IPFS (IPFS)
 import LinkNote.Component.HTML.Header (header)
+import LinkNote.Component.Store as LS
 import LinkNote.Component.Util (logAny)
+import LinkNote.Data.Data (Note, File)
 import Prelude (Unit, bind, discard, not, otherwise, pure, unit, void, when, ($), (<#>), (<<<), (<>), (=<<), (==))
 import RxDB.RxCollection (bulkRemoveA, find, insertA, upsertA)
 import RxDB.RxDocument (toJSON)
@@ -41,28 +46,6 @@ foreign import insertText :: String -> Effect Boolean
 foreign import autoFocus :: String -> Effect Unit 
 foreign import nowTime :: Effect Int 
 
-type Input = { 
-  coll :: RxCollection Note, 
-  collFile :: RxCollection File,
-  ipfs :: Maybe IPFS 
-  }
-
-type Note =  NoteBase ()
-
-type NoteBase r = {
-  id :: String , 
-  content :: String| r
-}
-
-type NoteExtend = NoteBase (created :: Int)
-
-type File = Record (
-  id :: String , 
-  cid :: String, 
-  mime :: String,
-  type :: String 
-)
-
 type State = { 
     currentId :: Maybe String,
     coll :: RxCollection Note,
@@ -72,6 +55,8 @@ type State = {
     ipfsGatway :: Maybe String
     }
 
+type ConnectedInput = Connected LS.Store Unit
+
 data Action
   = Submit String String 
   | InitNote 
@@ -80,7 +65,7 @@ data Action
   | HandleKeyUp String KE.KeyboardEvent
   | HandleKeyDown String KE.KeyboardEvent
   | InitComp
-  | Receive Input
+  | Receive ConnectedInput
   | SubmitIpfs String
   | Delete String 
   | Edit String
@@ -237,9 +222,9 @@ handleAction = case _ of
   Edit noteId  -> do
     handleAction $ ChangeEditID $ Just noteId
   IgnorePaste ev -> H.liftEffect $ preventDefault $ CE.toEvent ev
-  Receive input -> do
+  Receive { context } -> do
     ipfs <- H.gets _.ipfs 
-    let ipfs' = input.ipfs
+    let ipfs' = context.ipfs
     when (isUpdate ipfs ipfs') do
       H.modify_ _ { ipfs = ipfs' }
       handleAction InitComp
@@ -250,13 +235,13 @@ handleAction = case _ of
       isUpdate (Just x) (Just y) = not $ unsafeRefEq (logAny x) (logAny y)
       isUpdate _ _ = true
 
-initialState :: Input-> State
-initialState input = { 
+initialState :: ConnectedInput-> State
+initialState { context } = { 
   currentId: Nothing,
   ipfsGatway: Nothing,
-  coll : input.coll,
-  collFile : input.collFile,
-  ipfs : input.ipfs,
+  coll : context.collNote,
+  collFile : context.collFile,
+  ipfs : context.ipfs,
   noteList : []
   }
 
@@ -274,9 +259,9 @@ subscriptPaste ipfs = do
   _ <- H.liftEffect $ addPasteListenner fromMaybe ipfs (\path -> HS.notify listener $ SubmitIpfs path)
   pure emitter
 
-component :: forall q  o m. MonadAff m => H.Component q Input o m
+component :: forall q  o m.  MonadStore LS.Action LS.Store m => MonadAff m => H.Component q Unit o m
 component =
-  H.mkComponent
+  connect selectAll $ H.mkComponent
     { 
       initialState
     , render

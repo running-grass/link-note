@@ -12,22 +12,25 @@ import Effect.Aff.Class (class MonadAff)
 import Halogen (liftEffect)
 import Halogen as H
 import Halogen.HTML as HH
+import Halogen.Store.Connect (Connected, connect)
+import Halogen.Store.Monad (class MonadStore, updateStore)
+import Halogen.Store.Select (selectAll)
 import IPFS (IPFS)
 import LinkNote.Component.HTML.Header (header)
 import LinkNote.Component.Navigate (class Navigate, navigate)
+import LinkNote.Component.Store as Store
 import LinkNote.Data.Route (Route(..), routeCodec)
 import LinkNote.Data.Setting (IPFSApiAddress(..), IPFSInstanceType(..))
-import LinkNote.Page.Home (Note, File)
 import LinkNote.Page.Home as Home
 import LinkNote.Page.Setting as Setting
 import LinkNote.Page.TopicList as TopicList
 import Routing.Duplex as RD
 import Routing.Hash (getHash)
-import RxDB.Type (RxCollection)
 import Type.Proxy (Proxy(..))
 
 type OpaqueSlot slot = forall query. H.Slot query Void slot
 
+type ConnectedInput = Connected Store.Store Unit
 
 
 foreign import getGlobalIPFS :: (forall x. x -> Maybe x) 
@@ -47,23 +50,15 @@ getIpfsAddrByType BraveBrowser = "http://127.0.0.1:45005/"
 getIpfsAddrByType (CustomAPI  (IPFSApiAddress addr)) = addr
 
 currentIpfs :: IPFSInstanceType
-currentIpfs = BraveBrowser
+currentIpfs = Unused
 
 data Query a
   = Navigate Route a
 
 type State = { 
-    route :: Maybe Route,
-    coll :: RxCollection Note, 
-    collFile :: RxCollection File,
-    ipfs :: Maybe IPFS 
+    route :: Maybe Route
   }
 
-type Input = { 
-  coll :: RxCollection Note, 
-  collFile :: RxCollection File,
-  ipfs :: Maybe IPFS 
-  }
 
 data Action
   = Init
@@ -75,20 +70,18 @@ type ChildSlots =
   , topicList :: OpaqueSlot Unit
   )
 
-initialState :: Input -> State
-initialState input = { 
-  route: Nothing,
-  coll : input.coll,
-  collFile : input.collFile,
-  ipfs : input.ipfs
+initialState :: ConnectedInput -> State
+initialState _ = { 
+  route: Nothing
   }
 
 component
   :: forall m
    . MonadAff m
   => Navigate m
-  => H.Component Query Input Void m
-component = H.mkComponent
+  => MonadStore Store.Action Store.Store m
+  => H.Component Query Unit Void m
+component = connect selectAll $ H.mkComponent
   { initialState: initialState
   , render
   , eval: H.mkEval $ H.defaultEval
@@ -110,7 +103,9 @@ component = H.mkComponent
     InitIPFS -> do
       let addr = getIpfsAddrByType currentIpfs
       ipfs <- H.liftAff $ getGlobalIPFSA addr
-      H.modify_ _ { ipfs = ipfs }
+      case ipfs of 
+        Just ipfs' -> updateStore $ Store.SetIPFS ipfs'
+        Nothing -> pure unit
 
   handleQuery :: forall a. Query a -> H.HalogenM State Action ChildSlots Void m (Maybe a)
   handleQuery = case _ of
@@ -122,12 +117,12 @@ component = H.mkComponent
       pure (Just a)
 
   render :: State -> H.ComponentHTML Action ChildSlots m
-  render { route, ipfs, coll, collFile  } = HH.div_ [
+  render { route } = HH.div_ [
     header route,
     case route of
       Just r -> case r of
-        Home ->
-          HH.slot_ (Proxy :: _ "home") unit Home.component {ipfs, coll, collFile}
+        Home -> 
+          HH.slot_ (Proxy :: _ "home") unit Home.component unit
         Setting ->
           -- HH.div_ [ HH.text "I will be a setting page." ]
           HH.slot_ (Proxy :: _ "setting") unit Setting.component {  ipfsInstanceType: JsIPFS }  

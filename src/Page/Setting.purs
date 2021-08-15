@@ -3,7 +3,6 @@ module LinkNote.Page.Setting where
 import Effect.Aff.Class (class MonadAff)
 import Halogen as H
 import Halogen.HTML as HH
-import LinkNote.Component.HTML.Header (header)
 import LinkNote.Data.Setting (IPFSInstanceType)
 import Prelude (Unit, pure, unit)
 
@@ -15,12 +14,13 @@ type State = {
     ipfsInstanceType :: IPFSInstanceType
 }
 
-data Action = Submit  
+data Action = Submit
 
 render :: forall cs m. State -> H.ComponentHTML Action cs m
 render _ =
-  HH.div_ [
+  HH.section_ [
     HH.text "I am a setting"
+    
   ]
 
 handleAction :: forall cs o m . MonadAff m =>  Action → H.HalogenM State Action cs o m Unit

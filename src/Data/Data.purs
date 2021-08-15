@@ -1,17 +1,34 @@
 module LinkNote.Data.Data where
 
-type Note =  NoteBase ()
+import Data.DateTime.Instant (Instant)
 
-type NoteBase r = {
-  id :: String , 
-  content :: String| r
+type Time = Instant
+type NoteId = String
+type FileId = String 
+type TopicId = String
+
+type Note = {
+  id :: NoteId
+  , content :: String
+  -- , created :: Time
+  -- , updated :: Time 
+  -- , childrenIds :: Array NoteId
 }
 
-type NoteExtend = NoteBase (created :: Int)
+type File = {
+  id :: FileId
+  , cid :: String
+  , mime :: String
+  , type :: String
+  -- , created :: Time
+  -- , updated :: Time 
+  -- , noteIds :: Array NoteId
+}
 
-type File = Record (
-  id :: String , 
-  cid :: String, 
-  mime :: String,
-  type :: String 
-)
+type Topic = {
+  id :: TopicId,
+  name :: String,
+  created :: Time,
+  updated :: Time,
+  noteIds :: Array NoteId
+}

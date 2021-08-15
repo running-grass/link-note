@@ -19,6 +19,40 @@ exports.initRxDB = () => () => {
     }).then(db => {
         window.db = db;
         return db.addCollections({
+            topic: {
+                schema: {
+                    version: 0,
+                    primaryKey: 'id',
+                    title: '笔记主题',
+                    type: 'object',
+                    properties: {
+                        id: {
+                            type: 'string'
+                        },
+                        name: {
+                            type: 'string'
+                        },
+                        created: {
+                            type: 'integer'
+                        },
+                        updated: {
+                            type: 'integer'
+                        },
+                        noteIds: {
+                            type: 'array',
+                            uniqueItems: true,
+                            items: {
+                                type: "string",
+                            }
+                        },
+                    },
+                    required: ['id'],
+                    indexes: [
+                        'updated', 
+                        'created',
+                    ]
+                }
+            },
             notes: {
                 schema: {
                     version: 0,
@@ -31,9 +65,19 @@ exports.initRxDB = () => () => {
                         content: {
                             type: 'string'
                         },
-                        type: {
-                            type: 'string'
-                        }
+                        created: {
+                            type: 'integer'
+                        },
+                        updated: {
+                            type: 'integer'
+                        },
+                        childrenIds: {
+                            type: 'array',
+                            uniqueItems: true,
+                            items: {
+                                type: "string",
+                            }
+                        },
                     },
                 }
             },
@@ -55,7 +99,20 @@ exports.initRxDB = () => () => {
                         },
                         type: {
                             type: 'string'
-                        }
+                        },
+                        created: {
+                            type: 'integer'
+                        },
+                        updated: {
+                            type: 'integer'
+                        },
+                        childrenIds: {
+                            type: 'array',
+                            uniqueItems: true,
+                            items: {
+                                type: "string",
+                            }
+                        },
                     },
                 }
             }
@@ -78,6 +135,22 @@ exports.getNotesCollection = (db) => () => {
         return Promise.reject('note collection not exist！');
     }
 };
+
+
+exports.getTopicCollection = (db) => () => {
+
+    if (window.collTopic) {
+        return Promise.resolve(window.collTopic);
+    }
+
+    if (db.collections.topic) {
+        window.collTopic = db.collections.topic;
+        return Promise.resolve(window.collTopic);
+    } else {
+        return Promise.reject('topic collection not exist！');
+    }
+};
+
 
 exports.getFileCollection = (db) => () => {
 

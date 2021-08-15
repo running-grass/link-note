@@ -16,8 +16,10 @@ import Halogen.Store.Connect (Connected, connect)
 import Halogen.Store.Monad (class MonadStore, updateStore)
 import Halogen.Store.Select (selectAll)
 import IPFS (IPFS)
+import LinkNote.Capability.Navigate (class Navigate, navigate)
+import LinkNote.Capability.Now (class Now)
+import LinkNote.Capability.Resource.Topic (class ManageTopic)
 import LinkNote.Component.HTML.Header (header)
-import LinkNote.Component.Navigate (class Navigate, navigate)
 import LinkNote.Component.Store as Store
 import LinkNote.Data.Route (Route(..), routeCodec)
 import LinkNote.Data.Setting (IPFSApiAddress(..), IPFSInstanceType(..))
@@ -30,8 +32,9 @@ import Type.Proxy (Proxy(..))
 
 type OpaqueSlot slot = forall query. H.Slot query Void slot
 
-type ConnectedInput = Connected Store.Store Unit
+type Input = Unit 
 
+type ConnectedInput = Connected Store.Store Input
 
 foreign import getGlobalIPFS :: (forall x. x -> Maybe x) 
                                 -> (forall x. Maybe x) 
@@ -73,16 +76,19 @@ type ChildSlots =
 initialState :: ConnectedInput -> State
 initialState _ = { 
   route: Nothing
-  }
-
+}
+ 
 component
   :: forall m
    . MonadAff m
   => Navigate m
+  => ManageTopic m
+  => Now m
   => MonadStore Store.Action Store.Store m
-  => H.Component Query Unit Void m
+  => H.Component Query Input Void m
 component = connect selectAll $ H.mkComponent
-  { initialState: initialState
+  { 
+    initialState: initialState
   , render
   , eval: H.mkEval $ H.defaultEval
       { handleQuery = handleQuery
@@ -124,10 +130,9 @@ component = connect selectAll $ H.mkComponent
         Home -> 
           HH.slot_ (Proxy :: _ "home") unit Home.component unit
         Setting ->
-          -- HH.div_ [ HH.text "I will be a setting page." ]
-          HH.slot_ (Proxy :: _ "setting") unit Setting.component {  ipfsInstanceType: JsIPFS }  
+          HH.slot_ (Proxy :: _ "setting") unit Setting.component {  ipfsInstanceType: JsIPFS }
         TopicList ->
-          HH.slot_ (Proxy :: _ "topicList") unit TopicList.component {  ipfsInstanceType: JsIPFS }  
+          HH.slot_ (Proxy :: _ "topicList") unit TopicList.component unit
         _ -> HH.div_ [ HH.text "404页面" ]
       Nothing ->
         HH.div_ [ HH.text "Oh yeah! You get a 404 page." ]

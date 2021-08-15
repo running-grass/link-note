@@ -14,7 +14,7 @@ import LinkNote.Component.AppM (runAppM)
 import LinkNote.Component.Router as Router
 import LinkNote.Component.Store (Store)
 import LinkNote.Data.Route (routeCodec)
-import LinkNote.Data.Data (Note, File)
+import LinkNote.Data.Data (Note, File, Topic)
 import Prelude (Unit, bind, discard, pure, unit, void, when, ($), (/=))
 import Routing.Duplex (parse)
 import Routing.Hash (matchesWith)
@@ -31,6 +31,12 @@ foreign import getNotesCollection :: RxDatabase -> Effect (Promise (RxCollection
 getNotesCollectionA :: RxDatabase -> Aff (RxCollection Note)
 getNotesCollectionA db = toAffE $ getNotesCollection db
 
+
+foreign import getTopicCollection :: RxDatabase -> Effect (Promise (RxCollection Topic))
+
+getTopicCollectionA :: RxDatabase -> Aff (RxCollection Topic)
+getTopicCollectionA db = toAffE $ getTopicCollection db
+
 foreign import getFileCollection :: RxDatabase -> Effect (Promise (RxCollection File))
 getFileCollectionA :: RxDatabase -> Aff (RxCollection File)
 getFileCollectionA db = toAffE $ getFileCollection db
@@ -42,20 +48,20 @@ awaitRoot = do
   ele <- selectElement (QuerySelector "#halogen-app")
   maybe (throwError (error "找不到根节点！")) pure ele
 
-
 main :: Effect Unit
 main = runHalogenAff do
     db <- initRxDBA unit
-    coll <- getNotesCollectionA db    
+    coll <- getNotesCollectionA db
+    collTopic <- getTopicCollectionA db    
     collFile <- getFileCollectionA db 
     let 
       initStore :: Store
       initStore = {
         ipfs : Nothing
-        , collTopic : coll 
+        , collTopic : collTopic 
         , collNote : coll 
         , collFile : collFile
-      } 
+      }
     rootComponent <- runAppM initStore Router.component 
     app <- awaitRoot
     halogenIO <- runUI rootComponent unit app 

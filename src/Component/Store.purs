@@ -2,7 +2,7 @@ module LinkNote.Component.Store where
 
 import Prelude
 
-import LinkNote.Data.Data (Note, File)
+import LinkNote.Data.Data (Note, File, Topic)
 import Data.Maybe (Maybe(..))
 import IPFS (IPFS)
 import RxDB.Type (RxCollection)
@@ -14,7 +14,7 @@ derive instance ordLogLevel :: Ord LogLevel
 
 type Store = { 
     ipfs :: Maybe IPFS
-    , collTopic :: RxCollection Note
+    , collTopic :: RxCollection Topic
     , collNote :: RxCollection Note
     , collFile :: RxCollection File
   }

@@ -23,7 +23,6 @@ import Halogen.Store.Select (selectAll)
 import Halogen.Subscription as HS
 import Html.Renderer.Halogen as RH
 import IPFS (IPFS)
-import LinkNote.Component.HTML.Header (header)
 import LinkNote.Component.Store as LS
 import LinkNote.Component.Util (logAny)
 import LinkNote.Data.Data (Note, File)
@@ -72,7 +71,9 @@ data Action
   | EditNote Event String 
   | ChangeEditID (Maybe String)
 
+
 foreign import addPasteListenner :: (forall a. a -> Maybe a -> a) -> Maybe IPFS -> (Function String (Effect Unit)) -> Effect Unit
+
 
 foreign import getGatewayUri :: IPFS -> Effect (Promise String)
 
@@ -108,11 +109,12 @@ renderNote ipfsGatway currentId note =
       ]
     ]
 
+
 render :: forall cs m. State -> H.ComponentHTML Action cs m
 render state =
   HH.div_
     [
-    HH.ul_ $ state.noteList <#> renderNote (fromMaybe "ipfs://" state.ipfsGatway) state.currentId
+    HH.ul_ $ state.noteList <#> renderNote (fromMaybe "https://dweb.link/ipfs/" state.ipfsGatway) state.currentId
     ]
     
 
@@ -145,7 +147,7 @@ handleAction = case _ of
       Just id -> H.liftEffect $ autoFocus id
       Nothing -> pure unit
   New -> do
-    coll <- H.gets _.coll
+    coll <- H.gets _.coll 
     -- now <- H.liftEffect nowTime
     uuid <- H.liftEffect UUID.genUUID
     let noteId = "note-" <> UUID.toString uuid
@@ -259,7 +261,10 @@ subscriptPaste ipfs = do
   _ <- H.liftEffect $ addPasteListenner fromMaybe ipfs (\path -> HS.notify listener $ SubmitIpfs path)
   pure emitter
 
-component :: forall q  o m.  MonadStore LS.Action LS.Store m => MonadAff m => H.Component q Unit o m
+component :: forall q  o m.  
+  MonadStore LS.Action LS.Store m 
+  => MonadAff m => 
+  H.Component q Unit o m
 component =
   connect selectAll $ H.mkComponent
     { 

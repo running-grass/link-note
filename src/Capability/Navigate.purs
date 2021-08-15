@@ -1,4 +1,4 @@
-module LinkNote.Component.Navigate where
+module LinkNote.Capability.Navigate where
 
 import Prelude
 

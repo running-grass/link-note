@@ -1,45 +1,96 @@
 module LinkNote.Page.TopicList where
 
+import Prelude
+
+import Data.Maybe (Maybe(..))
+import Data.UUID as UUID
 import Effect.Aff.Class (class MonadAff)
 import Halogen as H
 import Halogen.HTML as HH
-import LinkNote.Component.HTML.Header (header)
-import LinkNote.Data.Setting (IPFSInstanceType)
-import Prelude (Unit, pure, unit)
+import Halogen.HTML.Events as HE
+import Halogen.HTML.Properties as HP
+import Halogen.Store.Connect (Connected, connect)
+import Halogen.Store.Monad (class MonadStore)
+import Halogen.Store.Select (selectAll)
+import LinkNote.Capability.Now (class Now, now)
+import LinkNote.Capability.Resource.Topic (class ManageTopic, createTopic, getTopics)
+import LinkNote.Component.Store as LS
+import LinkNote.Data.Data (Topic)
+import RxDB.Type (RxCollection)
 
-type Input = { 
-  ipfsInstanceType :: IPFSInstanceType
-}
+type Input = Unit
+
+type ConnectedInput = Connected LS.Store Unit
 
 type State = { 
-    ipfsInstanceType :: IPFSInstanceType
+    collTopic :: RxCollection Topic
+    , newTopicName :: String
+    , topicList :: Array Topic
 }
 
-data Action = Submit  
+data Action = 
+  ChangeNewTopicName String
+  | CreateTopic
+  | UpdateTopicList
 
 render :: forall cs m. State -> H.ComponentHTML Action cs m
-render _ =
-  HH.div_ [
-    HH.text "I am a topic list"
+render st =
+  HH.section_ [
+    HH.div_ [
+      HH.input [ HP.value st.newTopicName, HE.onValueChange \topicName -> ChangeNewTopicName topicName ]
+      , HH.button [ HE.onClick \_ -> CreateTopic ] [HH.text "新建主题"]
+    ] 
+    , HH.ul_ $ st.topicList <#> \topic -> HH.li_ [HH.text topic.name]
+    , HH.text "topic list end"
   ]
 
-handleAction :: forall cs o m . MonadAff m =>  Action → H.HalogenM State Action cs o m Unit
+handleAction :: forall cs o m . 
+  MonadAff m =>  
+  Now m => 
+  ManageTopic m =>
+  Action → H.HalogenM State Action cs o m Unit
 handleAction = case _ of
-  Submit ->  do
-    pure unit 
+  ChangeNewTopicName newTopicName -> do 
+    H.modify_ _ { newTopicName = newTopicName}
+  CreateTopic -> do
+    newTopicName <- H.gets _.newTopicName
+    uuid <- H.liftEffect UUID.genUUID 
+    let id = "topic-" <> UUID.toString uuid
+    nowTime <- now
+    let topic = {
+      id : id
+      , name : newTopicName
+      , created : nowTime
+      , updated : nowTime
+      , noteIds : []
+    }
+    createTopic topic
+    list <- getTopics
+    H.modify_ _ { topicList = list, newTopicName = "" }
+  UpdateTopicList -> do
+    list <- getTopics
+    H.modify_ _ { topicList = list }
 
-initialState :: Input-> State
-initialState input = { 
-    ipfsInstanceType: input.ipfsInstanceType
-  }
+initialState :: ConnectedInput-> State
+initialState { context } = { 
+  collTopic : context.collTopic
+  , newTopicName : ""
+  , topicList : []
+}
 
-component :: forall q  o m. MonadAff m => H.Component q Input o m
-component =
+component :: forall q  o m. 
+  MonadStore LS.Action LS.Store m => 
+  MonadAff m => 
+  Now m => 
+  ManageTopic m =>
+  H.Component q Input o m
+component = connect selectAll $
   H.mkComponent
     { 
       initialState
     , render
     , eval: H.mkEval H.defaultEval { 
         handleAction = handleAction
+        , initialize = Just UpdateTopicList
       }
     }

@@ -35,7 +35,7 @@ module.exports = {
 
   devServer: {
     // noInfo: true,
-    open: true,
+    // open: true,
     contentBase: path.resolve(__dirname, 'dist'),
     port: 4008,
     stats: 'errors-only'

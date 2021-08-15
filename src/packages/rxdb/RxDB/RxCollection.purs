@@ -20,9 +20,9 @@ foreign import insert :: forall doc . RxCollection doc -> doc -> Effect (Promise
 insertA :: forall doc . RxCollection doc -> doc -> Aff (RxDocument doc)
 insertA coll json = toAffE $ insert coll json
 
-foreign import upsert :: forall doc . RxCollection doc -> doc -> Effect (Promise (RxDocument doc))
+foreign import upsert :: forall doc a . RxCollection doc -> Record a -> Effect (Promise (RxDocument doc))
 
-upsertA :: forall doc . RxCollection doc -> doc -> Aff (RxDocument doc)
+upsertA :: forall doc a . RxCollection doc -> Record a -> Aff (RxDocument doc)
 upsertA coll json = toAffE $ upsert coll json
 
 foreign import find :: forall doc . (RxCollection doc)-> QueryObject -> Effect (RxQuery (Array (RxDocument doc)))

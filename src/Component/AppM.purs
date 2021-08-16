@@ -50,6 +50,9 @@ foreign import _insertDoc :: forall a. RxCollection a -> a -> Effect (Promise Un
 insertDoc :: forall a. RxCollection a -> a -> Aff Unit
 insertDoc coll doc = toAffE $ _insertDoc coll doc
 
+foreign import _updateDocById :: forall a doc. RxCollection a -> String -> doc -> Effect (Promise Unit)
+
+updateDocById coll id doc = toAffE $ _updateDocById coll id doc
 
 foreign import _bulkRemoveDoc :: forall a id. RxCollection a -> Array id -> Effect (Promise Unit)
 
@@ -109,3 +112,7 @@ instance manageNoteAppM :: ManageNote AppM where
   getAllNotesByHostId hostId = do
     { collNote } <- getStore
     liftAff $ find collNote { hostId } 
+  updateNoteById id notePatch = do
+    { collNote } <- getStore
+    liftAff $ updateDocById collNote id notePatch
+    pure true

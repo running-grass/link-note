@@ -2,10 +2,10 @@ module LinkNote.Component.HTML.Utils where
 
 import Prelude
 
-import LinkNote.Data.Route (Route, routeCodec)
 import Data.Maybe (Maybe(..))
 import Halogen.HTML as HH
 import Halogen.HTML.Properties as HP
+import LinkNote.Data.Route (Route, routeCodec)
 import Routing.Duplex (print)
 
 -- | I get annoyed writing `class_ $ ClassName "..."` over and over again. This small utility saves
@@ -29,3 +29,9 @@ maybeElem _ _ = HH.text ""
 -- | to minimize the work performed each render.
 whenElem :: forall p i. Boolean -> (Unit -> HH.HTML p i) -> HH.HTML p i
 whenElem cond f = if cond then f unit else HH.text ""
+
+inputClass :: forall r i. String -> HH.IProp (class :: String | r) i
+inputClass appendClass = css $ "border rounded border-gray-400	focus:outline-none focus:ring focus:border-blue-300 " <> appendClass
+
+buttonClass :: forall r i. String -> HH.IProp (class :: String | r) i
+buttonClass  appendClass = css $ "px-4 py-1 text-sm text-purple-600 font-semibold rounded-full border border-purple-200 hover:text-white hover:bg-purple-600 hover:border-transparent focus:outline-none focus:ring-2 focus:ring-purple-600 focus:ring-offset-2 " <> appendClass

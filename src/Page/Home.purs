@@ -15,7 +15,7 @@ data Action = Submit
 render :: forall cs m. State -> H.ComponentHTML Action cs m
 render _ =
   HH.section_ [
-    HH.text "I am Home"
+    HH.text "请切换到主题页面使用"
   ]
 
 initialState :: Input-> State

@@ -15,7 +15,7 @@ import Halogen.Store.Monad (class MonadStore)
 import Halogen.Store.Select (selectAll)
 import LinkNote.Capability.Now (class Now, now)
 import LinkNote.Capability.Resource.Topic (class ManageTopic, createTopic, getTopics)
-import LinkNote.Component.HTML.Utils (css, safeHref)
+import LinkNote.Component.HTML.Utils (buttonClass, css, inputClass, safeHref)
 import LinkNote.Component.Store as LS
 import LinkNote.Data.Data (Topic)
 import LinkNote.Data.Route as LR
@@ -39,8 +39,8 @@ render :: forall cs m. State -> H.ComponentHTML Action cs m
 render st =
   HH.section_ [
     HH.div_ [
-      HH.input [ HP.value st.newTopicName, HE.onValueChange \topicName -> ChangeNewTopicName topicName ]
-      , HH.button [ HE.onClick \_ -> CreateTopic ] [HH.text "新建主题"]
+      HH.input [ inputClass "mr-4", HP.value st.newTopicName, HE.onValueChange \topicName -> ChangeNewTopicName topicName ]
+      , HH.button [ buttonClass "", HE.onClick \_ -> CreateTopic ] [HH.text "新建主题"]
     ] 
     , HH.ul_ $ st.topicList <#> renderItem
   ]

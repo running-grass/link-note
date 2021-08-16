@@ -72,7 +72,6 @@ module LinkNote.Page.Topic where
 --       }
 --     }
 
-import Control.Monad.Rec.Class (forever)
 import Control.Promise (Promise, toAffE)
 import Data.Array (null)
 import Data.Maybe (Maybe(..), fromMaybe)
@@ -81,7 +80,7 @@ import Data.String.Regex.Flags (global)
 import Data.String.Regex.Unsafe (unsafeRegex)
 import Data.UUID as UUID
 import Effect (Effect)
-import Effect.Aff (Aff, Milliseconds(..), delay, forkAff)
+import Effect.Aff (Aff)
 import Effect.Aff.Class (class MonadAff)
 import Effect.Unsafe (unsafePerformEffect)
 import Halogen (ClassName(..))
@@ -96,15 +95,14 @@ import Halogen.Subscription as HS
 import Html.Renderer.Halogen as RH
 import IPFS (IPFS)
 import LinkNote.Capability.Now (class Now, now)
-import LinkNote.Capability.Resource.Note (class ManageNote, deleteNote)
+import LinkNote.Capability.Resource.Note (class ManageNote, addNote, deleteNote, getAllNotesByHostId, updateNoteById)
 import LinkNote.Capability.Resource.Topic (class ManageTopic)
 import LinkNote.Component.Store as LS
 import LinkNote.Component.Util (logAny)
 import LinkNote.Data.Data (File, Note, TopicId)
 import Prelude (Unit, bind, discard, not, otherwise, pure, unit, void, when, ($), (<#>), (<<<), (<>), (=<<), (==))
-import RxDB.RxCollection (bulkRemoveA, find, insertA, upsertA)
+import RxDB.RxCollection (upsertA)
 import RxDB.RxDocument (toJSON)
-import RxDB.RxQuery (emptyQueryObject, execA)
 import RxDB.Type (RxCollection, RxDocument)
 import Unsafe.Reference (unsafeRefEq)
 import Web.Clipboard.ClipboardEvent as CE
@@ -118,9 +116,9 @@ foreign import doBlur :: EventTarget -> Effect Unit
 foreign import innerText :: EventTarget -> Effect String
 foreign import insertText :: String -> Effect Boolean 
 foreign import autoFocus :: String -> Effect Unit 
-foreign import nowTime :: Effect Int 
 
 type State = { 
+    topicId :: TopicId,
     currentId :: Maybe String,
     coll :: RxCollection Note,
     collFile :: RxCollection File,
@@ -196,13 +194,6 @@ render state =
     HH.ul_ $ state.noteList <#> renderNote (fromMaybe "https://dweb.link/ipfs/" state.ipfsGatway) state.currentId
     ]
     
-
-toNotes :: Array (RxDocument Note) ->  Array Note
-toNotes ds = ds <#> toNote 
-          
-toNote  :: RxDocument Note -> Note 
-toNote d = unsafePerformEffect $ toJSON d
-
 getTextFromEvent :: Event -> Effect (Maybe String)
 getTextFromEvent ev = do
   let maybeTarget = target ev
@@ -230,16 +221,26 @@ handleAction = case _ of
       Just id -> H.liftEffect $ autoFocus id
       Nothing -> pure unit
   New -> do
-    coll <- H.gets _.coll 
+    hostId <- H.gets _.topicId 
     nowTime <- now
     uuid <- H.liftEffect UUID.genUUID
-    let noteId = "note-" <> UUID.toString uuid
-    void $ H.liftAff $ insertA coll { content: "",  id: noteId }
-    handleAction $ ChangeEditID $ Just noteId
+    let id = "note-" <> UUID.toString uuid
+    let note = {
+      id,
+      heading: "",
+      content: "",
+      hostType: "topic",
+      hostId,
+      created: nowTime,
+      updated: nowTime,
+      parentId: "",
+      childrenIds: []
+    }
+    void $ addNote note
+    handleAction $ ChangeEditID $ Just id
   Submit noteId note->  do
-    coll <- H.gets _.coll
-    void $ H.liftAff $ upsertA coll { content: note,  id: noteId }
-    pure unit 
+    nowTime <- now
+    void $ updateNoteById noteId { content: note, updated: nowTime }
   SubmitIpfs path -> do
     collFile <- H.gets _.collFile
 
@@ -261,10 +262,12 @@ handleAction = case _ of
       _ -> do
         pure unit
   InitNote -> do
-    coll <- H.gets _.coll
-    query <-  H.liftEffect $ find coll emptyQueryObject
-    docs <- H.liftAff $ execA query
-    let notes  = toNotes docs
+    -- coll <- H.gets _.coll
+    -- query <-  H.liftEffect $ find coll emptyQueryObject
+
+    -- docs <- H.liftAff $ execA query
+    topicId <- H.gets _.topicId
+    notes <- getAllNotesByHostId topicId
     if null notes 
       then handleAction New 
       else H.modify_  _ { noteList = notes }
@@ -322,7 +325,8 @@ handleAction = case _ of
       isUpdate _ _ = true
 
 initialState :: ConnectedInput-> State
-initialState { context } = { 
+initialState { context, input } = { 
+  topicId: input.topicId,
   currentId: Nothing,
   ipfsGatway: Nothing,
   coll : context.collNote,

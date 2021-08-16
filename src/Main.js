@@ -62,7 +62,7 @@ exports.initRxDB = () => () => {
             },
             note: {
                 schema: {
-                    version: 0,
+                    version: 1,
                     primaryKey: 'id',
                     type: 'object',
                     properties: {
@@ -88,6 +88,9 @@ exports.initRxDB = () => () => {
                         updated: {
                             type: 'integer'
                         },
+                        parentId: {
+                            type: 'string'
+                        },
                         childrenIds: {
                             type: 'array',
                             uniqueItems: true,
@@ -96,7 +99,17 @@ exports.initRxDB = () => () => {
                             }
                         },
                     },
-                }
+                    indexes: [
+                        'hostId',
+                        'updated', 
+                        'created',
+                        'parentId',
+                        // 'childrenIds'
+                    ]
+                },
+                migrationStrategies: {
+                    1: notMig,
+                }, // (optional)
             },
             file: {
                 schema: {

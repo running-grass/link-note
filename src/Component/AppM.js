@@ -16,7 +16,7 @@ exports._getDoc = just => nothing => coll => id => () => {
 }
 
 exports._find = coll => obj => () => {
-    return coll.find(obj).exec();
+    return coll.find({selector: obj}).exec();
 }
 
 exports._insertDoc = coll => topic => () => {
@@ -25,4 +25,8 @@ exports._insertDoc = coll => topic => () => {
 
 exports._bulkRemoveDoc = coll => ids => () => {
     return coll.bulkRemove(ids);
+}
+
+exports._updateDocById = coll => id => doc => () => {
+    return coll.findOne(id).update({ "$set" : doc});
 }

@@ -11,14 +11,14 @@ type HostType = String
 
 type Note = {
   id :: NoteId
+  , heading :: String
   , content :: String
-  -- , heading :: String
-
-  -- , hostType :: HostType
-  -- , hostId :: String
-  -- , created :: Time
-  -- , updated :: Time 
-  -- , childrenIds :: Array NoteId
+  , hostType :: HostType
+  , hostId :: String
+  , created :: Time
+  , updated :: Time 
+  , parentId :: NoteId
+  , childrenIds :: Array NoteId
 }
 
 type File = {

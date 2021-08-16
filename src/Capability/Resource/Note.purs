@@ -10,9 +10,11 @@ class Monad m <= ManageNote m where
   deleteNote :: NoteId -> m Boolean
   deleteNotes :: Array NoteId -> m Boolean
   getAllNotesByHostId :: TopicId -> m (Array Note)
+  updateNoteById :: forall r. NoteId -> Record r -> m Boolean
         
 instance manageNoteHalogenM :: ManageNote m => ManageNote (HalogenM st act slots msg m) where
   addNote = lift <<< addNote
   deleteNote = lift <<< deleteNote
   deleteNotes = lift <<< deleteNotes
   getAllNotesByHostId = lift <<< getAllNotesByHostId
+  updateNoteById id = lift <<< updateNoteById id

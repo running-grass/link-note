@@ -61,7 +61,3 @@ exports.autoFocus  = (id) => () => {
         tar.focus();
     })
 }
-
-exports.nowTime = () => {
-    return Date.now();
-}

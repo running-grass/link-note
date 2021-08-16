@@ -5,6 +5,8 @@ const {
 } = require('rxdb');
 const pouchdbAdapterIdb = require('pouchdb-adapter-idb');
 
+const notMig = doc => doc;
+
 exports.initRxDB = () => () => {
     addPouchPlugin(pouchdbAdapterIdb);
     if (window.db) {
@@ -21,7 +23,7 @@ exports.initRxDB = () => () => {
         return db.addCollections({
             topic: {
                 schema: {
-                    version: 0,
+                    version: 1,
                     primaryKey: 'id',
                     title: '笔记主题',
                     type: 'object',
@@ -48,10 +50,15 @@ exports.initRxDB = () => () => {
                     },
                     required: ['id'],
                     indexes: [
+                        'name',
                         'updated', 
                         'created',
                     ]
-                }
+                },
+                migrationStrategies: {
+                    1: notMig,
+                }, // (optional)
+                autoMigrate: true, // (optional)
             },
             notes: {
                 schema: {
@@ -118,6 +125,8 @@ exports.initRxDB = () => () => {
             }
         }).then(() => {
             return db;
+        }).catch(e => {
+            debugger
         });
     });
 };

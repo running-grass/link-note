@@ -14,10 +14,6 @@ const plugins =
       new FileManagerWebpackPlugin({
         events: {
           onEnd: {
-            copy: [
-              { source: './public/CNAME', destination: './dist/CNAME' },
-              { source: './public/statics', destination: './dist/statics' }
-            ],
             delete: [
               './release', // 删除之前已经存在的压缩包
             ],
@@ -109,6 +105,16 @@ module.exports = {
       title: 'ais',
       template: 'public/index.html',
       inject: false  // See stackoverflow.com/a/38292765/3067181
+    }),
+    new FileManagerWebpackPlugin({
+      events: {
+        onEnd: {
+          copy: [
+            { source: './public/CNAME', destination: './dist/CNAME' },
+            { source: './public/statics', destination: './dist/statics' }
+          ]
+        }
+      }
     }),
   ].concat(plugins)
 };

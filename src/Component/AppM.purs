@@ -3,6 +3,7 @@ module LinkNote.Component.AppM where
 import Prelude
 
 import Control.Promise (Promise, toAffE)
+import Data.Maybe (Maybe(..))
 import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Aff.Class (class MonadAff, liftAff)
@@ -44,10 +45,21 @@ instance nowAppM :: Now AppM where
   nowTime = liftEffect Now.nowTime
   nowDateTime = liftEffect Now.nowDateTime
 
+foreign import _getDoc :: forall a id. 
+  (forall x. x -> Maybe x) 
+  -> (forall x. Maybe x) 
+  -> RxCollection a 
+  -> id
+  -> Effect(Promise (Maybe a))
+
+getDoc :: forall a id. RxCollection a -> id -> Aff (Maybe a)
+getDoc coll id = toAffE $ _getDoc Just Nothing coll id
+
 foreign import _getAllDocs :: forall a. RxCollection a -> Effect (Promise (Array a))
 
 getAllDocs :: forall a. RxCollection a -> Aff (Array a)
 getAllDocs = toAffE <<< _getAllDocs
+
 
 foreign import _insertDoc :: forall a. RxCollection a -> a -> Effect (Promise Unit)
 
@@ -61,3 +73,6 @@ instance manageTopicAppM :: ManageTopic AppM where
   createTopic topic = do
     { collTopic } <- getStore 
     liftAff $ insertDoc collTopic topic
+  getTopic id = do
+    { collTopic } <- getStore 
+    liftAff $ getDoc collTopic id

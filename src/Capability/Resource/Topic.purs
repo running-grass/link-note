@@ -2,13 +2,16 @@ module LinkNote.Capability.Resource.Topic where
 
 import Prelude
 
+import Data.Maybe (Maybe)
 import Halogen (HalogenM, lift)
-import LinkNote.Data.Data (Topic)
+import LinkNote.Data.Data (Topic, TopicId)
 
 class Monad m <= ManageTopic m where
   getTopics :: m (Array Topic)
   createTopic :: Topic -> m Unit
+  getTopic :: TopicId -> m (Maybe Topic)
 
 instance manageTopicHalogenM :: ManageTopic m => ManageTopic (HalogenM st act slots msg m) where
   getTopics = lift  getTopics
   createTopic = lift <<< createTopic
+  getTopic = lift <<< getTopic

@@ -25,6 +25,7 @@ import LinkNote.Data.Route (Route(..), routeCodec)
 import LinkNote.Data.Setting (IPFSApiAddress(..), IPFSInstanceType(..))
 import LinkNote.Page.Home as Home
 import LinkNote.Page.Setting as Setting
+import LinkNote.Page.Topic as Topic
 import LinkNote.Page.TopicList as TopicList
 import Routing.Duplex as RD
 import Routing.Hash (getHash)
@@ -71,6 +72,7 @@ type ChildSlots =
   ( home :: OpaqueSlot Unit
   , setting :: OpaqueSlot Unit
   , topicList :: OpaqueSlot Unit
+  , topic :: OpaqueSlot Unit
   )
 
 initialState :: ConnectedInput -> State
@@ -130,10 +132,10 @@ component = connect selectAll $ H.mkComponent
         Home -> 
           HH.slot_ (Proxy :: _ "home") unit Home.component unit
         Setting ->
-          HH.slot_ (Proxy :: _ "setting") unit Setting.component {  ipfsInstanceType: JsIPFS }
-        TopicList ->
-          HH.slot_ (Proxy :: _ "topicList") unit TopicList.component unit
-        _ -> HH.div_ [ HH.text "404页面" ]
+          HH.slot_ (Proxy :: _ "setting") unit Setting.component {  ipfsInstanceType: JsIPFS } 
+        (Topic topicId) -> HH.slot_ (Proxy :: _ "topic") unit Topic.component { topicId }
+        TopicList -> HH.slot_ (Proxy :: _ "topicList") unit TopicList.component unit
+        -- _ -> HH.div_ [ HH.text "404页面" ]
       Nothing ->
         HH.div_ [ HH.text "Oh yeah! You get a 404 page." ]
   ]

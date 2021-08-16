@@ -6,6 +6,7 @@ import Data.Maybe (Maybe(..))
 import Data.UUID as UUID
 import Effect.Aff.Class (class MonadAff)
 import Halogen as H
+import Halogen.HTML (HTML(..))
 import Halogen.HTML as HH
 import Halogen.HTML.Events as HE
 import Halogen.HTML.Properties as HP
@@ -14,8 +15,10 @@ import Halogen.Store.Monad (class MonadStore)
 import Halogen.Store.Select (selectAll)
 import LinkNote.Capability.Now (class Now, now)
 import LinkNote.Capability.Resource.Topic (class ManageTopic, createTopic, getTopics)
+import LinkNote.Component.HTML.Utils (css, safeHref)
 import LinkNote.Component.Store as LS
 import LinkNote.Data.Data (Topic)
+import LinkNote.Data.Route as LR
 import RxDB.Type (RxCollection)
 
 type Input = Unit
@@ -23,8 +26,7 @@ type Input = Unit
 type ConnectedInput = Connected LS.Store Unit
 
 type State = { 
-    collTopic :: RxCollection Topic
-    , newTopicName :: String
+    newTopicName :: String
     , topicList :: Array Topic
 }
 
@@ -40,9 +42,18 @@ render st =
       HH.input [ HP.value st.newTopicName, HE.onValueChange \topicName -> ChangeNewTopicName topicName ]
       , HH.button [ HE.onClick \_ -> CreateTopic ] [HH.text "新建主题"]
     ] 
-    , HH.ul_ $ st.topicList <#> \topic -> HH.li_ [HH.text topic.name]
-    , HH.text "topic list end"
+    , HH.ul_ $ st.topicList <#> renderItem
   ]
+
+renderItem :: forall i p. Topic -> HTML i p
+renderItem  topic  =
+    HH.li
+      [ ]
+      [ HH.a [ css "nav-link"  -- <> guard (route == r) " active"
+          , safeHref $ LR.Topic topic.id
+          ]
+          [ HH.text topic.name ]
+      ]
 
 handleAction :: forall cs o m . 
   MonadAff m =>  
@@ -73,8 +84,7 @@ handleAction = case _ of
 
 initialState :: ConnectedInput-> State
 initialState { context } = { 
-  collTopic : context.collTopic
-  , newTopicName : ""
+  newTopicName : ""
   , topicList : []
 }
 

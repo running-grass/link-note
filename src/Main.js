@@ -60,13 +60,23 @@ exports.initRxDB = () => () => {
                 }, // (optional)
                 autoMigrate: true, // (optional)
             },
-            notes: {
+            note: {
                 schema: {
                     version: 0,
                     primaryKey: 'id',
                     type: 'object',
                     properties: {
                         id: {
+                            type: 'string'
+                        },
+                        hostType: {
+                            type: 'string'
+                            , enum: ["topic", "file"]
+                        },
+                        hostId: {
+                            type: 'string'
+                        },
+                        heading: {
                             type: 'string'
                         },
                         content: {
@@ -125,52 +135,22 @@ exports.initRxDB = () => () => {
             }
         }).then(() => {
             return db;
-        }).catch(e => {
-            debugger
+        // }).catch(e => {
+        //     alert("请清空一下缓存");
         });
     });
 };
 
-exports.getNotesCollection = (db) => () => {
+exports._getCollection = (db) => dbName => () => {
 
-    if (window.notes) {
-        return Promise.resolve(window.notes);
-    }
+    // webpack dev环境使用
+    const windowProp = 'coll' + dbName;
 
-    if (db.collections.notes) {
-        window.notes = db.collections.notes;
-        return Promise.resolve(window.notes);
+    const coll = db.collections[dbName];
+    if (coll) {
+        window[windowProp] = coll;
+        return Promise.resolve(coll);
     } else {
-        return Promise.reject('note collection not exist！');
-    }
-};
-
-
-exports.getTopicCollection = (db) => () => {
-
-    if (window.collTopic) {
-        return Promise.resolve(window.collTopic);
-    }
-
-    if (db.collections.topic) {
-        window.collTopic = db.collections.topic;
-        return Promise.resolve(window.collTopic);
-    } else {
-        return Promise.reject('topic collection not exist！');
-    }
-};
-
-
-exports.getFileCollection = (db) => () => {
-
-    if (window.collFile) {
-        return Promise.resolve(window.collFile);
-    }
-
-    if (db.collections.file) {
-        window.collFile = db.collections.file;
-        return Promise.resolve(window.collFile);
-    } else {
-        return Promise.reject('file collection not exist！');
+        return Promise.reject(dbName + '不存在');
     }
 };

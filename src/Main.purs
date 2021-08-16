@@ -14,7 +14,6 @@ import LinkNote.Component.AppM (runAppM)
 import LinkNote.Component.Router as Router
 import LinkNote.Component.Store (Store)
 import LinkNote.Data.Route (routeCodec)
-import LinkNote.Data.Data (Note, File, Topic)
 import Prelude (Unit, bind, discard, pure, unit, void, when, ($), (/=))
 import Routing.Duplex (parse)
 import Routing.Hash (matchesWith)
@@ -27,19 +26,10 @@ foreign import initRxDB :: Unit -> Effect (Promise RxDatabase)
 initRxDBA :: Unit -> Aff RxDatabase
 initRxDBA unit = toAffE $ initRxDB unit
 
-foreign import getNotesCollection :: RxDatabase -> Effect (Promise (RxCollection Note))
-getNotesCollectionA :: RxDatabase -> Aff (RxCollection Note)
-getNotesCollectionA db = toAffE $ getNotesCollection db
+foreign import _getCollection :: forall a. RxDatabase -> String -> Effect (Promise (RxCollection a))
 
-
-foreign import getTopicCollection :: RxDatabase -> Effect (Promise (RxCollection Topic))
-
-getTopicCollectionA :: RxDatabase -> Aff (RxCollection Topic)
-getTopicCollectionA db = toAffE $ getTopicCollection db
-
-foreign import getFileCollection :: RxDatabase -> Effect (Promise (RxCollection File))
-getFileCollectionA :: RxDatabase -> Aff (RxCollection File)
-getFileCollectionA db = toAffE $ getFileCollection db
+getCollection :: forall a . RxDatabase -> String -> Aff (RxCollection a)
+getCollection db collName = toAffE $ _getCollection db collName
 
 -- | Waits for the document to load and then finds the `body` element.
 awaitRoot :: Aff HTMLElement
@@ -51,15 +41,15 @@ awaitRoot = do
 main :: Effect Unit
 main = runHalogenAff do
     db <- initRxDBA unit
-    coll <- getNotesCollectionA db
-    collTopic <- getTopicCollectionA db    
-    collFile <- getFileCollectionA db 
+    collNote <- getCollection db "note"
+    collTopic <- getCollection db "topic"
+    collFile <- getCollection db "file"
     let 
       initStore :: Store
       initStore = {
         ipfs : Nothing
         , collTopic : collTopic 
-        , collNote : coll 
+        , collNote : collNote
         , collFile : collFile
       }
     rootComponent <- runAppM initStore Router.component 

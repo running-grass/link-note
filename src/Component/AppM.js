@@ -15,6 +15,14 @@ exports._getDoc = just => nothing => coll => id => () => {
     }).catch(() => Promise.resolve(nothing));
 }
 
+exports._find = coll => obj => () => {
+    return coll.find(obj).exec();
+}
+
 exports._insertDoc = coll => topic => () => {
     return coll.insert(topic);
+}
+
+exports._bulkRemoveDoc = coll => ids => () => {
+    return coll.bulkRemove(ids);
 }

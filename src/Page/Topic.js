@@ -1,5 +1,6 @@
 const toUri = require('multiaddr-to-uri')
 
+
 exports.addPasteListenner = (fromMaybe) => (maybeIpfs) => (callback, callbackText) => () => {
     // window.addEventListener('paste', ... or
     const ipfs = fromMaybe(null)(maybeIpfs);
@@ -9,7 +10,6 @@ exports.addPasteListenner = (fromMaybe) => (maybeIpfs) => (callback, callbackTex
         const clipboardData = (event.clipboardData || event.originalEvent.clipboardData);
 
         maybeText = clipboardData.getData('text');
-
         if (maybeText) {
             // console.log(maybeText)
             exports.insertText(maybeText)();

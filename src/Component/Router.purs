@@ -18,6 +18,7 @@ import Halogen.Store.Select (selectAll)
 import IPFS (IPFS)
 import LinkNote.Capability.Navigate (class Navigate, navigate)
 import LinkNote.Capability.Now (class Now)
+import LinkNote.Capability.Resource.Note (class ManageNote)
 import LinkNote.Capability.Resource.Topic (class ManageTopic)
 import LinkNote.Component.HTML.Header (header)
 import LinkNote.Component.Store as Store
@@ -63,7 +64,6 @@ type State = {
     route :: Maybe Route
   }
 
-
 data Action
   = Init
   | InitIPFS
@@ -75,22 +75,21 @@ type ChildSlots =
   , topic :: OpaqueSlot Unit
   )
 
-initialState :: ConnectedInput -> State
+initialState :: forall a. a -> State
 initialState _ = { 
   route: Nothing
 }
  
-component
-  :: forall m
-   . MonadAff m
+component :: forall m. MonadAff m
+  => MonadStore Store.Action Store.Store m
   => Navigate m
   => ManageTopic m
   => Now m
-  => MonadStore Store.Action Store.Store m
+  => ManageNote m 
   => H.Component Query Input Void m
 component = connect selectAll $ H.mkComponent
   { 
-    initialState: initialState
+    initialState
   , render
   , eval: H.mkEval $ H.defaultEval
       { handleQuery = handleQuery
@@ -133,9 +132,11 @@ component = connect selectAll $ H.mkComponent
           HH.slot_ (Proxy :: _ "home") unit Home.component unit
         Setting ->
           HH.slot_ (Proxy :: _ "setting") unit Setting.component {  ipfsInstanceType: JsIPFS } 
-        (Topic topicId) -> HH.slot_ (Proxy :: _ "topic") unit Topic.component { topicId }
-        TopicList -> HH.slot_ (Proxy :: _ "topicList") unit TopicList.component unit
-        -- _ -> HH.div_ [ HH.text "404页面" ]
+        Topic topicId -> 
+          HH.slot_ (Proxy :: _ "topic") unit Topic.component { topicId }
+        TopicList -> 
+          HH.slot_ (Proxy :: _ "topicList") unit TopicList.component unit
+        _ -> HH.div_ [ HH.text "404页面" ]
       Nothing ->
         HH.div_ [ HH.text "Oh yeah! You get a 404 page." ]
   ]

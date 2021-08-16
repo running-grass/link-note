@@ -7,9 +7,15 @@ type NoteId = String
 type FileId = String 
 type TopicId = String
 
+type HostType = String
+
 type Note = {
   id :: NoteId
   , content :: String
+  -- , heading :: String
+
+  -- , hostType :: HostType
+  -- , hostId :: String
   -- , created :: Time
   -- , updated :: Time 
   -- , childrenIds :: Array NoteId

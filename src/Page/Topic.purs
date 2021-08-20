@@ -129,8 +129,8 @@ getTextFromEvent ev = do
 handleAction :: forall cs o m . 
   MonadAff m =>  
   Now m =>
-  ManageIPFS m =>
   ManageTopic m =>
+  ManageIPFS m =>
   ManageNote m =>
   Action → H.HalogenM State Action cs o m Unit
 handleAction = case _ of
@@ -250,8 +250,8 @@ subscriptPaste ipfs = do
   pure emitter
 
 component :: forall q o m.  
-  MonadStore LS.Action LS.Store m => 
   MonadAff m => 
+  MonadStore LS.Action LS.Store m => 
   Now m =>
   ManageIPFS m =>
   ManageTopic m =>

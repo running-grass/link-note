@@ -13,7 +13,6 @@ import Halogen.Aff (awaitLoad, runHalogenAff, selectElement)
 import Halogen.VDom.Driver (runUI)
 import LinkNote.Component.AppM (runAppM)
 import LinkNote.Component.Router as Router
-import LinkNote.Component.Store (Store)
 import LinkNote.Data.Route (routeCodec)
 import Prelude (Unit, bind, discard, pure, unit, void, when, ($), (/=))
 import Routing.Duplex (parse)
@@ -41,20 +40,18 @@ awaitRoot = do
 
 main :: Effect Unit
 main = runHalogenAff do
+    app <- awaitRoot
     db <- initRxDBA unit
     collNote <- getCollection db "note"
     collTopic <- getCollection db "topic"
     collFile <- getCollection db "file"
-    let 
-      initStore :: Store
-      initStore = {
+    let initStore = {
         ipfs : Nothing
         , collTopic : collTopic 
         , collNote : collNote
         , collFile : collFile
       }
     rootComponent <- runAppM initStore Router.component 
-    app <- liftAff $ awaitRoot
     halogenIO <- runUI rootComponent unit app 
     void $ liftEffect $ matchesWith (parse routeCodec) \old new ->
       when (old /= Just new) do

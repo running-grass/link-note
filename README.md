@@ -53,14 +53,14 @@ nix-env -iA nixpkgs.direnv
 安装好了direnv之后， 在项目根目录执行 `direnv allow`，
 并且在shell中配置好钩子，参考 https://direnv.net/docs/hook.html
 
-### 使用spago编译purs文件
-```bash
-spago build
-```
-
 ### 使用pnpm安装node_modeules依赖
 ```bash
 pnpm install
+```
+
+### 使用spago编译purs文件
+```bash
+spago build
 ```
 
 
@@ -69,3 +69,15 @@ pnpm install
 pnpm debug
 ```
 
+## 开发文档
+
+### 架构描述
+根据purescript-realworld中的demo，把应用分为三层。
+1. 全局状态层，文件为Store.purs。在渲染页面之前被初始化，包括全局配置、数据库连接等
+2. 副作用能力层，接口目录为`src/Component`，具体实现为`src/Component/AppM.purs`，把应用需要使用的各种副作用从页面中剥离出来由这一层统一管理，也便于测试时的mock。包括数据库增删改查、记录日志、路由导航、随机数、当然时间等
+3. 组件层，包括各种页面、组件、html片段、工具函数，这里只写纯函数。涉及到副作用的就会调用上一层的接口。需要读取应用配置的，就去读全局状态层(或许可以)
+
+### 增加一个能力
+1. 在src/Component目录中参考已有能力，增加一个文件。定义好需要的接口
+2. 在AppM中去实现这个接口中的各个函数
+3. 在Router.purs中为根组件声明这个能力Monad，在需要的页面组件中声明这个Monad.如果需要在工具函数中使用该能力也要声明。

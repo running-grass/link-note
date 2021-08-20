@@ -7,6 +7,7 @@ import Effect (Effect)
 import Effect.Aff (Aff, launchAff_, throwError)
 import Effect.Class (liftEffect)
 import Effect.Exception (error)
+import Halogen (liftAff)
 import Halogen as H
 import Halogen.Aff (awaitLoad, runHalogenAff, selectElement)
 import Halogen.VDom.Driver (runUI)
@@ -53,7 +54,7 @@ main = runHalogenAff do
         , collFile : collFile
       }
     rootComponent <- runAppM initStore Router.component 
-    app <- awaitRoot
+    app <- liftAff $ awaitRoot
     halogenIO <- runUI rootComponent unit app 
     void $ liftEffect $ matchesWith (parse routeCodec) \old new ->
       when (old /= Just new) do

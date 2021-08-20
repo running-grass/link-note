@@ -13,7 +13,9 @@ import Halogen.HTML.Properties as HP
 import Halogen.Store.Connect (Connected, connect)
 import Halogen.Store.Monad (class MonadStore)
 import Halogen.Store.Select (selectAll)
+import LinkNote.Capability.ManageIPFS (class ManageIPFS)
 import LinkNote.Capability.Now (class Now, now)
+import LinkNote.Capability.Resource.Note (class ManageNote)
 import LinkNote.Capability.Resource.Topic (class ManageTopic, createTopic, getTopics)
 import LinkNote.Component.HTML.Utils (buttonClass, css, inputClass, safeHref)
 import LinkNote.Component.Store as LS
@@ -92,6 +94,7 @@ component :: forall q  o m.
   MonadStore LS.Action LS.Store m => 
   MonadAff m => 
   Now m => 
+  ManageNote m =>
   ManageTopic m =>
   H.Component q Input o m
 component = connect selectAll $

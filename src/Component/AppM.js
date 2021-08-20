@@ -16,7 +16,7 @@ exports._getDoc = just => nothing => coll => id => () => {
 }
 
 exports._find = coll => obj => () => {
-    return coll.find({selector: obj}).exec();
+    return coll.find({selector: obj}).sort({ created: 1}).exec();
 }
 
 exports._insertDoc = coll => topic => () => {
@@ -29,4 +29,8 @@ exports._bulkRemoveDoc = coll => ids => () => {
 
 exports._updateDocById = coll => id => doc => () => {
     return coll.findOne(id).update({ "$set" : doc});
+}
+
+exports._getGatewayUri = just => nothing => ipfs => () => {
+    return ipfs.config.get("Addresses.Gateway").then(gateway => gateway ? just(toUri(gateway)) : nothing);
 }

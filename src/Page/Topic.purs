@@ -1,78 +1,5 @@
 module LinkNote.Page.Topic where
 
--- import Prelude
-
--- import Data.Maybe (Maybe(..))
--- import Data.UUID as UUID
--- import Effect.Aff.Class (class MonadAff)
--- import Halogen as H
--- import Halogen.HTML as HH
--- import Halogen.HTML.Events as HE
--- import Halogen.HTML.Properties as HP
--- import Halogen.Store.Connect (Connected, connect)
--- import Halogen.Store.Monad (class MonadStore)
--- import Halogen.Store.Select (selectAll)
--- import LinkNote.Capability.Now (class Now, now)
--- import LinkNote.Capability.Resource.Topic (class ManageTopic, createTopic, getTopic, getTopics)
--- import LinkNote.Component.Store as LS
--- import LinkNote.Data.Data (Topic, TopicId)
--- import RxDB.Type (RxCollection)
-
--- type Input = {
---   topicId :: TopicId
--- }
-
--- type State = { 
---   topicId :: TopicId
---   , topic :: Maybe Topic
--- }
-
--- data Action = 
---   UpdateTopic
-
--- render :: forall cs m. State -> H.ComponentHTML Action cs m
--- render st =
---   HH.section_ [
---     case st.topic of
---     Nothing -> HH.text "主题不存在"
---     Just topic -> HH.text topic.name
---   ]
-
--- handleAction :: forall cs o m . 
---   MonadAff m =>  
---   Now m => 
---   ManageTopic m =>
---   Action → H.HalogenM State Action cs o m Unit
--- handleAction = case _ of
---   UpdateTopic -> do
---     topicId <- H.gets _.topicId
---     topic' <- getTopic topicId
---     H.modify_ _ { topic = topic' }
-
--- initialState :: Input-> State
--- initialState input = { 
---   topicId : input.topicId
---   , topic : Nothing
--- }
-
--- component :: forall q  o m. 
---   MonadStore LS.Action LS.Store m => 
---   MonadAff m => 
---   Now m => 
---   ManageTopic m =>
---   H.Component q Input o m
--- component = 
---   H.mkComponent
---     { 
---       initialState
---     , render
---     , eval: H.mkEval H.defaultEval { 
---         handleAction = handleAction
---         , initialize = Just UpdateTopic
---       }
---     }
-
-import Control.Promise (Promise, toAffE)
 import Data.Array (null)
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.String.Regex (Regex, replace)
@@ -80,9 +7,7 @@ import Data.String.Regex.Flags (global)
 import Data.String.Regex.Unsafe (unsafeRegex)
 import Data.UUID as UUID
 import Effect (Effect)
-import Effect.Aff (Aff)
 import Effect.Aff.Class (class MonadAff)
-import Effect.Unsafe (unsafePerformEffect)
 import Halogen (ClassName(..))
 import Halogen as H
 import Halogen.HTML as HH
@@ -94,6 +19,7 @@ import Halogen.Store.Select (selectAll)
 import Halogen.Subscription as HS
 import Html.Renderer.Halogen as RH
 import IPFS (IPFS)
+import LinkNote.Capability.ManageIPFS (class ManageIPFS, getIpfsGatewayPrefix)
 import LinkNote.Capability.Now (class Now, now)
 import LinkNote.Capability.Resource.Note (class ManageNote, addNote, deleteNote, getAllNotesByHostId, updateNoteById)
 import LinkNote.Capability.Resource.Topic (class ManageTopic)
@@ -102,8 +28,7 @@ import LinkNote.Component.Util (logAny)
 import LinkNote.Data.Data (File, Note, TopicId)
 import Prelude (Unit, bind, discard, not, otherwise, pure, unit, void, when, ($), (<#>), (<<<), (<>), (=<<), (==))
 import RxDB.RxCollection (upsertA)
-import RxDB.RxDocument (toJSON)
-import RxDB.Type (RxCollection, RxDocument)
+import RxDB.Type (RxCollection)
 import Unsafe.Reference (unsafeRefEq)
 import Web.Clipboard.ClipboardEvent as CE
 import Web.Event.Event (Event, currentTarget, preventDefault, target)
@@ -120,11 +45,10 @@ foreign import autoFocus :: String -> Effect Unit
 type State = { 
     topicId :: TopicId,
     currentId :: Maybe String,
-    coll :: RxCollection Note,
     collFile :: RxCollection File,
     noteList :: Array Note,
     ipfs :: Maybe IPFS,
-    ipfsGatway :: Maybe String
+    ipfsGatway :: String
     }
 
 type Input = {
@@ -151,14 +75,8 @@ data Action
 
 foreign import addPasteListenner :: (forall a. a -> Maybe a -> a) -> Maybe IPFS -> (Function String (Effect Unit)) -> Effect Unit
 
-
-foreign import getGatewayUri :: IPFS -> Effect (Promise String)
-
 regFileLink :: Regex
 regFileLink = unsafeRegex "\\[\\[file-(.*?)\\]\\]" global
-
-getGatewayUriA :: IPFS -> Aff String
-getGatewayUriA ipfs = toAffE $ getGatewayUri ipfs 
 
 renderNote :: forall  a. String -> Maybe String ->  Note  -> HH.HTML a Action
 renderNote ipfsGatway currentId note = 
@@ -191,7 +109,7 @@ render :: forall cs m. State -> H.ComponentHTML Action cs m
 render state =
   HH.div_
     [
-    HH.ul_ $ state.noteList <#> renderNote (fromMaybe "https://dweb.link/ipfs/" state.ipfsGatway) state.currentId
+    HH.ul_ $ state.noteList <#> renderNote state.ipfsGatway state.currentId
     ]
     
 getTextFromEvent :: Event -> Effect (Maybe String)
@@ -211,6 +129,8 @@ getTextFromEvent ev = do
 handleAction :: forall cs o m . 
   MonadAff m =>  
   Now m =>
+  ManageIPFS m =>
+  ManageTopic m =>
   ManageNote m =>
   Action → H.HalogenM State Action cs o m Unit
 handleAction = case _ of
@@ -250,22 +170,13 @@ handleAction = case _ of
     let appendText = "[[" <> fileId <> "]]"
     _ <- H.liftEffect $ insertText appendText
     pure unit 
-
   InitComp -> do
     handleAction InitNote
     maybeIpfs <- H.gets _.ipfs
     _ <- H.subscribe =<< subscriptPaste maybeIpfs
-    case maybeIpfs of 
-      Just ipfs -> do
-        host <- H.liftAff $ getGatewayUriA ipfs
-        H.modify_ _ { ipfsGatway = Just (host <> "/ipfs/") }
-      _ -> do
-        pure unit
+    ipfsGatway <- getIpfsGatewayPrefix
+    H.modify_ _ { ipfsGatway = ipfsGatway}
   InitNote -> do
-    -- coll <- H.gets _.coll
-    -- query <-  H.liftEffect $ find coll emptyQueryObject
-
-    -- docs <- H.liftAff $ execA query
     topicId <- H.gets _.topicId
     notes <- getAllNotesByHostId topicId
     if null notes 
@@ -273,8 +184,6 @@ handleAction = case _ of
       else H.modify_  _ { noteList = notes }
   Delete noteId -> do
     void $ deleteNote noteId
-    -- coll <- H.gets _.coll
-    -- H.liftAff $ bulkRemoveA coll [noteId]
     handleAction $ ChangeEditID $ Nothing
   HandleKeyDown id kbe 
     | KE.key kbe == "Enter" -> do 
@@ -328,8 +237,7 @@ initialState :: ConnectedInput-> State
 initialState { context, input } = { 
   topicId: input.topicId,
   currentId: Nothing,
-  ipfsGatway: Nothing,
-  coll : context.collNote,
+  ipfsGatway: "https://dweb.link/ipfs/",
   collFile : context.collFile,
   ipfs : context.ipfs,
   noteList : []
@@ -341,10 +249,11 @@ subscriptPaste ipfs = do
   _ <- H.liftEffect $ addPasteListenner fromMaybe ipfs (\path -> HS.notify listener $ SubmitIpfs path)
   pure emitter
 
-component :: forall q  o m.  
+component :: forall q o m.  
   MonadStore LS.Action LS.Store m => 
   MonadAff m => 
   Now m =>
+  ManageIPFS m =>
   ManageTopic m =>
   ManageNote m =>
   H.Component q Input o m

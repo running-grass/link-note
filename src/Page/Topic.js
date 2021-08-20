@@ -38,9 +38,6 @@ exports.addPasteListenner = (fromMaybe) => (maybeIpfs) => (callback, callbackTex
     console.debug('已经绑定了粘贴事件');
 }
 
-exports.getGatewayUri = (ipfs) => () => {
-    return ipfs.config.get("Addresses.Gateway").then(gateway => gateway ? gateway : Promise.reject("没有获取到网关值")).then(toUri);
-}
 
 exports.doBlur = (target) => () => {
     target.blur();

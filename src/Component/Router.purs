@@ -16,6 +16,7 @@ import Halogen.Store.Connect (Connected, connect)
 import Halogen.Store.Monad (class MonadStore, updateStore)
 import Halogen.Store.Select (selectAll)
 import IPFS (IPFS)
+import LinkNote.Capability.ManageIPFS (class ManageIPFS)
 import LinkNote.Capability.Navigate (class Navigate, navigate)
 import LinkNote.Capability.Now (class Now)
 import LinkNote.Capability.Resource.Note (class ManageNote)
@@ -85,6 +86,7 @@ component :: forall m. MonadAff m
   => Navigate m
   => ManageTopic m
   => Now m
+  => ManageIPFS m
   => ManageNote m 
   => H.Component Query Input Void m
 component = connect selectAll $ H.mkComponent
@@ -136,7 +138,7 @@ component = connect selectAll $ H.mkComponent
           HH.slot_ (Proxy :: _ "topic") unit Topic.component { topicId }
         TopicList -> 
           HH.slot_ (Proxy :: _ "topicList") unit TopicList.component unit
-        _ -> HH.div_ [ HH.text "404页面" ]
+        -- _ -> HH.div_ [ HH.text "404页面" ]
       Nothing ->
         HH.div_ [ HH.text "Oh yeah! You get a 404 page." ]
   ]

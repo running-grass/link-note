@@ -11,6 +11,8 @@ import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Now as Now
 import Halogen as H
 import Halogen.Store.Monad (class MonadStore, StoreT, getStore, runStoreT)
+import IPFS (IPFS)
+import LinkNote.Capability.ManageIPFS (class ManageIPFS)
 import LinkNote.Capability.Navigate (class Navigate)
 import LinkNote.Capability.Now (class Now)
 import LinkNote.Capability.Resource.Note (class ManageNote)
@@ -21,6 +23,16 @@ import Routing.Duplex (print)
 import Routing.Hash (setHash)
 import RxDB.Type (RxCollection)
 import Safe.Coerce (coerce)
+
+
+foreign import _getGatewayUri :: 
+  (forall x. x -> Maybe x) 
+  -> (forall x. Maybe x) 
+  -> IPFS
+  -> Effect(Promise (Maybe String))
+
+getGatewayUri :: IPFS -> Aff (Maybe String)
+getGatewayUri ipfs = toAffE $ _getGatewayUri Just Nothing ipfs
 
 
 foreign import _getDoc :: forall a id. 
@@ -52,6 +64,7 @@ insertDoc coll doc = toAffE $ _insertDoc coll doc
 
 foreign import _updateDocById :: forall a doc. RxCollection a -> String -> doc -> Effect (Promise Unit)
 
+updateDocById :: forall a doc. RxCollection a -> String -> doc -> Aff Unit
 updateDocById coll id doc = toAffE $ _updateDocById coll id doc
 
 foreign import _bulkRemoveDoc :: forall a id. RxCollection a -> Array id -> Effect (Promise Unit)
@@ -84,6 +97,17 @@ instance nowAppM :: Now AppM where
   nowTime = liftEffect Now.nowTime
   nowDateTime = liftEffect Now.nowDateTime
 
+instance ipfsAppM :: ManageIPFS AppM where
+  getIpfsGatewayPrefix = do 
+    { ipfs } <- getStore
+    let default = pure "https://dweb.link/ipfs/"
+    case ipfs of 
+      Nothing -> default
+      Just ipfs' -> do
+        uri <- liftAff $ getGatewayUri ipfs'
+        case uri of 
+          Nothing -> default
+          Just uri' -> pure uri'
 
 instance manageTopicAppM :: ManageTopic AppM where
   getTopics = do

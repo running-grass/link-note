@@ -1,13 +1,17 @@
 module LinkNote.Page.Topic where
 
-import Data.Array (null)
-import Data.Maybe (Maybe(..), fromMaybe)
+import Prelude
+
+import Control.Alternative (empty, guard)
+import Data.Array (filter, findIndex, index, null)
+import Data.Maybe (Maybe(..), fromMaybe, isJust)
 import Data.String.Regex (Regex, replace)
 import Data.String.Regex.Flags (global)
 import Data.String.Regex.Unsafe (unsafeRegex)
 import Data.UUID as UUID
 import Effect (Effect)
 import Effect.Aff.Class (class MonadAff)
+import Effect.Class.Console (log)
 import Halogen (ClassName(..))
 import Halogen as H
 import Halogen.HTML as HH
@@ -23,18 +27,20 @@ import LinkNote.Capability.ManageIPFS (class ManageIPFS, getIpfsGatewayPrefix)
 import LinkNote.Capability.Now (class Now, now)
 import LinkNote.Capability.Resource.Note (class ManageNote, addNote, deleteNote, getAllNotesByHostId, updateNoteById)
 import LinkNote.Capability.Resource.Topic (class ManageTopic)
+import LinkNote.Component.HTML.Utils (css)
 import LinkNote.Component.Store as LS
 import LinkNote.Component.Util (logAny)
-import LinkNote.Data.Data (File, Note, TopicId)
-import Prelude (Unit, bind, discard, not, otherwise, pure, unit, void, when, ($), (<#>), (<<<), (<>), (=<<), (==))
+import LinkNote.Data.Data (File, Note, TopicId, NoteId)
 import RxDB.RxCollection (upsertA)
 import RxDB.Type (RxCollection)
 import Unsafe.Reference (unsafeRefEq)
 import Web.Clipboard.ClipboardEvent as CE
-import Web.Event.Event (Event, currentTarget, preventDefault, target)
+import Web.DOM.ParentNode (children)
+import Web.Event.Event (Event, currentTarget, preventDefault, stopPropagation, target)
 import Web.Event.Internal.Types (EventTarget)
 import Web.HTML.HTMLTextAreaElement as HTAE
 import Web.UIEvent.KeyboardEvent as KE
+import Web.UIEvent.MouseEvent as ME
 
 
 foreign import doBlur :: EventTarget -> Effect Unit
@@ -42,11 +48,18 @@ foreign import innerText :: EventTarget -> Effect String
 foreign import insertText :: String -> Effect Boolean 
 foreign import autoFocus :: String -> Effect Unit 
 
+newtype NoteNode = NoteNode {
+  id :: NoteId
+  , heading :: String
+  , children :: Array NoteNode
+}
+
 type State = { 
     topicId :: TopicId,
     currentId :: Maybe String,
     collFile :: RxCollection File,
     noteList :: Array Note,
+    renderNoteList :: Array NoteNode,
     ipfs :: Maybe IPFS,
     ipfsGatway :: String
     }
@@ -69,26 +82,52 @@ data Action
   | SubmitIpfs String
   | Delete String 
   | Edit String
+  | Indent NoteId
   | EditNote Event String 
+  | ClickNote ME.MouseEvent NoteId
   | ChangeEditID (Maybe String)
 
 
 foreign import addPasteListenner :: (forall a. a -> Maybe a -> a) -> Maybe IPFS -> (Function String (Effect Unit)) -> Effect Unit
 
+
+noteToTree :: Array Note -> NoteId -> Array NoteNode
+noteToTree notelist parentId = filterdList <#> toTree
+  where
+    filterdList = filter (\note -> note.parentId == parentId) notelist
+    toTree note = NoteNode {
+      id: note.id
+      , heading: note.heading
+      , children: noteToTree notelist note.id
+    }
+
+searchPrevNoteId :: Array Note -> NoteId -> Maybe NoteId
+searchPrevNoteId [] _ = Nothing
+searchPrevNoteId [_] _ = Nothing
+searchPrevNoteId notes id = do
+  idx <- findIndex (\note -> note.id == id) notes
+  if idx == 0 then Nothing else do
+    note <- index notes $ idx - 1
+    pure note.id
+
+
+
 regFileLink :: Regex
 regFileLink = unsafeRegex "\\[\\[file-(.*?)\\]\\]" global
 
-renderNote :: forall  a. String -> Maybe String ->  Note  -> HH.HTML a Action
-renderNote ipfsGatway currentId note = 
+renderNote :: forall  a. String -> Maybe String -> Int ->  NoteNode -> HH.HTML a Action
+renderNote ipfsGatway currentId level (NoteNode note)  = 
   HH.li [ 
     HP.id note.id 
-    , HE.onClick \_ -> Edit note.id 
+    , HE.onClick \ev -> ClickNote ev note.id 
+
     , HP.style "min-height: 30px;"
+    , css $ "pl-" <> (show 8)
     ] 
     [
       case currentId of 
       Just id | id == note.id -> HH.textarea [
-        HP.value note.content
+        HP.value note.heading
         , HP.style "min-width: 100px;min-height: 30px;" 
         , HE.onKeyUp \kbe -> HandleKeyUp note.id kbe
         , HE.onKeyDown \kbe -> HandleKeyDown note.id kbe
@@ -100,8 +139,11 @@ renderNote ipfsGatway currentId note =
       _ -> HH.div [ 
         HP.class_ $ ClassName "head"
       ] [ 
-        RH.render_ $ replace regFileLink ("<img src=\"" <> ipfsGatway <> "$1\">") note.content 
+        RH.render_ $ replace regFileLink ("<img src=\"" <> ipfsGatway <> "$1\">") note.heading 
       ]
+      , if null note.children 
+        then HH.span_ []
+        else HH.ul_ $ note.children <#> renderNote ipfsGatway currentId (level + 1)
     ]
 
 
@@ -109,7 +151,7 @@ render :: forall cs m. State -> H.ComponentHTML Action cs m
 render state =
   HH.div_
     [
-    HH.ul_ $ state.noteList <#> renderNote state.ipfsGatway state.currentId
+    HH.ul_ $ state.renderNoteList <#> renderNote state.ipfsGatway state.currentId 1
     ]
     
 getTextFromEvent :: Event -> Effect (Maybe String)
@@ -160,7 +202,7 @@ handleAction = case _ of
     handleAction $ ChangeEditID $ Just id
   Submit noteId note->  do
     nowTime <- now
-    void $ updateNoteById noteId { content: note, updated: nowTime }
+    void $ updateNoteById noteId { heading: note, updated: nowTime }
   SubmitIpfs path -> do
     collFile <- H.gets _.collFile
 
@@ -181,19 +223,42 @@ handleAction = case _ of
     notes <- getAllNotesByHostId topicId
     if null notes 
       then handleAction New 
-      else H.modify_  _ { noteList = notes }
+      else do 
+        let nodes = logAny $ noteToTree notes ""
+        H.modify_  _ { 
+          noteList = notes 
+          , renderNoteList = nodes
+        }
+  ClickNote mev nid -> do
+    H.liftEffect $ stopPropagation $ ME.toEvent mev
+    handleAction $ Edit nid 
   Delete noteId -> do
     void $ deleteNote noteId
     handleAction $ ChangeEditID $ Nothing
+  Indent id -> do
+    notes <- H.gets _.noteList 
+    let pid = searchPrevNoteId notes id
+    case pid of
+      Nothing -> pure unit
+      Just pid' -> do
+        void $ updateNoteById id { parentId: pid' }
+        handleAction InitNote
+        -- log $ "indent " <> id <> "+++++++" <> pid'
+    pure unit
   HandleKeyDown id kbe 
     | KE.key kbe == "Enter" -> do 
       H.liftEffect $ preventDefault $ KE.toEvent kbe
+    | KE.key kbe == "Tab" -> do 
+      H.liftEffect $ preventDefault $ KE.toEvent kbe
     | otherwise -> pure unit
-
+  
   HandleKeyUp id kbe 
     | KE.key kbe == "Enter" -> do 
       H.liftEffect $ preventDefault $ KE.toEvent kbe
       handleAction New
+    | KE.key kbe == "Tab" -> do
+      handleAction $ Indent id 
+      pure unit
     | KE.key kbe == "Escape" -> do 
         handleAction $ ChangeEditID Nothing
         let maybeTarget = currentTarget $ KE.toEvent kbe
@@ -240,7 +305,8 @@ initialState { context, input } = {
   ipfsGatway: "https://dweb.link/ipfs/",
   collFile : context.collFile,
   ipfs : context.ipfs,
-  noteList : []
+  noteList : [],
+  renderNoteList: []
   }
 
 subscriptPaste :: forall m. MonadAff m => Maybe IPFS -> m (HS.Emitter Action)

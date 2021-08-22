@@ -10,12 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 支持主题概念，笔记要依赖于某个主题存在
 - 主题详情页面的笔记支持树形层级展示
 - Tab/S-Tab可以调整笔记层级
-
-### 优化
-- IPFS不再是必要选项，可以在设置页面修改IPFS配置
 ### 其它
 - 每次版本发布会支持
-
+- IPFS不再是必要选项，暂时关闭IPFS支持
 ## [0.2.2] - 2021-08-07
 ### bugfix
 - 节点失焦后刷新不及时

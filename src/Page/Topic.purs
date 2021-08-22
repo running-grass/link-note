@@ -2,16 +2,15 @@ module LinkNote.Page.Topic where
 
 import Prelude
 
-import Control.Alternative (empty, guard)
-import Data.Array (filter, findIndex, index, null)
-import Data.Maybe (Maybe(..), fromMaybe, isJust)
+import Data.Array (filter, findIndex, index, mapWithIndex, null)
+import Data.Array.NonEmpty (NonEmptyArray, fromArray, init, last, length, toArray, uncons, updateAt, snoc')
+import Data.Maybe (Maybe(..), fromMaybe)
 import Data.String.Regex (Regex, replace)
 import Data.String.Regex.Flags (global)
 import Data.String.Regex.Unsafe (unsafeRegex)
 import Data.UUID as UUID
 import Effect (Effect)
 import Effect.Aff.Class (class MonadAff)
-import Effect.Class.Console (log)
 import Halogen (ClassName(..))
 import Halogen as H
 import Halogen.HTML as HH
@@ -29,13 +28,11 @@ import LinkNote.Capability.Resource.Note (class ManageNote, addNote, deleteNote,
 import LinkNote.Capability.Resource.Topic (class ManageTopic)
 import LinkNote.Component.HTML.Utils (css)
 import LinkNote.Component.Store as LS
-import LinkNote.Component.Util (logAny)
 import LinkNote.Data.Data (File, Note, TopicId, NoteId)
 import RxDB.RxCollection (upsertA)
 import RxDB.Type (RxCollection)
 import Unsafe.Reference (unsafeRefEq)
 import Web.Clipboard.ClipboardEvent as CE
-import Web.DOM.ParentNode (children)
 import Web.Event.Event (Event, currentTarget, preventDefault, stopPropagation, target)
 import Web.Event.Internal.Types (EventTarget)
 import Web.HTML.HTMLTextAreaElement as HTAE
@@ -52,6 +49,8 @@ newtype NoteNode = NoteNode {
   id :: NoteId
   , heading :: String
   , children :: Array NoteNode
+  , parentId :: NoteId
+  , path :: NonEmptyArray Int
 }
 
 type State = { 
@@ -70,19 +69,22 @@ type Input = {
 
 type ConnectedInput = Connected LS.Store Input
 
+type NodePath = NonEmptyArray Int
+
 data Action
   = Submit String String 
   | InitNote 
-  | New
+  | New NoteId
   | IgnorePaste CE.ClipboardEvent
-  | HandleKeyUp String KE.KeyboardEvent
-  | HandleKeyDown String KE.KeyboardEvent
+  | HandleKeyUp NoteNode KE.KeyboardEvent
+  | HandleKeyDown KE.KeyboardEvent
   | InitComp
   | Receive ConnectedInput
   | SubmitIpfs String
   | Delete String 
   | Edit String
-  | Indent NoteId
+  | Indent NoteId NodePath
+  | UnIndent NoteId NodePath
   | EditNote Event String 
   | ClickNote ME.MouseEvent NoteId
   | ChangeEditID (Maybe String)
@@ -91,14 +93,16 @@ data Action
 foreign import addPasteListenner :: (forall a. a -> Maybe a -> a) -> Maybe IPFS -> (Function String (Effect Unit)) -> Effect Unit
 
 
-noteToTree :: Array Note -> NoteId -> Array NoteNode
-noteToTree notelist parentId = filterdList <#> toTree
+noteToTree :: Array Note -> NoteId -> Array Int -> Array NoteNode
+noteToTree notelist parentId parentP = mapWithIndex  toTree filterdList
   where
     filterdList = filter (\note -> note.parentId == parentId) notelist
-    toTree note = NoteNode {
+    toTree idx note = NoteNode {
       id: note.id
       , heading: note.heading
-      , children: noteToTree notelist note.id
+      , parentId: note.parentId
+      , path : snoc' parentP idx
+      , children: noteToTree notelist note.id $ toArray $ snoc' parentP idx
     }
 
 searchPrevNoteId :: Array Note -> NoteId -> Maybe NoteId
@@ -110,13 +114,36 @@ searchPrevNoteId notes id = do
     note <- index notes $ idx - 1
     pure note.id
 
+look :: Array NoteNode -> NodePath -> Maybe NoteNode
+look nodes path = do
+  let us = uncons path
+  current@(NoteNode curr) <- index nodes us.head 
+  if null us.tail 
+    then pure current
+    else do
+      tail <- fromArray us.tail
+      look curr.children tail
 
+parentPath :: NodePath -> Maybe NodePath
+parentPath path = do
+  let len = length path
+  if len == 1 
+    then Nothing
+    else fromArray $ init path
+
+prevPath :: NodePath -> Maybe NodePath
+prevPath path = do
+  let las = last path
+  let lasInx = (length path) - 1
+  if las == 0 
+    then Nothing
+    else updateAt lasInx (las - 1) path
 
 regFileLink :: Regex
 regFileLink = unsafeRegex "\\[\\[file-(.*?)\\]\\]" global
 
 renderNote :: forall  a. String -> Maybe String -> Int ->  NoteNode -> HH.HTML a Action
-renderNote ipfsGatway currentId level (NoteNode note)  = 
+renderNote ipfsGatway currentId level noteNode@(NoteNode note)  = 
   HH.li [ 
     HP.id note.id 
     , HE.onClick \ev -> ClickNote ev note.id 
@@ -129,15 +156,16 @@ renderNote ipfsGatway currentId level (NoteNode note)  =
       Just id | id == note.id -> HH.textarea [
         HP.value note.heading
         , HP.style "min-width: 100px;min-height: 30px;" 
-        , HE.onKeyUp \kbe -> HandleKeyUp note.id kbe
-        , HE.onKeyDown \kbe -> HandleKeyDown note.id kbe
+        , HE.onKeyUp \kbe -> HandleKeyUp noteNode kbe 
+        , HE.onKeyDown \kbe -> HandleKeyDown kbe
         , HE.onPaste IgnorePaste
         , HE.onValueInput \val -> Submit note.id val
+        , css "bg-gray-100"
         -- , HE.onBlur \_ -> ChangeEditID Nothing
       ]
 
       _ -> HH.div [ 
-        HP.class_ $ ClassName "head"
+        HP.class_ $ ClassName "head bg-gray-50"
       ] [ 
         RH.render_ $ replace regFileLink ("<img src=\"" <> ipfsGatway <> "$1\">") note.heading 
       ]
@@ -182,7 +210,7 @@ handleAction = case _ of
     case mb of 
       Just id -> H.liftEffect $ autoFocus id
       Nothing -> pure unit
-  New -> do
+  New pid -> do
     hostId <- H.gets _.topicId 
     nowTime <- now
     uuid <- H.liftEffect UUID.genUUID
@@ -195,7 +223,7 @@ handleAction = case _ of
       hostId,
       created: nowTime,
       updated: nowTime,
-      parentId: "",
+      parentId: pid,
       childrenIds: []
     }
     void $ addNote note
@@ -222,9 +250,9 @@ handleAction = case _ of
     topicId <- H.gets _.topicId
     notes <- getAllNotesByHostId topicId
     if null notes 
-      then handleAction New 
+      then handleAction $ New ""
       else do 
-        let nodes = logAny $ noteToTree notes ""
+        let nodes = noteToTree notes "" []
         H.modify_  _ { 
           noteList = notes 
           , renderNoteList = nodes
@@ -235,30 +263,39 @@ handleAction = case _ of
   Delete noteId -> do
     void $ deleteNote noteId
     handleAction $ ChangeEditID $ Nothing
-  Indent id -> do
-    notes <- H.gets _.noteList 
-    let pid = searchPrevNoteId notes id
-    case pid of
+  Indent id path -> do
+    nodes <- H.gets _.renderNoteList
+    let prevNode = prevPath path >>= look nodes
+    case prevNode of
       Nothing -> pure unit
-      Just pid' -> do
-        void $ updateNoteById id { parentId: pid' }
+      Just (NoteNode node) -> do
+        void $ updateNoteById id { parentId: node.id }
         handleAction InitNote
-        -- log $ "indent " <> id <> "+++++++" <> pid'
     pure unit
-  HandleKeyDown id kbe 
+  UnIndent id path -> do
+    nodes <- H.gets _.renderNoteList
+    let parentNode = parentPath path >>= look nodes
+    case parentNode of
+      Nothing -> pure unit
+      Just (NoteNode node) -> do
+        void $ updateNoteById id { parentId: node.parentId }
+        handleAction InitNote
+    pure unit
+  HandleKeyDown kbe 
     | KE.key kbe == "Enter" -> do 
       H.liftEffect $ preventDefault $ KE.toEvent kbe
     | KE.key kbe == "Tab" -> do 
       H.liftEffect $ preventDefault $ KE.toEvent kbe
     | otherwise -> pure unit
   
-  HandleKeyUp id kbe 
+  HandleKeyUp (NoteNode note) kbe 
+    | KE.shiftKey kbe && KE.key kbe == "Tab" -> do
+      handleAction $ UnIndent note.id note.path
     | KE.key kbe == "Enter" -> do 
       H.liftEffect $ preventDefault $ KE.toEvent kbe
-      handleAction New
+      handleAction $ New note.parentId
     | KE.key kbe == "Tab" -> do
-      handleAction $ Indent id 
-      pure unit
+      handleAction $ Indent note.id note.path
     | KE.key kbe == "Escape" -> do 
         handleAction $ ChangeEditID Nothing
         let maybeTarget = currentTarget $ KE.toEvent kbe
@@ -273,7 +310,7 @@ handleAction = case _ of
       case maybeText of 
         Nothing -> pure unit
         Just text 
-          | "" == text -> handleAction $ Delete id 
+          | "" == text -> handleAction $ Delete note.id 
           | otherwise -> pure unit 
     | otherwise -> pure unit
   EditNote ev id -> do 
@@ -295,7 +332,7 @@ handleAction = case _ of
     where
       isUpdate :: Maybe IPFS -> Maybe IPFS -> Boolean
       isUpdate Nothing Nothing = false
-      isUpdate (Just x) (Just y) = not $ unsafeRefEq (logAny x) (logAny y)
+      isUpdate (Just x) (Just y) = not $ unsafeRefEq (x) (y)
       isUpdate _ _ = true
 
 initialState :: ConnectedInput-> State

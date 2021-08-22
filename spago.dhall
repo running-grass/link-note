@@ -33,7 +33,6 @@ to generate this file without the comments in this block.
   , "routing-duplex"
   , "safe-coerce"
   , "strings"
-  , "tailrec"
   , "transformers"
   , "unsafe-reference"
   , "uuid"

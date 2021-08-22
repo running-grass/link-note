@@ -6,14 +6,13 @@ import Data.Maybe (Maybe(..))
 import Data.UUID as UUID
 import Effect.Aff.Class (class MonadAff)
 import Halogen as H
-import Halogen.HTML (HTML(..))
+import Halogen.HTML (HTML)
 import Halogen.HTML as HH
 import Halogen.HTML.Events as HE
 import Halogen.HTML.Properties as HP
 import Halogen.Store.Connect (Connected, connect)
 import Halogen.Store.Monad (class MonadStore)
 import Halogen.Store.Select (selectAll)
-import LinkNote.Capability.ManageIPFS (class ManageIPFS)
 import LinkNote.Capability.Now (class Now, now)
 import LinkNote.Capability.Resource.Note (class ManageNote)
 import LinkNote.Capability.Resource.Topic (class ManageTopic, createTopic, getTopics)
@@ -21,7 +20,6 @@ import LinkNote.Component.HTML.Utils (buttonClass, css, inputClass, safeHref)
 import LinkNote.Component.Store as LS
 import LinkNote.Data.Data (Topic)
 import LinkNote.Data.Route as LR
-import RxDB.Type (RxCollection)
 
 type Input = Unit
 
@@ -85,7 +83,7 @@ handleAction = case _ of
     H.modify_ _ { topicList = list }
 
 initialState :: ConnectedInput-> State
-initialState { context } = { 
+initialState _ = { 
   newTopicName : ""
   , topicList : []
 }

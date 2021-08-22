@@ -7,7 +7,6 @@ import Effect (Effect)
 import Effect.Aff (Aff, launchAff_, throwError)
 import Effect.Class (liftEffect)
 import Effect.Exception (error)
-import Halogen (liftAff)
 import Halogen as H
 import Halogen.Aff (awaitLoad, runHalogenAff, selectElement)
 import Halogen.VDom.Driver (runUI)

@@ -2,7 +2,8 @@ module LinkNote.Page.Topic where
 
 import Prelude
 
-import Data.Array (filter, findIndex, index, mapWithIndex, null)
+import Data.Array (cons, elemIndex, filter, findIndex, index, mapWithIndex, null)
+import Data.Array as Array 
 import Data.Array.NonEmpty (NonEmptyArray, fromArray, init, last, length, toArray, uncons, updateAt, snoc')
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.String.Regex (Regex, replace)
@@ -28,6 +29,7 @@ import LinkNote.Capability.Resource.Note (class ManageNote, addNote, deleteNote,
 import LinkNote.Capability.Resource.Topic (class ManageTopic)
 import LinkNote.Component.HTML.Utils (css)
 import LinkNote.Component.Store as LS
+import LinkNote.Component.Util (logAny)
 import LinkNote.Data.Data (File, Note, TopicId, NoteId)
 import RxDB.RxCollection (upsertA)
 import RxDB.Type (RxCollection)
@@ -61,6 +63,7 @@ type State = {
     renderNoteList :: Array NoteNode,
     ipfs :: Maybe IPFS,
     ipfsGatway :: String
+    , visionNoteIds :: Array NoteId
     }
 
 type Input = {
@@ -104,6 +107,26 @@ noteToTree notelist parentId parentP = mapWithIndex  toTree filterdList
       , path : snoc' parentP idx
       , children: noteToTree notelist note.id $ toArray $ snoc' parentP idx
     }
+
+treeToIdList :: Array NoteNode -> Array NoteId
+treeToIdList nodes = do
+  node' <- nodes
+  let (NoteNode  node) = node' 
+  cons node.id $ treeToIdList node.children
+
+visionPrevId :: Array NoteId -> NoteId -> Maybe NoteId
+visionPrevId ids id = do
+  currIdx <- elemIndex id ids 
+  if currIdx == 0 
+    then Nothing
+    else ids `index` (currIdx - 1)
+
+visionNextId :: Array NoteId -> NoteId -> Maybe NoteId
+visionNextId ids id = do
+  currIdx <- elemIndex id ids
+  if currIdx == (Array.length ids) - 1
+    then Nothing
+    else ids `index` (currIdx + 1)
 
 searchPrevNoteId :: Array Note -> NoteId -> Maybe NoteId
 searchPrevNoteId [] _ = Nothing
@@ -253,9 +276,11 @@ handleAction = case _ of
       then handleAction $ New ""
       else do 
         let nodes = noteToTree notes "" []
+        let ids = treeToIdList nodes
         H.modify_  _ { 
           noteList = notes 
           , renderNoteList = nodes
+          , visionNoteIds = ids
         }
   ClickNote mev nid -> do
     H.liftEffect $ stopPropagation $ ME.toEvent mev
@@ -304,6 +329,18 @@ handleAction = case _ of
             H.liftEffect $ doBlur target
           Nothing -> pure unit
 
+    | KE.key kbe == "ArrowUp" -> do 
+      ids <- H.gets _.visionNoteIds
+      let prevId = visionPrevId ids note.id
+      case prevId of
+        (Just id) -> handleAction $ ChangeEditID $ Just id
+        _ -> pure unit
+    | KE.key kbe == "ArrowDown" -> do 
+      ids <- H.gets _.visionNoteIds
+      let nextId = visionNextId ids note.id
+      case nextId of
+        (Just id) -> handleAction $ ChangeEditID $ Just id
+        _ -> pure unit
     | KE.key kbe == "Backspace" -> do 
       maybeText <- H.liftEffect $ getTextFromEvent $ KE.toEvent kbe
 
@@ -344,6 +381,7 @@ initialState { context, input } = {
   ipfs : context.ipfs,
   noteList : [],
   renderNoteList: []
+  , visionNoteIds: []
   }
 
 subscriptPaste :: forall m. MonadAff m => Maybe IPFS -> m (HS.Emitter Action)

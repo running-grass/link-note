@@ -5,6 +5,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [0.3.0] - 2021-08-22
 ### 新特性
 - 新页面 主题列表/主题详情/设置 页面
 - 支持主题概念，笔记要依赖于某个主题存在
@@ -43,7 +45,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Init Project
 
 
-[Unreleased]: https://github.com/running-grass/learn-purs/compare/0.2.2...HEAD
+[Unreleased]: https://github.com/link-note/link-note/compare/0.3.0...HEAD
+[0.3.0]: https://github.com/link-note/link-note/compare/0.2.2...0.3.0
 [0.2.2]: https://github.com/running-grass/learn-purs/compare/0.2.1...0.2.2
 [0.2.1]: https://github.com/running-grass/learn-purs/compare/0.2.0...0.2.1
 [0.2.0]: https://github.com/running-grass/learn-purs/compare/0.1.0...0.2.0

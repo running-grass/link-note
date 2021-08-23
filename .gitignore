@@ -18,7 +18,7 @@ dist
 release
 
 # 编辑器相关
-.vscode
+# .vscode
 
 # log文件
 *.log

@@ -16,6 +16,7 @@ import Halogen.Store.Connect (Connected, connect)
 import Halogen.Store.Monad (class MonadStore, updateStore)
 import Halogen.Store.Select (selectAll)
 import IPFS (IPFS)
+import LinkNote.Capability.ManageFile (class ManageFile)
 import LinkNote.Capability.ManageIPFS (class ManageIPFS)
 import LinkNote.Capability.Navigate (class Navigate, navigate)
 import LinkNote.Capability.Now (class Now)
@@ -32,6 +33,8 @@ import LinkNote.Page.TopicList as TopicList
 import Routing.Duplex as RD
 import Routing.Hash (getHash)
 import Type.Proxy (Proxy(..))
+
+
 
 type OpaqueSlot slot = forall query. H.Slot query Void slot
 
@@ -88,6 +91,7 @@ component :: forall m. MonadAff m
   => Now m
   => ManageIPFS m
   => ManageNote m 
+  => ManageFile m
   => H.Component Query Input Void m
 component = connect selectAll $ H.mkComponent
   { 

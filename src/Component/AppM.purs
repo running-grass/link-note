@@ -12,6 +12,7 @@ import Effect.Now as Now
 import Halogen as H
 import Halogen.Store.Monad (class MonadStore, StoreT, getStore, runStoreT)
 import IPFS (IPFS)
+import LinkNote.Capability.ManageFile (class ManageFile)
 import LinkNote.Capability.ManageIPFS (class ManageIPFS)
 import LinkNote.Capability.Navigate (class Navigate)
 import LinkNote.Capability.Now (class Now)
@@ -139,4 +140,10 @@ instance manageNoteAppM :: ManageNote AppM where
   updateNoteById id notePatch = do
     { collNote } <- getStore
     liftAff $ updateDocById collNote id notePatch
+    pure true
+
+instance manageFileAppM :: ManageFile AppM where
+  addFile file = do
+    { collFile } <- getStore
+    liftAff $ insertDoc collFile file
     pure true

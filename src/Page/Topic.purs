@@ -3,7 +3,7 @@ module LinkNote.Page.Topic where
 import Prelude
 
 import Data.Array (cons, elemIndex, filter, findIndex, index, mapWithIndex, null)
-import Data.Array as Array 
+import Data.Array as Array
 import Data.Array.NonEmpty (NonEmptyArray, fromArray, init, last, length, toArray, uncons, updateAt, snoc')
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.String.Regex (Regex, replace)
@@ -23,6 +23,7 @@ import Halogen.Store.Select (selectAll)
 import Halogen.Subscription as HS
 import Html.Renderer.Halogen as RH
 import IPFS (IPFS)
+import LinkNote.Capability.ManageFile (class ManageFile, addFile)
 import LinkNote.Capability.ManageIPFS (class ManageIPFS, getIpfsGatewayPrefix)
 import LinkNote.Capability.Now (class Now, now)
 import LinkNote.Capability.Resource.Note (class ManageNote, addNote, deleteNote, getAllNotesByHostId, updateNoteById)
@@ -30,9 +31,7 @@ import LinkNote.Capability.Resource.Topic (class ManageTopic)
 import LinkNote.Component.HTML.Utils (css)
 import LinkNote.Component.Store as LS
 import LinkNote.Component.Util (logAny)
-import LinkNote.Data.Data (File, Note, TopicId, NoteId)
-import RxDB.RxCollection (upsertA)
-import RxDB.Type (RxCollection)
+import LinkNote.Data.Data (Note, NoteId, TopicId)
 import Unsafe.Reference (unsafeRefEq)
 import Web.Clipboard.ClipboardEvent as CE
 import Web.Event.Event (Event, currentTarget, preventDefault, stopPropagation, target)
@@ -40,7 +39,6 @@ import Web.Event.Internal.Types (EventTarget)
 import Web.HTML.HTMLTextAreaElement as HTAE
 import Web.UIEvent.KeyboardEvent as KE
 import Web.UIEvent.MouseEvent as ME
-
 
 foreign import doBlur :: EventTarget -> Effect Unit
 foreign import innerText :: EventTarget -> Effect String
@@ -58,7 +56,6 @@ newtype NoteNode = NoteNode {
 type State = { 
     topicId :: TopicId,
     currentId :: Maybe String,
-    collFile :: RxCollection File,
     noteList :: Array Note,
     renderNoteList :: Array NoteNode,
     ipfs :: Maybe IPFS,
@@ -77,6 +74,7 @@ type NodePath = NonEmptyArray Int
 data Action
   = Submit String String 
   | InitNote 
+  | AutoFoucs
   | New NoteId
   | IgnorePaste CE.ClipboardEvent
   | HandleKeyUp NoteNode KE.KeyboardEvent
@@ -225,11 +223,14 @@ handleAction :: forall cs o m .
   ManageTopic m =>
   ManageIPFS m =>
   ManageNote m =>
+  ManageFile m =>
   Action → H.HalogenM State Action cs o m Unit
 handleAction = case _ of
   ChangeEditID mb -> do 
     H.modify_ _ { currentId = mb}
     handleAction InitNote
+  AutoFoucs -> do
+    mb <- H.gets _.currentId 
     case mb of 
       Just id -> H.liftEffect $ autoFocus id
       Nothing -> pure unit
@@ -255,14 +256,10 @@ handleAction = case _ of
     nowTime <- now
     void $ updateNoteById noteId { heading: note, updated: nowTime }
   SubmitIpfs path -> do
-    collFile <- H.gets _.collFile
-
     let fileId = "file-" <> path
-    void $ H.liftAff $ upsertA collFile { cid: path,  id: fileId, mime: "", type: "" }
-    
+    void $ addFile { cid: path,  id: fileId, mime: "", type: "" }
     let appendText = "[[" <> fileId <> "]]"
-    _ <- H.liftEffect $ insertText appendText
-    pure unit 
+    void $ H.liftEffect $ insertText appendText
   InitComp -> do
     handleAction InitNote
     maybeIpfs <- H.gets _.ipfs
@@ -282,6 +279,8 @@ handleAction = case _ of
           , renderNoteList = nodes
           , visionNoteIds = ids
         }
+    handleAction AutoFoucs
+
   ClickNote mev nid -> do
     H.liftEffect $ stopPropagation $ ME.toEvent mev
     handleAction $ Edit nid 
@@ -310,16 +309,21 @@ handleAction = case _ of
     | KE.key kbe == "Enter" -> do 
       H.liftEffect $ preventDefault $ KE.toEvent kbe
     | KE.key kbe == "Tab" -> do 
+      H.liftEffect $ stopPropagation $ KE.toEvent kbe
       H.liftEffect $ preventDefault $ KE.toEvent kbe
     | otherwise -> pure unit
   
   HandleKeyUp (NoteNode note) kbe 
     | KE.shiftKey kbe && KE.key kbe == "Tab" -> do
+      H.liftEffect $ stopPropagation $ KE.toEvent kbe
+      H.liftEffect $ preventDefault $ KE.toEvent kbe
       handleAction $ UnIndent note.id note.path
     | KE.key kbe == "Enter" -> do 
       H.liftEffect $ preventDefault $ KE.toEvent kbe
       handleAction $ New note.parentId
     | KE.key kbe == "Tab" -> do
+      H.liftEffect $ stopPropagation $ KE.toEvent kbe
+      H.liftEffect $ preventDefault $ KE.toEvent kbe
       handleAction $ Indent note.id note.path
     | KE.key kbe == "Escape" -> do 
         handleAction $ ChangeEditID Nothing
@@ -377,7 +381,6 @@ initialState { context, input } = {
   topicId: input.topicId,
   currentId: Nothing,
   ipfsGatway: "https://dweb.link/ipfs/",
-  collFile : context.collFile,
   ipfs : context.ipfs,
   noteList : [],
   renderNoteList: []
@@ -397,6 +400,7 @@ component :: forall q o m.
   ManageIPFS m =>
   ManageTopic m =>
   ManageNote m =>
+  ManageFile m =>
   H.Component q Input o m
 component = connect selectAll $ H.mkComponent
     { 

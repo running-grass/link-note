@@ -2,8 +2,7 @@
 
 
 ## try me
-最新版(v0.2.3)IPFS链接：  
-HTTP版本： https://link-note.app/  
+最新版(v0.2.3)链接： https://link-note.app/  
 
 ## 开发进度
 https://sharing.clickup.com/b/h/4-7810727-2/4eeed303c8bfb07

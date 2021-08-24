@@ -23,16 +23,16 @@ import Halogen.Store.Select (selectAll)
 import Halogen.Subscription as HS
 import Html.Renderer.Halogen as RH
 import IPFS (IPFS)
-import LinkNote.Capability.LogMessages (class LogMessages, logDebug, logError, logMessage)
+import LinkNote.Capability.LogMessages (class LogMessages, logDebug)
 import LinkNote.Capability.ManageFile (class ManageFile, addFile)
 import LinkNote.Capability.ManageIPFS (class ManageIPFS, getIpfsGatewayPrefix)
 import LinkNote.Capability.Now (class Now, now)
 import LinkNote.Capability.Resource.Note (class ManageNote, addNote, deleteNote, getAllNotesByHostId, updateNoteById)
-import LinkNote.Capability.Resource.Topic (class ManageTopic)
+import LinkNote.Capability.Resource.Topic (class ManageTopic, getTopic)
 import LinkNote.Component.HTML.Utils (css)
 import LinkNote.Component.Store as LS
 import LinkNote.Component.Util (liftMaybe, logAny)
-import LinkNote.Data.Data (Note, NoteId, TopicId)
+import LinkNote.Data.Data (Note, NoteId, TopicId, Topic)
 import Unsafe.Reference (unsafeRefEq)
 import Web.Clipboard.ClipboardEvent as CE
 import Web.Event.Event (Event, currentTarget, preventDefault, stopPropagation, target)
@@ -56,6 +56,7 @@ newtype NoteNode = NoteNode {
 
 type State = { 
     topicId :: TopicId,
+    topic :: Maybe Topic,
     currentId :: Maybe String,
     noteList :: Array Note,
     renderNoteList :: Array NoteNode,
@@ -94,9 +95,10 @@ data Action
 
 foreign import addPasteListenner :: (forall a. a -> Maybe a -> a) -> Maybe IPFS -> (Function String (Effect Unit)) -> Effect Unit
 
+type NoteSort = Array NoteId
 
-noteToTree :: Array Note -> NoteId -> Array Int -> Array NoteNode
-noteToTree notelist parentId parentP = mapWithIndex  toTree filterdList
+noteToTree :: Array Note -> NoteId -> Array Int -> NoteSort -> Array NoteNode
+noteToTree notelist parentId parentP sortIds = mapWithIndex  toTree filterdList
   where
     filterdList = filter (\note -> note.parentId == parentId) notelist
     toTree idx note = NoteNode {
@@ -104,7 +106,7 @@ noteToTree notelist parentId parentP = mapWithIndex  toTree filterdList
       , heading: note.heading
       , parentId: note.parentId
       , path : snoc' parentP idx
-      , children: noteToTree notelist note.id $ toArray $ snoc' parentP idx
+      , children: noteToTree notelist note.id (toArray $ snoc' parentP idx) note.childrenIds
     }
 
 treeToIdList :: Array NoteNode -> Array NoteId
@@ -269,16 +271,19 @@ handleAction = case _ of
     H.modify_ _ { ipfsGatway = ipfsGatway}
   InitNote -> do
     topicId <- H.gets _.topicId
+    topic <- getTopic topicId
+    topic_ <- liftMaybe topic
     notes <- getAllNotesByHostId topicId
     if null notes 
       then handleAction $ New ""
       else do 
-        let nodes = noteToTree notes "" []
+        let nodes = noteToTree notes "" [] topic_.noteIds
         let ids = treeToIdList nodes
         H.modify_  _ { 
           noteList = notes 
           , renderNoteList = nodes
           , visionNoteIds = ids
+          , topic = topic
         }
         logDebug "笔记列表已刷新"
     handleAction AutoFoucs
@@ -382,6 +387,7 @@ initialState :: ConnectedInput-> State
 initialState { context, input } = { 
   topicId: input.topicId,
   currentId: Nothing,
+  topic: Nothing,
   ipfsGatway: "https://dweb.link/ipfs/",
   ipfs : context.ipfs,
   noteList : [],

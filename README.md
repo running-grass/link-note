@@ -78,3 +78,8 @@ pnpm debug
 1. 在src/Component目录中参考已有能力，增加一个文件。定义好需要的接口
 2. 在AppM中去实现这个接口中的各个函数
 3. 在Router.purs中为根组件声明这个能力Monad，在需要的页面组件中声明这个Monad.如果需要在工具函数中使用该能力也要声明。
+
+#### Q&A
+1. 增加一个能力后，编译成功，但是控制台报错`Uncaught TypeError: component.initialState is not a function`，怎么办
+   
+   本质问题未知，但是可以解决。在AppM随便更改，让其重新编译，然后在Router.purs改改

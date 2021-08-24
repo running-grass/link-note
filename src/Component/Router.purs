@@ -16,6 +16,7 @@ import Halogen.Store.Connect (Connected, connect)
 import Halogen.Store.Monad (class MonadStore, updateStore)
 import Halogen.Store.Select (selectAll)
 import IPFS (IPFS)
+import LinkNote.Capability.LogMessages (class LogMessages)
 import LinkNote.Capability.ManageFile (class ManageFile)
 import LinkNote.Capability.ManageIPFS (class ManageIPFS)
 import LinkNote.Capability.Navigate (class Navigate, navigate)
@@ -47,18 +48,8 @@ foreign import getGlobalIPFS :: (forall x. x -> Maybe x)
                                 -> String 
                                 -> Effect (Promise (Maybe IPFS))
 
-
 getGlobalIPFSA :: String -> Aff (Maybe IPFS)
 getGlobalIPFSA addr = toAffE $ getGlobalIPFS Just Nothing addr
-
-foreign import _liftMaybeToPromise :: forall x . 
-                                      (forall a. a → Maybe a → a)
-                                      -> Maybe x 
-                                      -> Effect (Promise x)
-
-
-liftMaybe :: forall m a. MonadAff m => Maybe a -> m a 
-liftMaybe mb = H.liftAff $ toAffE $ _liftMaybeToPromise (fromMaybe) mb
 
 getIpfsAddrByType :: IPFSInstanceType -> String
 getIpfsAddrByType Unused = "none"
@@ -101,8 +92,9 @@ component :: forall m. MonadAff m
   => ManageTopic m
   => Now m
   => ManageIPFS m
-  => ManageNote m 
+  => ManageNote m  
   => ManageFile m
+  => LogMessages m
   => H.Component Query Input Void m
 component = connect selectAll $ H.mkComponent
   { 

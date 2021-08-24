@@ -23,6 +23,7 @@ import Halogen.Store.Select (selectAll)
 import Halogen.Subscription as HS
 import Html.Renderer.Halogen as RH
 import IPFS (IPFS)
+import LinkNote.Capability.LogMessages (class LogMessages, logDebug, logError, logMessage)
 import LinkNote.Capability.ManageFile (class ManageFile, addFile)
 import LinkNote.Capability.ManageIPFS (class ManageIPFS, getIpfsGatewayPrefix)
 import LinkNote.Capability.Now (class Now, now)
@@ -223,6 +224,7 @@ handleAction :: forall cs o m .
   ManageTopic m =>
   ManageIPFS m =>
   ManageNote m =>
+  LogMessages m =>
   ManageFile m =>
   Action → H.HalogenM State Action cs o m Unit
 handleAction = case _ of
@@ -278,6 +280,7 @@ handleAction = case _ of
           , renderNoteList = nodes
           , visionNoteIds = ids
         }
+        logDebug "笔记列表已刷新"
     handleAction AutoFoucs
 
   ClickNote mev nid -> do
@@ -397,6 +400,7 @@ component :: forall q o m.
   MonadStore LS.Action LS.Store m => 
   Now m =>
   ManageIPFS m =>
+  LogMessages m =>
   ManageTopic m =>
   ManageNote m =>
   ManageFile m =>

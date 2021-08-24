@@ -14,6 +14,7 @@ derive instance ordLogLevel :: Ord LogLevel
 
 type Store = { 
     ipfs :: Maybe IPFS
+    , logLevel :: LogLevel
     , collTopic :: RxCollection Topic
     , collNote :: RxCollection Note
     , collFile :: RxCollection File

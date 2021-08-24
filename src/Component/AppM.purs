@@ -12,17 +12,22 @@ import Effect.Now as Now
 import Halogen as H
 import Halogen.Store.Monad (class MonadStore, StoreT, getStore, runStoreT)
 import IPFS (IPFS)
+import LinkNote.Capability.LogMessages (class LogMessages)
 import LinkNote.Capability.ManageFile (class ManageFile)
 import LinkNote.Capability.ManageIPFS (class ManageIPFS)
 import LinkNote.Capability.Navigate (class Navigate)
 import LinkNote.Capability.Now (class Now)
 import LinkNote.Capability.Resource.Note (class ManageNote)
 import LinkNote.Capability.Resource.Topic (class ManageTopic)
+import LinkNote.Component.Store (LogLevel(..))
 import LinkNote.Component.Store as Store
+import LinkNote.Data.Log as Log
 import LinkNote.Data.Route as Route
 import Routing.Duplex (print)
 import Routing.Hash (setHash)
 import RxDB.Type (RxCollection)
+import Effect.Console as Console
+
 import Safe.Coerce (coerce)
 
 
@@ -147,3 +152,10 @@ instance manageFileAppM :: ManageFile AppM where
     { collFile } <- getStore
     liftAff $ insertDoc collFile file
     pure true
+
+instance logMessagesAppM :: LogMessages AppM where
+  logMessage log = do
+    { logLevel } <- getStore
+    liftEffect case logLevel, Log.reason log of
+      Prod, Log.Debug -> pure unit
+      _, _ -> Console.log $ Log.message log

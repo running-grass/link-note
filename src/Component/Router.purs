@@ -47,8 +47,18 @@ foreign import getGlobalIPFS :: (forall x. x -> Maybe x)
                                 -> String 
                                 -> Effect (Promise (Maybe IPFS))
 
+
 getGlobalIPFSA :: String -> Aff (Maybe IPFS)
 getGlobalIPFSA addr = toAffE $ getGlobalIPFS Just Nothing addr
+
+foreign import _liftMaybeToPromise :: forall x . 
+                                      (forall a. a → Maybe a → a)
+                                      -> Maybe x 
+                                      -> Effect (Promise x)
+
+
+liftMaybe :: forall m a. MonadAff m => Maybe a -> m a 
+liftMaybe mb = H.liftAff $ toAffE $ _liftMaybeToPromise (fromMaybe) mb
 
 getIpfsAddrByType :: IPFSInstanceType -> String
 getIpfsAddrByType Unused = "none"
@@ -83,7 +93,8 @@ initialState :: forall a. a -> State
 initialState _ = { 
   route: Nothing
 }
- 
+
+
 component :: forall m. MonadAff m
   => MonadStore Store.Action Store.Store m
   => Navigate m

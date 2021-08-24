@@ -6,6 +6,7 @@ const ipfsCore = require('ipfs-core');
 
 const ipfsHttpClient = require('ipfs-http-client');
 
+
 exports.getGlobalIPFS = just => nothing => (addr) => () => {
     let provider = null;
     console.log(addr, 'ipfs');

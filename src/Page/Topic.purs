@@ -30,7 +30,7 @@ import LinkNote.Capability.Resource.Note (class ManageNote, addNote, deleteNote,
 import LinkNote.Capability.Resource.Topic (class ManageTopic)
 import LinkNote.Component.HTML.Utils (css)
 import LinkNote.Component.Store as LS
-import LinkNote.Component.Util (logAny)
+import LinkNote.Component.Util (liftMaybe, logAny)
 import LinkNote.Data.Data (Note, NoteId, TopicId)
 import Unsafe.Reference (unsafeRefEq)
 import Web.Clipboard.ClipboardEvent as CE
@@ -230,10 +230,9 @@ handleAction = case _ of
     H.modify_ _ { currentId = mb}
     handleAction InitNote
   AutoFoucs -> do
-    mb <- H.gets _.currentId 
-    case mb of 
-      Just id -> H.liftEffect $ autoFocus id
-      Nothing -> pure unit
+    maybeId <- H.gets _.currentId 
+    id <- liftMaybe maybeId
+    H.liftEffect $ autoFocus id
   New pid -> do
     hostId <- H.gets _.topicId 
     nowTime <- now

@@ -30,6 +30,7 @@ to generate this file without the comments in this block.
   , "maybe"
   , "now"
   , "option"
+  , "partial"
   , "prelude"
   , "psci-support"
   , "record"

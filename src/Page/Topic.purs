@@ -35,7 +35,7 @@ import LinkNote.Capability.Resource.Note (class ManageNote, addNote, deleteNote,
 import LinkNote.Capability.Resource.Topic (class ManageTopic, getTopic, updateTopicById)
 import LinkNote.Component.HTML.Utils (css)
 import LinkNote.Component.Store as LS
-import LinkNote.Component.Util (liftMaybe)
+import LinkNote.Component.Util (liftMaybe, swapElem)
 import LinkNote.Data.Data (Note, NoteId, TopicId, Topic)
 import Unsafe.Reference (unsafeRefEq)
 import Web.Clipboard.ClipboardEvent as CE
@@ -421,48 +421,83 @@ handleAction = case _ of
       pure unit
   
   HandleKeyUp (NoteNode note) kbe 
-    | KE.shiftKey kbe && KE.key kbe == "Tab" -> do
-      H.liftEffect $ stopPropagation $ KE.toEvent kbe
-      H.liftEffect $ preventDefault $ KE.toEvent kbe
-      handleAction $ UnIndent note.id note.path
-    | KE.key kbe == "Enter" -> do 
-      H.liftEffect $ preventDefault $ KE.toEvent kbe
-      handleAction $ New note.parentId insertIdx
-      where 
-        insertIdx = 1 + last note.path
-    | KE.key kbe == "Tab" -> do
-      H.liftEffect $ stopPropagation $ KE.toEvent kbe
-      H.liftEffect $ preventDefault $ KE.toEvent kbe
-      -- logDebug $ "缩进元素的path为" <> show note.path
-      handleAction $ Indent note.id note.path
-    | KE.key kbe == "Escape" -> do 
-        handleAction $ ChangeEditID Nothing
-        let maybeTarget = currentTarget $ KE.toEvent kbe
-        case maybeTarget of
-          Just target -> do 
-            H.liftEffect $ doBlur target
-          Nothing -> pure unit
-
-    | KE.key kbe == "ArrowUp" -> do 
-      ids <- H.gets _.visionNoteIds
-      let prevId = visionPrevId ids note.id
-      case prevId of
-        (Just id) -> handleAction $ ChangeEditID $ Just id
+    | KE.shiftKey kbe -> do
+      case KE.key kbe of
+        "Tab" -> do
+          H.liftEffect $ stopPropagation $ KE.toEvent kbe
+          H.liftEffect $ preventDefault $ KE.toEvent kbe
+          handleAction $ UnIndent note.id note.path
+        "ArrowUp" -> do
+          H.liftEffect $ stopPropagation $ KE.toEvent kbe
+          H.liftEffect $ preventDefault $ KE.toEvent kbe
+          let path = note.path
+          nodes <- H.gets _.renderNoteList
+          NoteNode parentNode <- liftMaybe $ parentPath path >>= look nodes
+          let currentIdx = last path
+          if currentIdx == 0 
+            then pure unit
+            else handleAction $ UpdateSortInParent parentNode.id $ \arr -> fromMaybe arr (swapElem currentIdx (currentIdx - 1) arr)
+          handleAction InitNote
+          pure unit
+        "ArrowDown" -> do
+          H.liftEffect $ stopPropagation $ KE.toEvent kbe
+          H.liftEffect $ preventDefault $ KE.toEvent kbe
+          let path = note.path
+          nodes <- H.gets _.renderNoteList
+          NoteNode parentNode <- liftMaybe $ parentPath path >>= look nodes
+          let currentIdx = last path
+          if currentIdx == (length parentNode.children) - 1 
+            then pure unit
+            else handleAction $ UpdateSortInParent parentNode.id $ \arr -> fromMaybe arr (swapElem currentIdx (currentIdx + 1) arr)
+          handleAction InitNote
+          pure unit
+        _ -> do
+          pure unit
+    | KE.altKey kbe -> do
+      pure unit
+    | KE.metaKey kbe -> do
+      pure unit
+    | KE.ctrlKey kbe -> do 
+      pure unit
+    | (not KE.shiftKey kbe) && (not KE.ctrlKey kbe) && (not KE.altKey kbe) && (not KE.metaKey kbe)-> do
+      case KE.key kbe of
+        "Enter" -> do 
+          H.liftEffect $ preventDefault $ KE.toEvent kbe
+          handleAction $ New note.parentId insertIdx
+          where 
+            insertIdx = 1 + last note.path
+        "Tab" -> do
+          H.liftEffect $ stopPropagation $ KE.toEvent kbe
+          H.liftEffect $ preventDefault $ KE.toEvent kbe
+          -- logDebug $ "缩进元素的path为" <> show note.path
+          handleAction $ Indent note.id note.path
+        "Escape" -> do 
+          handleAction $ ChangeEditID Nothing
+          let maybeTarget = currentTarget $ KE.toEvent kbe
+          case maybeTarget of
+            Just target -> do 
+              H.liftEffect $ doBlur target
+            Nothing -> pure unit
+        "ArrowUp" -> do 
+          ids <- H.gets _.visionNoteIds
+          let prevId = visionPrevId ids note.id
+          case prevId of
+            (Just id) -> handleAction $ ChangeEditID $ Just id
+            _ -> pure unit
+        "ArrowDown" -> do 
+          ids <- H.gets _.visionNoteIds
+          let nextId = visionNextId ids note.id
+          case nextId of
+            (Just id) -> handleAction $ ChangeEditID $ Just id
+            _ -> pure unit
+        "Backspace" -> do 
+          maybeText <- H.liftEffect $ getTextFromEvent $ KE.toEvent kbe
+          case maybeText of 
+            Nothing -> pure unit
+            Just text 
+              | "" == text -> handleAction $ Delete note.id 
+              | otherwise -> pure unit 
         _ -> pure unit
-    | KE.key kbe == "ArrowDown" -> do 
-      ids <- H.gets _.visionNoteIds
-      let nextId = visionNextId ids note.id
-      case nextId of
-        (Just id) -> handleAction $ ChangeEditID $ Just id
-        _ -> pure unit
-    | KE.key kbe == "Backspace" -> do 
-      maybeText <- H.liftEffect $ getTextFromEvent $ KE.toEvent kbe
-
-      case maybeText of 
-        Nothing -> pure unit
-        Just text 
-          | "" == text -> handleAction $ Delete note.id 
-          | otherwise -> pure unit 
     | otherwise -> pure unit
   EditNote ev id -> do 
     maybeText <- H.liftEffect $ getTextFromEvent ev

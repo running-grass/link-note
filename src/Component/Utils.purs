@@ -5,6 +5,7 @@ import Prelude
 import Control.Promise (Promise, toAffE)
 import Data.Maybe (Maybe, fromMaybe)
 import Effect (Effect)
+import Effect.Aff (Aff)
 import Effect.Aff.Class (class MonadAff, liftAff)
 
 foreign import logAny :: forall a. a -> a
@@ -16,5 +17,8 @@ foreign import _liftMaybeToPromise :: forall x .
                                       -> Effect (Promise x)
 
 liftMaybe :: forall m a. MonadAff m => Maybe a -> m a 
-liftMaybe mb = liftAff $ toAffE $ _liftMaybeToPromise (fromMaybe) mb
+liftMaybe mb = liftAff aff
+    where 
+        aff :: Aff a
+        aff = toAffE $ _liftMaybeToPromise (fromMaybe) mb
  

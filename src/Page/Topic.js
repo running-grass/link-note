@@ -34,8 +34,6 @@ exports.addPasteListenner = (fromMaybe) => (maybeIpfs) => (callback, callbackTex
             }
         }
     }
-
-    console.debug('已经绑定了粘贴事件');
 }
 
 
@@ -53,8 +51,9 @@ exports.insertText = (text) => () => {
 
 exports.autoFocus  = (id) => () => {
     setTimeout(() => {
-        const tar = document.querySelector(`li#${id} textarea`);
-        // console.log(tar);
-        tar.focus();
+        const target = document.querySelector(`li#${id || 'dummy'} textarea`);
+        if (target) {
+            target.focus();
+        }
     })
 }

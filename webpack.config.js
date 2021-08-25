@@ -26,7 +26,7 @@ const plugins =
   ;
 
 module.exports = {
-  devtool: isDebug ? 'eval-source-map' : 'none',
+  devtool: isDebug ? 'source-map' : 'none',
 
   devServer: {
     // noInfo: true,

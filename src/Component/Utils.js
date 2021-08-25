@@ -9,6 +9,6 @@ exports._liftMaybeToPromise = fromMaybe => maybe => () => {
     if (val !== null) {
         return Promise.resolve(val);
     } else {
-        return Promise.reject();
+        return Promise.reject(new Error("需要增加catch"));
     }
 }

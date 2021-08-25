@@ -41,7 +41,7 @@ awaitRoot = do
 main :: Effect Unit
 main = runHalogenAff do
     app <- awaitRoot 
-    db <- initRxDBA unit
+    db <- initRxDBA unit 
     collNote <- getCollection db "note"
     collTopic <- getCollection db "topic"
     collFile <- getCollection db "file"

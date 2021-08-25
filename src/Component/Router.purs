@@ -90,7 +90,7 @@ component :: forall m. MonadAff m
   => MonadStore Store.Action Store.Store m
   => Navigate m
   => ManageTopic m
-  => Now m
+  => Now m 
   => ManageIPFS m
   => ManageNote m  
   => ManageFile m

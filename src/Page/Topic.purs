@@ -2,10 +2,14 @@ module LinkNote.Page.Topic where
 
 import Prelude
 
-import Data.Array (cons, elemIndex, filter, findIndex, index, mapWithIndex, null)
+import Control.Alternative ((<|>))
+import Control.Monad.State (class MonadState)
+import Data.Array (cons, elemIndex, filter, findIndex, index, mapWithIndex, null, sortWith)
 import Data.Array as Array
-import Data.Array.NonEmpty (NonEmptyArray, fromArray, init, last, length, toArray, uncons, updateAt, snoc')
-import Data.Maybe (Maybe(..), fromMaybe)
+import Data.Array.NonEmpty (NonEmptyArray, fromArray, init, last, snoc', toArray, uncons, updateAt)
+import Data.Array.NonEmpty as NArray
+import Data.Foldable (length)
+import Data.Maybe (Maybe(..), fromMaybe, fromMaybe')
 import Data.String.Regex (Regex, replace)
 import Data.String.Regex.Flags (global)
 import Data.String.Regex.Unsafe (unsafeRegex)
@@ -23,15 +27,15 @@ import Halogen.Store.Select (selectAll)
 import Halogen.Subscription as HS
 import Html.Renderer.Halogen as RH
 import IPFS (IPFS)
-import LinkNote.Capability.LogMessages (class LogMessages, logDebug)
+import LinkNote.Capability.LogMessages (class LogMessages, logAny, logDebug, logDebugAny)
 import LinkNote.Capability.ManageFile (class ManageFile, addFile)
 import LinkNote.Capability.ManageIPFS (class ManageIPFS, getIpfsGatewayPrefix)
 import LinkNote.Capability.Now (class Now, now)
 import LinkNote.Capability.Resource.Note (class ManageNote, addNote, deleteNote, getAllNotesByHostId, updateNoteById)
-import LinkNote.Capability.Resource.Topic (class ManageTopic, getTopic)
+import LinkNote.Capability.Resource.Topic (class ManageTopic, getTopic, updateTopicById)
 import LinkNote.Component.HTML.Utils (css)
 import LinkNote.Component.Store as LS
-import LinkNote.Component.Util (liftMaybe, logAny)
+import LinkNote.Component.Util (liftMaybe)
 import LinkNote.Data.Data (Note, NoteId, TopicId, Topic)
 import Unsafe.Reference (unsafeRefEq)
 import Web.Clipboard.ClipboardEvent as CE
@@ -53,6 +57,8 @@ newtype NoteNode = NoteNode {
   , parentId :: NoteId
   , path :: NonEmptyArray Int
 }
+
+-- derive newtype instance Eq NoteNode
 
 type State = { 
     topicId :: TopicId,
@@ -77,7 +83,7 @@ data Action
   = Submit String String 
   | InitNote 
   | AutoFoucs
-  | New NoteId
+  | New NoteId Int -- int 为在父元素中的索引
   | IgnorePaste CE.ClipboardEvent
   | HandleKeyUp NoteNode KE.KeyboardEvent
   | HandleKeyDown KE.KeyboardEvent
@@ -91,16 +97,33 @@ data Action
   | EditNote Event String 
   | ClickNote ME.MouseEvent NoteId
   | ChangeEditID (Maybe String)
+  | UpdateSortInParent String (NoteSort -> NoteSort)
+  | DeleteSortInParent String NoteId
+  | InsertSortInParent String NoteId Int -- maybe noteid为插入到哪个元素后面
+  | MoveSort NoteId String String Int -- 把noteid从哪里到哪里
+
 
 
 foreign import addPasteListenner :: (forall a. a -> Maybe a -> a) -> Maybe IPFS -> (Function String (Effect Unit)) -> Effect Unit
 
 type NoteSort = Array NoteId
 
+-- render :: forall cs m. State -> H.ComponentHTML Action cs m
+
+
+findNote :: forall m .
+  MonadState State m =>
+  MonadAff m => 
+  String -> m Note
+findNote id = do 
+  notes <- H.gets _.noteList
+  liftMaybe $ Array.find (\n -> n.id == id) notes
+
 noteToTree :: Array Note -> NoteId -> Array Int -> NoteSort -> Array NoteNode
-noteToTree notelist parentId parentP sortIds = mapWithIndex  toTree filterdList
+noteToTree notelist parentId parentP sortIds =  mapWithIndex toTree $ sortChild filterdList
   where
-    filterdList = filter (\note -> note.parentId == parentId) notelist
+    filterdList :: Array Note
+    filterdList = filter (\note -> note.parentId == parentId && (Array.elem note.id sortIds) ) notelist
     toTree idx note = NoteNode {
       id: note.id
       , heading: note.heading
@@ -108,6 +131,8 @@ noteToTree notelist parentId parentP sortIds = mapWithIndex  toTree filterdList
       , path : snoc' parentP idx
       , children: noteToTree notelist note.id (toArray $ snoc' parentP idx) note.childrenIds
     }
+    sortChild :: Array Note -> Array Note
+    sortChild = sortWith \node -> fromMaybe (length sortIds) (elemIndex node.id sortIds)    
 
 treeToIdList :: Array NoteNode -> Array NoteId
 treeToIdList nodes = do
@@ -148,6 +173,16 @@ look nodes path = do
       tail <- fromArray us.tail
       look curr.children tail
 
+flatten_ :: NoteNode -> Array NoteNode 
+flatten_ node@(NoteNode node_) = Array.cons node (Array.concatMap flatten_ node_.children)
+
+flatten :: Array NoteNode -> Array NoteNode 
+flatten nodes = Array.concatMap flatten_ nodes
+
+findNode :: NoteId -> Array NoteNode -> Maybe NoteNode
+findNode id nodes = Array.find (\(NoteNode n) -> n.id == id) $ flatten nodes
+
+
 parentPath :: NodePath -> Maybe NodePath
 parentPath path = do
   let len = length path
@@ -165,6 +200,12 @@ prevPath path = do
 
 regFileLink :: Regex
 regFileLink = unsafeRegex "\\[\\[file-(.*?)\\]\\]" global
+
+lastSecond :: forall a. NonEmptyArray a -> Maybe a
+lastSecond f = NArray.index f $ len - 2
+  where 
+    len = length f
+
 
 renderNote :: forall  a. String -> Maybe String -> Int ->  NoteNode -> HH.HTML a Action
 renderNote ipfsGatway currentId level noteNode@(NoteNode note)  = 
@@ -235,9 +276,11 @@ handleAction = case _ of
     handleAction InitNote
   AutoFoucs -> do
     maybeId <- H.gets _.currentId 
-    id <- liftMaybe maybeId
+    id <- liftMaybe (maybeId <|> pure "dummy")
+    -- logDebug $ "编辑笔记" <> id
     H.liftEffect $ autoFocus id
-  New pid -> do
+  New pid idx -> do
+    logDebug $ "增加一个新的Note，id为" <> pid
     hostId <- H.gets _.topicId 
     nowTime <- now
     uuid <- H.liftEffect UUID.genUUID
@@ -254,8 +297,38 @@ handleAction = case _ of
       childrenIds: []
     }
     void $ addNote note
+    handleAction $ InitNote
+    handleAction $ InsertSortInParent pid id idx
     handleAction $ ChangeEditID $ Just id
-  Submit noteId note->  do
+  UpdateSortInParent pid updateFunc -> do
+    if (pid == "") 
+      then do
+        topic <- liftMaybe =<< H.gets _.topic
+        let noteIds = Array.nubEq $ updateFunc topic.noteIds
+        void $ updateTopicById topic.id { noteIds }
+      else do
+        
+        notes <- H.gets _.renderNoteList
+        
+        (NoteNode pNode) <- liftMaybe $ findNode pid notes
+        let prevChildIds = pNode.children <#> \(NoteNode n) -> n.id
+        let childrenIds = Array.nubEq $ updateFunc prevChildIds
+        logAny "之前的ids"
+        logAny prevChildIds
+        logAny "之后的ids"
+        logAny childrenIds
+        -- logDebug $ "更新顺序，前索引个数为" <> (show $ Array.length pNote.childrenIds) <> "后索引个数为 " <> (show $ Array.length childrenIds)
+        void $ updateNoteById pid { childrenIds }
+  InsertSortInParent pid id idx -> do
+    -- logDebugAny {pid, id ,idx }
+    handleAction $ UpdateSortInParent pid \ids -> fromMaybe' (\_ -> Array.snoc ids id) (Array.insertAt idx id ids)
+  DeleteSortInParent pid id -> do
+    handleAction $ UpdateSortInParent pid $ Array.delete id
+  MoveSort noteId sourcePid targetPid targetIdx -> do 
+    logAny {noteId, sourcePid, targetPid}
+    handleAction $ InsertSortInParent targetPid noteId targetIdx
+    handleAction $ DeleteSortInParent sourcePid noteId
+  Submit noteId note ->  do
     nowTime <- now
     void $ updateNoteById noteId { heading: note, updated: nowTime }
   SubmitIpfs path -> do
@@ -264,18 +337,25 @@ handleAction = case _ of
     let appendText = "[[" <> fileId <> "]]"
     void $ H.liftEffect $ insertText appendText
   InitComp -> do
+    logDebug "初始化组件"
     handleAction InitNote
     maybeIpfs <- H.gets _.ipfs
     _ <- H.subscribe =<< subscriptPaste maybeIpfs
     ipfsGatway <- getIpfsGatewayPrefix
     H.modify_ _ { ipfsGatway = ipfsGatway}
   InitNote -> do
+    logDebug "初始化State"
     topicId <- H.gets _.topicId
     topic <- getTopic topicId
+
     topic_ <- liftMaybe topic
+    logDebug $ "读取到topic " <> topic_.name
+    H.modify_  _ { 
+      topic = Just topic_
+    }
     notes <- getAllNotesByHostId topicId
     if null notes 
-      then handleAction $ New ""
+      then handleAction $ New "" 0
       else do 
         let nodes = noteToTree notes "" [] topic_.noteIds
         let ids = treeToIdList nodes
@@ -283,42 +363,62 @@ handleAction = case _ of
           noteList = notes 
           , renderNoteList = nodes
           , visionNoteIds = ids
-          , topic = topic
         }
         logDebug "笔记列表已刷新"
-    handleAction AutoFoucs
+        logAny notes
+        logAny nodes
+        handleAction AutoFoucs
 
   ClickNote mev nid -> do
     H.liftEffect $ stopPropagation $ ME.toEvent mev
     handleAction $ Edit nid 
   Delete noteId -> do
+    notes <- H.gets _.noteList
+    note <- liftMaybe $ Array.find (\n -> n.id == noteId) notes
+    handleAction $ UpdateSortInParent note.parentId $ Array.delete noteId
     void $ deleteNote noteId
     handleAction $ ChangeEditID $ Nothing
+  
   Indent id path -> do
     nodes <- H.gets _.renderNoteList
-    let prevNode = prevPath path >>= look nodes
-    case prevNode of
-      Nothing -> pure unit
-      Just (NoteNode node) -> do
-        void $ updateNoteById id { parentId: node.id }
-        handleAction InitNote
-    pure unit
+    note <- findNote id
+    NoteNode prevNode <- liftMaybe $ prevPath path >>= look nodes
+    let len = length prevNode.children
+    let source = note.parentId
+    let target = prevNode.id
+    
+    void $ updateNoteById id { parentId: prevNode.id }
+
+    -- logDebug $ "上一个节点的子元素个数为  " <> show len
+    handleAction $ MoveSort id note.parentId prevNode.id len
+    handleAction InitNote
   UnIndent id path -> do
     nodes <- H.gets _.renderNoteList
-    let parentNode = parentPath path >>= look nodes
-    case parentNode of
-      Nothing -> pure unit
-      Just (NoteNode node) -> do
-        void $ updateNoteById id { parentId: node.parentId }
-        handleAction InitNote
-    pure unit
+    note <- findNote id
+    NoteNode parentNode <- liftMaybe $ parentPath path >>= look nodes
+
+    let source = note.parentId
+    let target = parentNode.parentId 
+
+    logAny { t: "unindent", source , target, path, parentPath: parentPath path }
+    void $ updateNoteById id { parentId: parentNode.parentId }
+    handleAction $ MoveSort id note.parentId target toTargetIdx
+    handleAction InitNote
+      where 
+        toTargetIdx :: Int 
+        toTargetIdx =  case lastSecond path of 
+          Nothing -> 0
+          Just idx -> 1 + idx
   HandleKeyDown kbe 
     | KE.key kbe == "Enter" -> do 
       H.liftEffect $ preventDefault $ KE.toEvent kbe
     | KE.key kbe == "Tab" -> do 
       H.liftEffect $ stopPropagation $ KE.toEvent kbe
       H.liftEffect $ preventDefault $ KE.toEvent kbe
-    | otherwise -> pure unit
+    | otherwise -> do 
+      -- H.liftEffect $ stopPropagation $ KE.toEvent kbe
+      -- H.liftEffect $ preventDefault $ KE.toEvent kbe
+      pure unit
   
   HandleKeyUp (NoteNode note) kbe 
     | KE.shiftKey kbe && KE.key kbe == "Tab" -> do
@@ -327,10 +427,13 @@ handleAction = case _ of
       handleAction $ UnIndent note.id note.path
     | KE.key kbe == "Enter" -> do 
       H.liftEffect $ preventDefault $ KE.toEvent kbe
-      handleAction $ New note.parentId
+      handleAction $ New note.parentId insertIdx
+      where 
+        insertIdx = 1 + last note.path
     | KE.key kbe == "Tab" -> do
       H.liftEffect $ stopPropagation $ KE.toEvent kbe
       H.liftEffect $ preventDefault $ KE.toEvent kbe
+      -- logDebug $ "缩进元素的path为" <> show note.path
       handleAction $ Indent note.id note.path
     | KE.key kbe == "Escape" -> do 
         handleAction $ ChangeEditID Nothing
@@ -395,10 +498,15 @@ initialState { context, input } = {
   , visionNoteIds: []
   }
 
-subscriptPaste :: forall m. MonadAff m => Maybe IPFS -> m (HS.Emitter Action)
+subscriptPaste :: forall m. 
+  MonadAff m => 
+  LogMessages m =>
+  Now m =>
+  Maybe IPFS -> m (HS.Emitter Action)
 subscriptPaste ipfs = do
   { emitter, listener } <- H.liftEffect HS.create
   _ <- H.liftEffect $ addPasteListenner fromMaybe ipfs (\path -> HS.notify listener $ SubmitIpfs path)
+  logDebug "绑定全局粘贴事件"
   pure emitter
 
 component :: forall q o m.  

@@ -1,5 +1,6 @@
 exports._getAllDocs = coll => () => {
-    return coll.find().sort({ updated: -1}).exec();
+    // return Promise.reject("errrrrrr");
+    return coll.find().sort({ updated: -1}).exec().then(list => list.map(a => a.toJSON()));
 }
 
 exports._getDoc = just => nothing => coll => id => () => {
@@ -8,7 +9,7 @@ exports._getDoc = just => nothing => coll => id => () => {
     }
     return coll.findOne(id).exec().then(doc => {
         if (doc) {
-            return just(doc);
+            return just(doc.toJSON());
         } else {
             return nothing;
         }
@@ -16,7 +17,7 @@ exports._getDoc = just => nothing => coll => id => () => {
 }
 
 exports._find = coll => obj => () => {
-    return coll.find({selector: obj}).sort({ created: 1}).exec();
+    return coll.find({selector: obj}).sort({ created: 1}).exec().then(list => list.map(a => a.toJSON()));
 }
 
 exports._insertDoc = coll => topic => () => {
@@ -33,4 +34,8 @@ exports._updateDocById = coll => id => doc => () => {
 
 exports._getGatewayUri = just => nothing => ipfs => () => {
     return ipfs.config.get("Addresses.Gateway").then(gateway => gateway ? just(toUri(gateway)) : nothing);
+}
+
+exports._log = a => () => {
+    console.log(a);
 }

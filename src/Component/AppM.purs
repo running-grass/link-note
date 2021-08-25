@@ -8,6 +8,7 @@ import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Aff.Class (class MonadAff, liftAff)
 import Effect.Class (class MonadEffect, liftEffect)
+import Effect.Console as Console
 import Effect.Now as Now
 import Halogen as H
 import Halogen.Store.Monad (class MonadStore, StoreT, getStore, runStoreT)
@@ -26,8 +27,6 @@ import LinkNote.Data.Route as Route
 import Routing.Duplex (print)
 import Routing.Hash (setHash)
 import RxDB.Type (RxCollection)
-import Effect.Console as Console
-
 import Safe.Coerce (coerce)
 
 
@@ -40,6 +39,7 @@ foreign import _getGatewayUri ::
 getGatewayUri :: IPFS -> Aff (Maybe String)
 getGatewayUri ipfs = toAffE $ _getGatewayUri Just Nothing ipfs
 
+foreign import _log :: forall a. a -> Effect Unit
 
 foreign import _getDoc :: forall a id. 
   (forall x. x -> Maybe x) 
@@ -125,15 +125,14 @@ instance manageTopicAppM :: ManageTopic AppM where
   getTopic id = do
     { collTopic } <- getStore 
     liftAff $ getDoc collTopic id
-
+  updateTopicById id patch = do
+    { collTopic } <- getStore
+    liftAff $ updateDocById collTopic id patch
+    pure true
 instance manageNoteAppM :: ManageNote AppM where
   addNote note = do
     { collNote } <- getStore
     liftAff $ insertDoc collNote note
-    pure true
-  deleteNote id = do
-    { collNote } <- getStore
-    liftAff $ bulkRemoveDoc collNote [id]
     pure true
   deleteNotes ids = do
     { collNote } <- getStore
@@ -159,3 +158,4 @@ instance logMessagesAppM :: LogMessages AppM where
     liftEffect case logLevel, Log.reason log of
       Prod, Log.Debug -> pure unit
       _, _ -> Console.log $ Log.message log
+  logAny = H.liftEffect <<< _log

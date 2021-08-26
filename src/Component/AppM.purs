@@ -4,6 +4,7 @@ import Prelude
 
 import Control.Promise (Promise, toAffE)
 import Data.Maybe (Maybe(..))
+import Data.String (trim)
 import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Aff.Class (class MonadAff, liftAff)
@@ -26,11 +27,12 @@ import LinkNote.Component.Store as Store
 import LinkNote.Component.Util (liftMaybe)
 import LinkNote.Data.Log as Log
 import LinkNote.Data.Route as Route
+import Record as R
 import Routing.Duplex (print)
 import Routing.Hash (setHash)
 import RxDB.Type (RxCollection, RxDatabase)
 import Safe.Coerce (coerce)
-
+import Type.Proxy (Proxy(..))
 
 foreign import _getGatewayUri :: 
   (forall x. x -> Maybe x) 
@@ -43,15 +45,19 @@ getGatewayUri ipfs = toAffE $ _getGatewayUri Just Nothing ipfs
 
 foreign import _log :: forall a. a -> Effect Unit
 
-foreign import _getDoc :: forall a id. 
+foreign import _getDoc :: forall a v. 
   (forall x. x -> Maybe x) 
   -> (forall x. Maybe x) 
   -> RxCollection a 
-  -> id
+  -> String
+  -> v
   -> Effect(Promise (Maybe a))
 
-getDoc :: forall a id. RxCollection a -> id -> Aff (Maybe a)
-getDoc coll id = toAffE $ _getDoc Just Nothing coll id
+getDoc :: forall a b. RxCollection a -> String -> b -> Aff (Maybe a)
+getDoc coll key val = toAffE $ _getDoc Just Nothing coll key val
+
+getDocById :: forall a v. RxCollection a -> v -> Aff (Maybe a)
+getDocById coll val = getDoc coll "id" val 
 
 foreign import _getAllDocs :: forall a. RxCollection a -> Effect (Promise (Array a))
 
@@ -130,18 +136,24 @@ instance manageTopicAppM :: ManageTopic AppM where
     coll <- liftMaybe collTopic
     liftAff $ getAllDocs coll
   createTopic topic = do
+    let newTopic = R.modify (Proxy :: Proxy "name") trim topic
     { collTopic } <- getStore 
     coll <- liftMaybe collTopic
-    liftAff $ insertDoc coll topic
+    liftAff $ insertDoc coll newTopic
   getTopic id = do
     { collTopic } <- getStore 
     coll <- liftMaybe collTopic
-    liftAff $ getDoc coll id
+    liftAff $ getDocById coll id
   updateTopicById id patch = do
     { collTopic } <- getStore
     coll <- liftMaybe collTopic
     liftAff $ updateDocById coll id patch
     pure true
+  getTopicByName topicName = do
+    { collTopic } <- getStore
+    coll <- liftMaybe collTopic
+    liftAff $ getDoc coll "name" $ trim topicName
+
 instance manageNoteAppM :: ManageNote AppM where
   addNote note = do
     { collNote } <- getStore

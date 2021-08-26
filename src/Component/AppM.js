@@ -5,11 +5,11 @@ exports._getAllDocs = coll => () => {
     return coll.find().sort({ updated: -1}).exec().then(list => list.map(a => a.toJSON()));
 }
 
-exports._getDoc = just => nothing => coll => id => () => {
-    if (!id) {
+exports._getDoc = just => nothing => coll => key => val => () => {
+    if (!key) {
         return Promise.resolve(nothing);
     }
-    return coll.findOne(id).exec().then(doc => {
+    return coll.findOne().where(key).eq(val).exec().then(doc => {
         if (doc) {
             return just(doc.toJSON());
         } else {

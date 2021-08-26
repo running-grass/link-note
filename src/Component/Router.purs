@@ -17,6 +17,7 @@ import Halogen.Store.Monad (class MonadStore, updateStore)
 import Halogen.Store.Select (selectAll)
 import IPFS (IPFS)
 import LinkNote.Capability.LogMessages (class LogMessages)
+import LinkNote.Capability.ManageDB (class ManageDB)
 import LinkNote.Capability.ManageFile (class ManageFile)
 import LinkNote.Capability.ManageIPFS (class ManageIPFS)
 import LinkNote.Capability.Navigate (class Navigate, navigate)
@@ -24,6 +25,7 @@ import LinkNote.Capability.Now (class Now)
 import LinkNote.Capability.Resource.Note (class ManageNote)
 import LinkNote.Capability.Resource.Topic (class ManageTopic)
 import LinkNote.Component.HTML.Header (header)
+import LinkNote.Component.HTML.Helper (helperHTML)
 import LinkNote.Component.Store as Store
 import LinkNote.Data.Route (Route(..), routeCodec)
 import LinkNote.Data.Setting (IPFSApiAddress(..), IPFSInstanceType(..))
@@ -85,7 +87,6 @@ initialState _ = {
   route: Nothing
 }
 
-
 component :: forall m. MonadAff m
   => MonadStore Store.Action Store.Store m
   => Navigate m
@@ -94,6 +95,7 @@ component :: forall m. MonadAff m
   => ManageIPFS m
   => ManageNote m  
   => ManageFile m
+  => ManageDB m
   => LogMessages m
   => H.Component Query Input Void m
 component = connect selectAll $ H.mkComponent
@@ -127,7 +129,6 @@ component = connect selectAll $ H.mkComponent
   handleQuery = case _ of
     Navigate dest a -> do
       { route } <-  H.get
-      -- don't re-render unnecessarily if the route is unchanged
       when (route /= Just dest) do 
         H.modify_ _ { route = Just dest }
       pure (Just a)
@@ -135,6 +136,7 @@ component = connect selectAll $ H.mkComponent
   render :: State -> H.ComponentHTML Action ChildSlots m
   render { route } = HH.div_ [
     header route,
+    helperHTML,
     case route of
       Just r -> case r of
         Home -> 
@@ -145,7 +147,6 @@ component = connect selectAll $ H.mkComponent
           HH.slot_ (Proxy :: _ "topic") unit Topic.component { topicId }
         TopicList -> 
           HH.slot_ (Proxy :: _ "topicList") unit TopicList.component unit
-        -- _ -> HH.div_ [ HH.text "404页面" ]
       Nothing ->
         HH.div_ [ HH.text "Oh yeah! You get a 404 page." ]
   ] 

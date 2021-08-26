@@ -3,8 +3,10 @@ module LinkNote.Page.Setting where
 import Effect.Aff.Class (class MonadAff)
 import Halogen as H
 import Halogen.HTML as HH
+import Halogen.HTML.Events as HE
+import LinkNote.Capability.ManageDB (class ManageDB, deleteLocalDB, exportLocalDB)
+import LinkNote.Component.HTML.Utils (buttonClass, css)
 import LinkNote.Data.Setting (IPFSInstanceType)
-import Prelude (Unit, pure, unit)
 
 type Input = { 
   ipfsInstanceType :: IPFSInstanceType
@@ -14,26 +16,28 @@ type State = {
     ipfsInstanceType :: IPFSInstanceType
 }
 
-data Action = Submit
+data Action = DeleteDB | ExportDB
 
 render :: forall cs m. State -> H.ComponentHTML Action cs m
 render _ =
   HH.section_ [
-    HH.text "I am a setting"
-    
+    HH.div [ css "mb-4" ] [
+      HH.button [ buttonClass "", HE.onClick \_ -> ExportDB] [ HH.text "导出"]
+    ]
+    , HH.div_ [
+      HH.button [ buttonClass "",  HE.onClick \_ -> DeleteDB ] [ HH.text "删库"]
+    ]
   ]
-
-handleAction :: forall cs o m . MonadAff m =>  Action → H.HalogenM State Action cs o m Unit
-handleAction = case _ of
-  Submit ->  do
-    pure unit 
 
 initialState :: Input-> State
 initialState input = { 
-    ipfsInstanceType: input.ipfsInstanceType
-  }
+  ipfsInstanceType: input.ipfsInstanceType
+}
 
-component :: forall q  o m. MonadAff m => H.Component q Input o m
+component :: forall q  o m. 
+  MonadAff m 
+  => ManageDB m
+  => H.Component q Input o m
 component =
   H.mkComponent
     { 
@@ -43,3 +47,9 @@ component =
         handleAction = handleAction
       }
     }
+  where
+    handleAction = case _ of
+      DeleteDB ->  do
+        deleteLocalDB
+      ExportDB -> do
+        exportLocalDB 

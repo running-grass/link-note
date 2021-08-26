@@ -11,6 +11,7 @@ specifiers:
   dotenv: ^10.0.0
   dotenv-cli: ^4.0.0
   dotenv-expand: ^5.1.0
+  downloadjs: ^1.4.7
   filemanager-webpack-plugin: ^6.1.4
   gh-pages: ^3.2.3
   html-webpack-plugin: ^4.5.2
@@ -18,6 +19,7 @@ specifiers:
   ipfs-core: ^0.9.1
   ipfs-http-client: ^51.0.1
   ipfs-provider: ^2.0.1
+  moment: ^2.29.1
   multiaddr-to-uri: ^8.0.0
   pouchdb-adapter-idb: ^7.2.2
   purescript-psa: ^0.8.2
@@ -35,11 +37,13 @@ dependencies:
   debug: 4.3.2
   dotenv: 10.0.0
   dotenv-expand: 5.1.0
+  downloadjs: registry.nlark.com/downloadjs/1.4.7
   filemanager-webpack-plugin: 6.1.4_webpack@4.46.0
   ipfs: 0.55.4
   ipfs-core: 0.9.1
   ipfs-http-client: 51.0.1
   ipfs-provider: 2.0.1
+  moment: 2.29.1
   multiaddr-to-uri: 8.0.0
   pouchdb-adapter-idb: 7.2.2
   rxdb: 10.0.2_rxjs@7.2.0
@@ -9304,6 +9308,10 @@ packages:
       deep-equal: 1.1.1
     dev: false
 
+  /moment/2.29.1:
+    resolution: {integrity: sha1-sr52n6MZQL6e7qZGnAdeNQBvo9M=, tarball: moment/download/moment-2.29.1.tgz}
+    dev: false
+
   /mortice/2.0.1:
     resolution: {integrity: sha512-9gsXmjq+5LZmXDIoyC/crf2i/7CUwDGSBEwSEsr1i/WfKmJ6DVt38B5kg6BE/WF/1/yfGJYiB1Wyiu423iI3nQ==}
     dependencies:
@@ -13368,6 +13376,12 @@ packages:
     name: commander
     version: 2.20.3
     dev: true
+
+  registry.nlark.com/downloadjs/1.4.7:
+    resolution: {integrity: sha1-9p+W+UDg0FU9rCkROYZaPNAQHjw=, registry: https://registry.npm.taobao.org/, tarball: https://registry.nlark.com/downloadjs/download/downloadjs-1.4.7.tgz}
+    name: downloadjs
+    version: 1.4.7
+    dev: false
 
   registry.nlark.com/email-addresses/3.1.0:
     resolution: {integrity: sha1-yr9+CFy9tjAIpwMZp05hNhiIEvs=, registry: https://registry.npm.taobao.org/, tarball: https://registry.nlark.com/email-addresses/download/email-addresses-3.1.0.tgz}

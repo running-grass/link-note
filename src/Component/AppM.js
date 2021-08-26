@@ -1,3 +1,5 @@
+const download = require('downloadjs');
+const moment = require('moment');
 exports._getAllDocs = coll => () => {
     // return Promise.reject("errrrrrr");
     return coll.find().sort({ updated: -1}).exec().then(list => list.map(a => a.toJSON()));
@@ -38,4 +40,15 @@ exports._getGatewayUri = just => nothing => ipfs => () => {
 
 exports._log = a => () => {
     console.log(a);
+}
+
+exports._deleteDB = db => () => db.remove().then(() => {
+    location.href = "";
+});
+
+exports._exportDB = db => () => {
+    return db.exportJSON().then(json => {
+        console.dir(json);
+        download(JSON.stringify(json), 'Link-Node备份-' + moment().format("YYYY-MM-DD-hh-mm-ss") + '.json', 'text/json');
+    }).then(() => true);
 }

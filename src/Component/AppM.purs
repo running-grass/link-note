@@ -14,6 +14,7 @@ import Halogen as H
 import Halogen.Store.Monad (class MonadStore, StoreT, getStore, runStoreT)
 import IPFS (IPFS)
 import LinkNote.Capability.LogMessages (class LogMessages)
+import LinkNote.Capability.ManageDB (class ManageDB)
 import LinkNote.Capability.ManageFile (class ManageFile)
 import LinkNote.Capability.ManageIPFS (class ManageIPFS)
 import LinkNote.Capability.Navigate (class Navigate)
@@ -27,7 +28,7 @@ import LinkNote.Data.Log as Log
 import LinkNote.Data.Route as Route
 import Routing.Duplex (print)
 import Routing.Hash (setHash)
-import RxDB.Type (RxCollection)
+import RxDB.Type (RxCollection, RxDatabase)
 import Safe.Coerce (coerce)
 
 
@@ -57,7 +58,14 @@ foreign import _getAllDocs :: forall a. RxCollection a -> Effect (Promise (Array
 getAllDocs :: forall a. RxCollection a -> Aff (Array a)
 getAllDocs = toAffE <<< _getAllDocs
 
+foreign import _deleteDB :: RxDatabase -> Effect (Promise Unit)
+foreign import _exportDB :: RxDatabase -> Effect (Promise Unit)
 
+deleteDB :: RxDatabase -> Aff Unit
+deleteDB = toAffE <<< _deleteDB
+
+exportDB :: RxDatabase -> Aff Unit
+exportDB = toAffE <<< _exportDB
 
 foreign import _find :: forall a r. RxCollection a -> Record r -> Effect (Promise (Array a))
 
@@ -169,3 +177,12 @@ instance logMessagesAppM :: LogMessages AppM where
       Prod, Log.Debug -> pure unit
       _, _ -> Console.log $ Log.message log
   logAny = H.liftEffect <<< _log
+
+instance ManageDB AppM where
+  deleteLocalDB = do
+    { rxdb } <- getStore
+    liftAff $ deleteDB rxdb
+  exportLocalDB = do
+    { rxdb } <- getStore
+    liftAff $ exportDB rxdb
+

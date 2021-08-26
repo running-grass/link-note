@@ -387,10 +387,10 @@ handleAction = case _ of
     let source = note.parentId
     let target = prevNode.id
     
-    void $ updateNoteById id { parentId: prevNode.id }
+    void $ updateNoteById id { parentId: target }
 
     -- logDebug $ "上一个节点的子元素个数为  " <> show len
-    handleAction $ MoveSort id note.parentId prevNode.id len
+    handleAction $ MoveSort id source target len
     handleAction InitNote
   UnIndent id path -> do
     nodes <- H.gets _.renderNoteList

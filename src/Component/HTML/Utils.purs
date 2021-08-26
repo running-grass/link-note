@@ -35,3 +35,12 @@ inputClass appendClass = css $ "border rounded border-gray-400	focus:outline-non
 
 buttonClass :: forall r i. String -> HH.IProp (class :: String | r) i
 buttonClass  appendClass = css $ "px-4 py-1 text-sm text-purple-600 font-semibold rounded-full border border-purple-200 hover:text-white hover:bg-purple-600 hover:border-transparent focus:outline-none focus:ring-2 focus:ring-purple-600 focus:ring-offset-2 " <> appendClass
+
+
+
+icon :: forall i p. String -> HH.HTML i p
+icon iconName = HH.span [
+              css "material-icons"
+            ] [
+              HH.text iconName
+            ]

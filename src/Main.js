@@ -142,9 +142,9 @@ exports.initRxDB = () => () => {
         return Promise.resolve(window.db);
     }
     return createRxDatabase({
-        name: 'ais', // + new Date().getTime(),
+        name: 'link-note', // + new Date().getTime(),
         storage: getRxStoragePouch('idb'),
-        password: 'myPassword',
+        password: 'link-note',
         multiInstance: true,
         eventReduce: false,
     }).then(db => {

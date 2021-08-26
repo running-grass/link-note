@@ -14,6 +14,7 @@ to generate this file without the comments in this block.
 , dependencies =
   [ "aff"
   , "aff-promise"
+  , "argonaut"
   , "arrays"
   , "console"
   , "control"
@@ -46,6 +47,7 @@ to generate this file without the comments in this block.
   , "web-events"
   , "web-file"
   , "web-html"
+  , "web-storage"
   , "web-uievents"
   ]
 , packages = ./packages.dhall

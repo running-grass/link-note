@@ -13,13 +13,14 @@ import Halogen (liftEffect)
 import Halogen as H
 import Halogen.HTML as HH
 import Halogen.Store.Connect (Connected, connect)
-import Halogen.Store.Monad (class MonadStore, updateStore)
+import Halogen.Store.Monad (class MonadStore, getStore, updateStore)
 import Halogen.Store.Select (selectAll)
 import IPFS (IPFS)
-import LinkNote.Capability.LogMessages (class LogMessages)
+import LinkNote.Capability.LogMessages (class LogMessages, logAny)
 import LinkNote.Capability.ManageDB (class ManageDB)
 import LinkNote.Capability.ManageFile (class ManageFile)
 import LinkNote.Capability.ManageIPFS (class ManageIPFS)
+import LinkNote.Capability.ManageStore (class ManageStore)
 import LinkNote.Capability.Navigate (class Navigate, navigate)
 import LinkNote.Capability.Now (class Now)
 import LinkNote.Capability.Resource.Note (class ManageNote)
@@ -95,6 +96,7 @@ component :: forall m. MonadAff m
   => ManageIPFS m
   => ManageNote m  
   => ManageFile m
+  => ManageStore m
   => ManageDB m
   => LogMessages m
   => H.Component Query Input Void m
@@ -119,7 +121,9 @@ component = connect selectAll $ H.mkComponent
       navigate $ fromMaybe Home initialRoute
       handleAction InitIPFS
     InitIPFS -> do
-      let addr = getIpfsAddrByType currentIpfs
+      { ipfsType } <- getStore
+      logAny ipfsType
+      let addr = getIpfsAddrByType ipfsType
       ipfs <- H.liftAff $ getGlobalIPFSA addr
       case ipfs of 
         Just ipfs' -> updateStore $ Store.SetIPFS ipfs'

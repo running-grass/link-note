@@ -12,12 +12,13 @@ import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Console as Console
 import Effect.Now as Now
 import Halogen as H
-import Halogen.Store.Monad (class MonadStore, StoreT, getStore, runStoreT)
+import Halogen.Store.Monad (class MonadStore, StoreT, getStore, runStoreT, updateStore)
 import IPFS (IPFS)
 import LinkNote.Capability.LogMessages (class LogMessages)
 import LinkNote.Capability.ManageDB (class ManageDB)
 import LinkNote.Capability.ManageFile (class ManageFile)
 import LinkNote.Capability.ManageIPFS (class ManageIPFS)
+import LinkNote.Capability.ManageStore (class ManageStore)
 import LinkNote.Capability.Navigate (class Navigate)
 import LinkNote.Capability.Now (class Now)
 import LinkNote.Capability.Resource.Note (class ManageNote)
@@ -27,12 +28,18 @@ import LinkNote.Component.Store as Store
 import LinkNote.Component.Util (liftMaybe)
 import LinkNote.Data.Log as Log
 import LinkNote.Data.Route as Route
+import LinkNote.Data.Setting (toString)
 import Record as R
 import Routing.Duplex (print)
 import Routing.Hash (setHash)
 import RxDB.Type (RxCollection, RxDatabase)
 import Safe.Coerce (coerce)
 import Type.Proxy (Proxy(..))
+import Web.HTML (window)
+import Web.HTML.Window (localStorage)
+import Web.Storage.Storage (clear, getItem, removeItem, setItem)
+
+
 
 foreign import _getGatewayUri :: 
   (forall x. x -> Maybe x) 
@@ -99,26 +106,26 @@ newtype AppM a = AppM (StoreT Store.Action Store.Store Aff a)
 runAppM :: forall q i o. Store.Store -> H.Component q i o AppM -> Aff (H.Component q i o Aff)
 runAppM store = runStoreT store Store.reduce <<< coerce
 
-derive newtype instance functorAppM :: Functor AppM
-derive newtype instance applyAppM :: Apply AppM
-derive newtype instance applicativeAppM :: Applicative AppM
-derive newtype instance bindAppM :: Bind AppM
-derive newtype instance monadAppM :: Monad AppM
-derive newtype instance monadEffectAppM :: MonadEffect AppM
-derive newtype instance monadAffAppM :: MonadAff AppM
-derive newtype instance monadStoreAppM :: MonadStore Store.Action Store.Store AppM
+derive newtype instance Functor AppM
+derive newtype instance Apply AppM
+derive newtype instance Applicative AppM
+derive newtype instance Bind AppM
+derive newtype instance Monad AppM
+derive newtype instance MonadEffect AppM
+derive newtype instance MonadAff AppM
+derive newtype instance MonadStore Store.Action Store.Store AppM
 
-instance navigateAppM :: Navigate AppM where
+instance Navigate AppM where
   navigate =
     liftEffect <<< setHash <<< print Route.routeCodec
 
-instance nowAppM :: Now AppM where
+instance Now AppM where
   now = liftEffect Now.now
   nowDate = liftEffect Now.nowDate
   nowTime = liftEffect Now.nowTime
   nowDateTime = liftEffect Now.nowDateTime
 
-instance ipfsAppM :: ManageIPFS AppM where
+instance ManageIPFS AppM where
   getIpfsGatewayPrefix = do 
     { ipfs } <- getStore
     let default = pure "https://dweb.link/ipfs/"
@@ -129,8 +136,14 @@ instance ipfsAppM :: ManageIPFS AppM where
         case uri of 
           Nothing -> default
           Just uri' -> pure uri'
+instance ManageStore AppM where
+  setIpfsInstanceType ins = do
+    w <- liftEffect window
+    s <- liftEffect $ localStorage w
+    liftEffect $ setItem "ipfsInstanceType" (toString ins) s
+    updateStore $ Store.SetIPFSType ins 
 
-instance manageTopicAppM :: ManageTopic AppM where
+instance ManageTopic AppM where
   getTopics = do
     { collTopic } <- getStore
     coll <- liftMaybe collTopic
@@ -154,7 +167,7 @@ instance manageTopicAppM :: ManageTopic AppM where
     coll <- liftMaybe collTopic
     liftAff $ getDoc coll "name" $ trim topicName
 
-instance manageNoteAppM :: ManageNote AppM where
+instance ManageNote AppM where
   addNote note = do
     { collNote } <- getStore
     coll <- liftMaybe collNote
@@ -175,14 +188,14 @@ instance manageNoteAppM :: ManageNote AppM where
     liftAff $ updateDocById coll id notePatch
     pure true
 
-instance manageFileAppM :: ManageFile AppM where
+instance ManageFile AppM where
   addFile file = do
     { collFile } <- getStore
     coll <- liftMaybe collFile
     liftAff $ insertDoc coll file
     pure true
 
-instance logMessagesAppM :: LogMessages AppM where
+instance LogMessages AppM where
   logMessage log = do
     { logLevel } <- getStore
     liftEffect case logLevel, Log.reason log of

@@ -102,14 +102,9 @@ data Action
   | InsertSortInParent String NoteId Int -- maybe noteid为插入到哪个元素后面
   | MoveSort NoteId String String Int -- 把noteid从哪里到哪里
 
-
-
 foreign import addPasteListenner :: (forall a. a -> Maybe a -> a) -> Maybe IPFS -> (Function String (Effect Unit)) -> Effect Unit
 
 type NoteSort = Array NoteId
-
--- render :: forall cs m. State -> H.ComponentHTML Action cs m
-
 
 findNote :: forall m .
   MonadState State m =>

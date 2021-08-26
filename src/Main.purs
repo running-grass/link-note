@@ -17,11 +17,16 @@ import LinkNote.Component.Router as Router
 import LinkNote.Component.Store (LogLevel(..))
 import LinkNote.Component.Store as Store
 import LinkNote.Data.Route (routeCodec)
+import LinkNote.Data.Setting (IPFSInstanceType(..), parseIpfsInsType)
 import Routing.Duplex (parse)
 import Routing.Hash (matchesWith)
 import RxDB.Type (RxCollection, RxDatabase)
 import Web.DOM.ParentNode (QuerySelector(..))
 import Web.HTML (HTMLElement)
+import Web.HTML (window)
+import Web.HTML.Window (localStorage)
+import Web.Storage.Storage (clear, getItem, removeItem, setItem)
+
 
 foreign import initRxDB :: Unit -> Effect (Promise RxDatabase)
 
@@ -57,10 +62,17 @@ main = runHalogenAff do
     collNote <- H.liftEffect $ getCollection db "note"
     collTopic <- H.liftEffect $ getCollection db "topic"
     collFile <- H.liftEffect $ getCollection db "file"
+    w <- liftEffect window
+    s <- liftEffect $ localStorage w
+    str <- liftEffect $ getItem "ipfsInstanceType" s
+    let insType = case str of 
+                    Just sss -> parseIpfsInsType sss 
+                    Nothing -> Unused
     let 
       initStore :: Store.Store
       initStore = {
         ipfs : Nothing
+        , ipfsType : insType
         , rxdb : db
         , logLevel : Dev
         , collTopic : collTopic 

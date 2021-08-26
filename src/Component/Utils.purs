@@ -11,7 +11,7 @@ foreign import logAny :: forall a. a -> a
 
 foreign import _maybeToEffect :: forall a. (forall x.x -> Maybe x -> x) ->  Maybe a -> Effect a
 
-liftMaybe :: forall m a. Warn (Text "这个方法不太好，逐渐弃用了！！！") 
+liftMaybe :: forall m a. Warn (Text "这个方法不太好，逐渐弃用了！！！ by grass") 
     => MonadEffect m 
     => Maybe a -> m a 
 liftMaybe mb = liftEffect $ _maybeToEffect fromMaybe mb 

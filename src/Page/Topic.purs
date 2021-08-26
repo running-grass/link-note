@@ -4,7 +4,7 @@ import Prelude
 
 import Control.Alternative ((<|>))
 import Control.Monad.State (class MonadState)
-import Data.Array (cons, elemIndex, filter, findIndex, index, mapWithIndex, null, sortWith)
+import Data.Array (cons, elem, elemIndex, filter, findIndex, index, mapWithIndex, null, sortWith)
 import Data.Array as Array
 import Data.Array.NonEmpty (NonEmptyArray, fromArray, init, last, snoc', toArray, uncons, updateAt)
 import Data.Array.NonEmpty as NArray
@@ -300,6 +300,7 @@ handleAction = case _ of
     handleAction $ InitNote
     handleAction $ InsertSortInParent pid id idx
     handleAction $ ChangeEditID $ Just id
+    
   UpdateSortInParent pid updateFunc -> do
     if (pid == "") 
       then do
@@ -307,25 +308,16 @@ handleAction = case _ of
         let noteIds = Array.nubEq $ updateFunc topic.noteIds
         void $ updateTopicById topic.id { noteIds }
       else do
-        
-        notes <- H.gets _.renderNoteList
-        
+        notes <- H.gets _.renderNoteList        
         (NoteNode pNode) <- liftMaybe $ findNode pid notes
         let prevChildIds = pNode.children <#> \(NoteNode n) -> n.id
         let childrenIds = Array.nubEq $ updateFunc prevChildIds
-        logAny "之前的ids"
-        logAny prevChildIds
-        logAny "之后的ids"
-        logAny childrenIds
-        -- logDebug $ "更新顺序，前索引个数为" <> (show $ Array.length pNote.childrenIds) <> "后索引个数为 " <> (show $ Array.length childrenIds)
         void $ updateNoteById pid { childrenIds }
   InsertSortInParent pid id idx -> do
-    -- logDebugAny {pid, id ,idx }
     handleAction $ UpdateSortInParent pid \ids -> fromMaybe' (\_ -> Array.snoc ids id) (Array.insertAt idx id ids)
   DeleteSortInParent pid id -> do
     handleAction $ UpdateSortInParent pid $ Array.delete id
   MoveSort noteId sourcePid targetPid targetIdx -> do 
-    logAny {noteId, sourcePid, targetPid}
     handleAction $ InsertSortInParent targetPid noteId targetIdx
     handleAction $ DeleteSortInParent sourcePid noteId
   Submit noteId note ->  do
@@ -365,8 +357,6 @@ handleAction = case _ of
           , visionNoteIds = ids
         }
         logDebug "笔记列表已刷新"
-        logAny notes
-        logAny nodes
         handleAction AutoFoucs
 
   ClickNote mev nid -> do
@@ -396,13 +386,10 @@ handleAction = case _ of
     nodes <- H.gets _.renderNoteList
     note <- findNote id
     NoteNode parentNode <- liftMaybe $ parentPath path >>= look nodes
-
     let source = note.parentId
     let target = parentNode.parentId 
-
-    logAny { t: "unindent", source , target, path, parentPath: parentPath path }
     void $ updateNoteById id { parentId: parentNode.parentId }
-    handleAction $ MoveSort id note.parentId target toTargetIdx
+    handleAction $ MoveSort id source target toTargetIdx
     handleAction InitNote
       where 
         toTargetIdx :: Int 
@@ -410,49 +397,52 @@ handleAction = case _ of
           Nothing -> 0
           Just idx -> 1 + idx
   HandleKeyDown kbe 
-    | KE.key kbe == "Enter" -> do 
-      H.liftEffect $ preventDefault $ KE.toEvent kbe
-    | KE.key kbe == "Tab" -> do 
+    | elem (KE.key kbe) ["Tab", "Enter", "ArrowUp", "ArrowDown"] -> do 
       H.liftEffect $ stopPropagation $ KE.toEvent kbe
       H.liftEffect $ preventDefault $ KE.toEvent kbe
-    | otherwise -> do 
-      -- H.liftEffect $ stopPropagation $ KE.toEvent kbe
-      -- H.liftEffect $ preventDefault $ KE.toEvent kbe
-      pure unit
+    | otherwise -> pure unit
   
   HandleKeyUp (NoteNode note) kbe 
+    -- 按下Shift修饰键的情况
     | KE.shiftKey kbe -> do
       case KE.key kbe of
-        "Tab" -> do
+        -- 反缩进
+        "Tab" -> do 
           H.liftEffect $ stopPropagation $ KE.toEvent kbe
           H.liftEffect $ preventDefault $ KE.toEvent kbe
           handleAction $ UnIndent note.id note.path
-        "ArrowUp" -> do
+        -- 把当前标题向上移动
+        "ArrowUp" -> do 
           H.liftEffect $ stopPropagation $ KE.toEvent kbe
           H.liftEffect $ preventDefault $ KE.toEvent kbe
           let path = note.path
-          nodes <- H.gets _.renderNoteList
-          NoteNode parentNode <- liftMaybe $ parentPath path >>= look nodes
+          let mbPid = parentPath path
           let currentIdx = last path
+          let func = \arr -> fromMaybe arr (swapElem currentIdx (currentIdx - 1) arr)
           if currentIdx == 0 
             then pure unit
-            else handleAction $ UpdateSortInParent parentNode.id $ \arr -> fromMaybe arr (swapElem currentIdx (currentIdx - 1) arr)
-          handleAction InitNote
-          pure unit
+            else updateSortByPpath mbPid func 
+        -- 把当前标题向下移动
         "ArrowDown" -> do
           H.liftEffect $ stopPropagation $ KE.toEvent kbe
           H.liftEffect $ preventDefault $ KE.toEvent kbe
           let path = note.path
           nodes <- H.gets _.renderNoteList
-          NoteNode parentNode <- liftMaybe $ parentPath path >>= look nodes
+          topic <- H.gets _.topic
+          let parentNode = parentPath path >>= look nodes
+          let mbPlen = case parentNode , topic of 
+                        (Just (NoteNode n)) , _ -> Just $ length n.children
+                        Nothing , (Just t) -> Just $ length t.noteIds
+                        _ , _ -> Nothing
+          let mbPpath = parentPath path
           let currentIdx = last path
-          if currentIdx == (length parentNode.children) - 1 
-            then pure unit
-            else handleAction $ UpdateSortInParent parentNode.id $ \arr -> fromMaybe arr (swapElem currentIdx (currentIdx + 1) arr)
+          let func = \arr -> fromMaybe arr (swapElem currentIdx (currentIdx + 1) arr)
+          case mbPlen of 
+            (Just len) | currentIdx < len - 1 -> updateSortByPpath mbPpath func
+            _ -> pure unit 
           handleAction InitNote
           pure unit
-        _ -> do
-          pure unit
+        _ -> pure unit
     | KE.altKey kbe -> do
       pure unit
     | KE.metaKey kbe -> do
@@ -499,6 +489,7 @@ handleAction = case _ of
               | otherwise -> pure unit 
         _ -> pure unit
     | otherwise -> pure unit
+
   EditNote ev id -> do 
     maybeText <- H.liftEffect $ getTextFromEvent ev
     case maybeText of 
@@ -520,7 +511,18 @@ handleAction = case _ of
       isUpdate Nothing Nothing = false
       isUpdate (Just x) (Just y) = not $ unsafeRefEq (x) (y)
       isUpdate _ _ = true
-
+  where
+    updateSortByPpath ppath func = do
+      nodes <- H.gets _.renderNoteList
+      case ppath of
+        Just path -> do 
+          let parentNode' = look nodes path
+          case parentNode' of
+            Just (NoteNode parentNode) -> do
+              handleAction $ UpdateSortInParent parentNode.id func
+            Nothing -> pure unit 
+        Nothing -> handleAction $ UpdateSortInParent "" func
+      handleAction InitNote
 initialState :: ConnectedInput-> State
 initialState { context, input } = { 
   topicId: input.topicId,

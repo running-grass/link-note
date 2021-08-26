@@ -54,8 +54,6 @@ logWarn = log Warn
 logError :: forall m. LogMessages m => Now m => String -> m Unit
 logError = log Error
 
-logDebugAny a = log Debug $ show a
-
 -- | Hush a monadic action by logging the error, leaving it open why the error is being logged
 logHush :: forall m a. LogMessages m => Now m => LogReason -> m (Either String a) -> m (Maybe a)
 logHush reason action =

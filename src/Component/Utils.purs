@@ -2,11 +2,9 @@ module LinkNote.Component.Util where
 
 import Prelude
 
-import Data.Maybe (Maybe(..), fromJust, fromMaybe)
+import Data.Maybe (Maybe(..), fromMaybe)
 import Effect (Effect)
-import Effect.Aff.Class (class MonadAff)
 import Effect.Class (class MonadEffect, liftEffect)
-import Partial.Unsafe (unsafePartial)
 
 foreign import logAny :: forall a. a -> a
 

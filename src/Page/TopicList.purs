@@ -10,20 +10,14 @@ import Halogen.HTML (HTML)
 import Halogen.HTML as HH
 import Halogen.HTML.Events as HE
 import Halogen.HTML.Properties as HP
-import Halogen.Store.Connect (Connected, connect)
-import Halogen.Store.Monad (class MonadStore)
-import Halogen.Store.Select (selectAll)
 import LinkNote.Capability.Now (class Now, now)
 import LinkNote.Capability.Resource.Note (class ManageNote)
 import LinkNote.Capability.Resource.Topic (class ManageTopic, createTopic, getTopics)
 import LinkNote.Component.HTML.Utils (buttonClass, css, inputClass, safeHref)
-import LinkNote.Component.Store as LS
 import LinkNote.Data.Data (Topic)
 import LinkNote.Data.Route as LR
 
 type Input = Unit
-
-type ConnectedInput = Connected LS.Store Unit
 
 type State = { 
     newTopicName :: String
@@ -47,9 +41,8 @@ render st =
 
 renderItem :: forall i p. Topic -> HTML i p
 renderItem  topic  =
-    HH.li
-      [ ]
-      [ HH.a [ css "nav-link"  -- <> guard (route == r) " active"
+    HH.li_
+      [ HH.a [ css "topic-item"
           , safeHref $ LR.Topic topic.id
           ]
           [ HH.text topic.name ]
@@ -82,21 +75,19 @@ handleAction = case _ of
     list <- getTopics
     H.modify_ _ { topicList = list }
 
-initialState :: ConnectedInput-> State
+initialState :: forall  a. a -> State
 initialState _ = { 
   newTopicName : ""
   , topicList : []
 }
 
 component :: forall q  o m. 
-  MonadStore LS.Action LS.Store m => 
   MonadAff m => 
   Now m => 
   ManageNote m =>
   ManageTopic m =>
   H.Component q Input o m
-component = connect selectAll $
-  H.mkComponent
+component = H.mkComponent
     { 
       initialState
     , render

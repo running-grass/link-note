@@ -1,6 +1,8 @@
 module Main 
   where
 
+import Prelude
+
 import Control.Promise (Promise, toAffE)
 import Data.Maybe (Maybe(..), maybe)
 import Effect (Effect)
@@ -13,8 +15,8 @@ import Halogen.VDom.Driver (runUI)
 import LinkNote.Component.AppM (runAppM)
 import LinkNote.Component.Router as Router
 import LinkNote.Component.Store (LogLevel(..))
+import LinkNote.Component.Store as Store
 import LinkNote.Data.Route (routeCodec)
-import Prelude (Unit, bind, discard, pure, unit, void, when, ($), (/=))
 import Routing.Duplex (parse)
 import Routing.Hash (matchesWith)
 import RxDB.Type (RxCollection, RxDatabase)
@@ -26,10 +28,19 @@ foreign import initRxDB :: Unit -> Effect (Promise RxDatabase)
 initRxDBA :: Unit -> Aff RxDatabase
 initRxDBA unit = toAffE $ initRxDB unit
 
-foreign import _getCollection :: forall a. RxDatabase -> String -> Effect (Promise (RxCollection a))
+foreign import _getCollection :: forall a.  (forall x. x -> Maybe x) 
+  -> (forall x. Maybe x) 
+  -> RxDatabase 
+  -> String 
+  -> Effect (Maybe (RxCollection a))
 
-getCollection :: forall a . RxDatabase -> String -> Aff (RxCollection a)
-getCollection db collName = toAffE $ _getCollection db collName
+foreign import _initCollections :: RxDatabase -> Effect (Promise Boolean)
+
+getCollection :: forall a . RxDatabase -> String -> Effect (Maybe (RxCollection a))
+getCollection = _getCollection Just Nothing
+
+initCollection :: RxDatabase -> Aff Boolean
+initCollection = toAffE <<< _initCollections 
 
 -- | Waits for the document to load and then finds the `body` element.
 awaitRoot :: Aff HTMLElement
@@ -42,11 +53,15 @@ main :: Effect Unit
 main = runHalogenAff do
     app <- awaitRoot 
     db <- initRxDBA unit 
-    collNote <- getCollection db "note"
-    collTopic <- getCollection db "topic"
-    collFile <- getCollection db "file"
-    let initStore = {
+    void $ initCollection db
+    collNote <- H.liftEffect $ getCollection db "note"
+    collTopic <- H.liftEffect $ getCollection db "topic"
+    collFile <- H.liftEffect $ getCollection db "file"
+    let 
+      initStore :: Store.Store
+      initStore = {
         ipfs : Nothing
+        , rxdb : db
         , logLevel : Dev
         , collTopic : collTopic 
         , collNote : collNote

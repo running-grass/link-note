@@ -22,6 +22,7 @@ import LinkNote.Capability.Resource.Note (class ManageNote)
 import LinkNote.Capability.Resource.Topic (class ManageTopic)
 import LinkNote.Component.Store (LogLevel(..))
 import LinkNote.Component.Store as Store
+import LinkNote.Component.Util (liftMaybe)
 import LinkNote.Data.Log as Log
 import LinkNote.Data.Route as Route
 import Routing.Duplex (print)
@@ -118,38 +119,47 @@ instance ipfsAppM :: ManageIPFS AppM where
 instance manageTopicAppM :: ManageTopic AppM where
   getTopics = do
     { collTopic } <- getStore
-    liftAff $ getAllDocs collTopic
+    coll <- liftMaybe collTopic
+    liftAff $ getAllDocs coll
   createTopic topic = do
     { collTopic } <- getStore 
-    liftAff $ insertDoc collTopic topic
+    coll <- liftMaybe collTopic
+    liftAff $ insertDoc coll topic
   getTopic id = do
     { collTopic } <- getStore 
-    liftAff $ getDoc collTopic id
+    coll <- liftMaybe collTopic
+    liftAff $ getDoc coll id
   updateTopicById id patch = do
     { collTopic } <- getStore
-    liftAff $ updateDocById collTopic id patch
+    coll <- liftMaybe collTopic
+    liftAff $ updateDocById coll id patch
     pure true
 instance manageNoteAppM :: ManageNote AppM where
   addNote note = do
     { collNote } <- getStore
-    liftAff $ insertDoc collNote note
+    coll <- liftMaybe collNote
+    liftAff $ insertDoc coll note
     pure true
   deleteNotes ids = do
     { collNote } <- getStore
-    liftAff $ bulkRemoveDoc collNote ids
+    coll <- liftMaybe collNote
+    liftAff $ bulkRemoveDoc coll ids
     pure true
   getAllNotesByHostId hostId = do
     { collNote } <- getStore
-    liftAff $ find collNote { hostId } 
+    coll <- liftMaybe collNote
+    liftAff $ find coll { hostId } 
   updateNoteById id notePatch = do
     { collNote } <- getStore
-    liftAff $ updateDocById collNote id notePatch
+    coll <- liftMaybe collNote
+    liftAff $ updateDocById coll id notePatch
     pure true
 
 instance manageFileAppM :: ManageFile AppM where
   addFile file = do
     { collFile } <- getStore
-    liftAff $ insertDoc collFile file
+    coll <- liftMaybe collFile
+    liftAff $ insertDoc coll file
     pure true
 
 instance logMessagesAppM :: LogMessages AppM where

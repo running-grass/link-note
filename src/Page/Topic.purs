@@ -27,7 +27,7 @@ import Halogen.Store.Select (selectAll)
 import Halogen.Subscription as HS
 import Html.Renderer.Halogen as RH
 import IPFS (IPFS)
-import LinkNote.Capability.LogMessages (class LogMessages, logAny, logDebug, logDebugAny)
+import LinkNote.Capability.LogMessages (class LogMessages, logAny, logDebug)
 import LinkNote.Capability.ManageFile (class ManageFile, addFile)
 import LinkNote.Capability.ManageIPFS (class ManageIPFS, getIpfsGatewayPrefix)
 import LinkNote.Capability.Now (class Now, now)

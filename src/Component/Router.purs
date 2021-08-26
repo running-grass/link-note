@@ -148,4 +148,4 @@ component = connect selectAll $ H.mkComponent
         -- _ -> HH.div_ [ HH.text "404页面" ]
       Nothing ->
         HH.div_ [ HH.text "Oh yeah! You get a 404 page." ]
-  ]
+  ] 

@@ -53,7 +53,7 @@ module.exports = {
           not: [/ipfs-http-client/],
         },
         // include: /node_modules\/ipfs-http-client/,
-        use: ['cache-loader', 'babel-loader'],
+        use: ['babel-loader'],
 
         // use: {
         //   loader: "babel-loader",
@@ -62,7 +62,7 @@ module.exports = {
       {
         test: /\.purs$/,
         use: [
-          "cache-loader",
+          // "cache-loader",
           {
             loader: 'purs-loader',
             options: {

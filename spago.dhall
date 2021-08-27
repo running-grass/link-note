@@ -25,6 +25,7 @@ to generate this file without the comments in this block.
   , "foldable-traversable"
   , "formatters"
   , "halogen"
+  , "halogen-select"
   , "halogen-store"
   , "halogen-subscriptions"
   , "html-parser-halogen"

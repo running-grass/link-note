@@ -1,12 +1,21 @@
 module LinkNote.Page.Setting where
 
+import Prelude
+
 import Effect.Aff.Class (class MonadAff)
 import Halogen as H
 import Halogen.HTML as HH
 import Halogen.HTML.Events as HE
+import Halogen.HTML.Properties as HP
+import LinkNote.Capability.LogMessages (class LogMessages, logAny)
 import LinkNote.Capability.ManageDB (class ManageDB, deleteLocalDB, exportLocalDB)
+import LinkNote.Capability.ManageStore (class ManageStore, setIpfsInstanceType)
 import LinkNote.Component.HTML.Utils (buttonClass, css)
-import LinkNote.Data.Setting (IPFSInstanceType)
+import LinkNote.Data.Setting (IPFSInstanceType(..), parseIpfsInsType, toString)
+
+-- import  Select  as  Select 
+-- import  Select.Setters  as  Setters
+
 
 type Input = { 
   ipfsInstanceType :: IPFSInstanceType
@@ -14,14 +23,25 @@ type Input = {
 
 type State = { 
     ipfsInstanceType :: IPFSInstanceType
+    , selected :: String
 }
 
-data Action = DeleteDB | ExportDB
+data Action = DeleteDB 
+  | ExportDB
+  | ChangeIpfsInsType String
 
 render :: forall cs m. State -> H.ComponentHTML Action cs m
-render _ =
+render st  =
   HH.section_ [
-    HH.div [ css "mb-4" ] [
+    HH.div [css "mb-4"] [
+      -- HH.span_ [HH.text st.selected] ,
+      HH.select [ HE.onValueChange ChangeIpfsInsType, HP.value st.selected] [
+        HH.option [ HP.value "unused"] [HH.text "不使用IPFS"]
+        , HH.option [ HP.value "local" ] [HH.text "本地Go节点"]
+        , HH.option [ HP.value "brave" ] [HH.text "brave浏览器"]
+      ]
+    ]
+    , HH.div [ css "mb-4" ] [
       HH.button [ buttonClass "", HE.onClick \_ -> ExportDB] [ HH.text "导出"]
     ]
     , HH.div_ [
@@ -32,11 +52,14 @@ render _ =
 initialState :: Input-> State
 initialState input = { 
   ipfsInstanceType: input.ipfsInstanceType
+  , selected : toString input.ipfsInstanceType
 }
 
 component :: forall q  o m. 
   MonadAff m 
   => ManageDB m
+  => ManageStore m
+  => LogMessages m
   => H.Component q Input o m
 component =
   H.mkComponent
@@ -53,3 +76,7 @@ component =
         deleteLocalDB
       ExportDB -> do
         exportLocalDB 
+      ChangeIpfsInsType insType -> do
+        H.modify_ _ { selected = insType}
+        setIpfsInstanceType $ parseIpfsInsType insType
+        logAny insType

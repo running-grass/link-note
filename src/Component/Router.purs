@@ -70,6 +70,7 @@ data Query a
 
 type State = { 
     route :: Maybe Route
+    , ipfsInstanceType :: IPFSInstanceType
   }
 
 data Action
@@ -83,9 +84,10 @@ type ChildSlots =
   , topic :: OpaqueSlot Unit
   )
 
-initialState :: forall a. a -> State
-initialState _ = { 
+initialState :: ConnectedInput -> State
+initialState { context } = { 
   route: Nothing
+  , ipfsInstanceType : context.ipfsType
 }
 
 component :: forall m. MonadAff m
@@ -138,7 +140,7 @@ component = connect selectAll $ H.mkComponent
       pure (Just a)
 
   render :: State -> H.ComponentHTML Action ChildSlots m
-  render { route } = HH.div_ [
+  render { route, ipfsInstanceType } = HH.div_ [
     header route,
     helperHTML,
     case route of
@@ -146,7 +148,7 @@ component = connect selectAll $ H.mkComponent
         Home -> 
           HH.slot_ (Proxy :: _ "home") unit Home.component unit
         Setting ->
-          HH.slot_ (Proxy :: _ "setting") unit Setting.component {  ipfsInstanceType: JsIPFS } 
+          HH.slot_ (Proxy :: _ "setting") unit Setting.component {  ipfsInstanceType } 
         Topic topicId -> 
           HH.slot_ (Proxy :: _ "topic") unit Topic.component { topicId }
         TopicList -> 

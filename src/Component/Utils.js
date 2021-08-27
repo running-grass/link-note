@@ -38,3 +38,7 @@ exports._swapElem = just => nothing => idx1 => idx2 => arr => {
 
     return just(newArr);
 }
+
+exports.refreshWindow = () => {
+    location.href = "";
+}

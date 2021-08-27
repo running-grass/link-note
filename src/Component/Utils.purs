@@ -26,3 +26,5 @@ foreign import _swapElem :: forall a .
 
 swapElem :: forall a. Int -> Int -> Array a -> Maybe (Array a)
 swapElem idx1 idx2 arr = _swapElem Just Nothing idx1 idx2 arr
+
+foreign import refreshWindow :: Effect Unit

@@ -25,7 +25,7 @@ import LinkNote.Capability.Resource.Note (class ManageNote)
 import LinkNote.Capability.Resource.Topic (class ManageTopic)
 import LinkNote.Component.Store (LogLevel(..))
 import LinkNote.Component.Store as Store
-import LinkNote.Component.Util (liftMaybe)
+import LinkNote.Component.Util (liftMaybe, refreshWindow)
 import LinkNote.Data.Log as Log
 import LinkNote.Data.Route as Route
 import LinkNote.Data.Setting (toString)
@@ -141,7 +141,9 @@ instance ManageStore AppM where
     w <- liftEffect window
     s <- liftEffect $ localStorage w
     liftEffect $ setItem "ipfsInstanceType" (toString ins) s
-    updateStore $ Store.SetIPFSType ins 
+    -- updateStore $ Store.SetIPFSType ins 
+    liftEffect $ refreshWindow
+
 
 instance ManageTopic AppM where
   getTopics = do

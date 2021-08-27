@@ -201,37 +201,82 @@ lastSecond f = NArray.index f $ len - 2
   where 
     len = length f
 
+noteWrap :: String
+noteWrap = """
+position: relative;
+width: 100%;
+"""
 
+textareaStyle :: String
+textareaStyle = """
+    resize:none;
+    height: 100%;
+    position: absolute;
+    left: 0;
+    top: 0;
+    background-color: transparent;
+"""
+
+notePlaceholder :: String
+notePlaceholder = """
+visibility: hidden;
+"""
+
+contentStyle :: String
+contentStyle =  """
+    min-height: 30px;
+    border: 0;
+    width: 100%;
+    font-family:PingFangSC-Regular,PingFang SC;
+    display: block;
+    font-size: 14px;
+    color: #333333;
+    line-height: 1.3;
+    padding: 5px 0;
+    overflow:hidden;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    word-break: break-word;
+"""
 renderNote :: forall  a. String -> Maybe String -> Int ->  NoteNode -> HH.HTML a Action
 renderNote ipfsGatway currentId level noteNode@(NoteNode note)  = 
   HH.li [ 
     HP.id note.id 
     , HE.onClick \ev -> ClickNote ev note.id 
-
+    , css "bg-gray-50"
     , HP.style "min-height: 30px;"
-    , css $ "pl-" <> (show 8)
     ] 
     [
       case currentId of 
-      Just id | id == note.id -> HH.textarea [
-        HP.value note.heading
-        , HP.style "min-width: 100px;min-height: 30px;" 
-        , HE.onKeyUp \kbe -> HandleKeyUp noteNode kbe 
-        , HE.onKeyDown \kbe -> HandleKeyDown kbe
-        , HE.onPaste IgnorePaste
-        , HE.onValueInput \val -> Submit note.id val
-        , css "bg-gray-100"
-        -- , HE.onBlur \_ -> ChangeEditID Nothing
-      ]
+      Just id | id == note.id -> 
+        HH.div [
+          css "bg-gray-200"
+          , HP.style noteWrap
+          ] [
+            HH.pre [
+              HP.style $ notePlaceholder <> contentStyle
+              ] [ HH.text note.heading ]
+            , HH.textarea [
+              HP.value note.heading
+              , css "focus:ring-0"
+              , HP.style $ textareaStyle <> contentStyle
+              , HE.onKeyUp \kbe -> HandleKeyUp noteNode kbe 
+              , HE.onKeyDown \kbe -> HandleKeyDown kbe
+              , HE.onPaste IgnorePaste
+              , HE.onValueInput \val -> Submit note.id val
+            -- , HE.onBlur \_ -> ChangeEditID Nothing
+          ]
+        ] 
 
       _ -> HH.div [ 
-        HP.class_ $ ClassName "head bg-gray-50"
+        HP.style "word-break: break-all;"
       ] [ 
         RH.render_ $ replace regFileLink ("<img src=\"" <> ipfsGatway <> "$1\">") note.heading 
       ]
+
       , if null note.children 
         then HH.span_ []
-        else HH.ul_ $ note.children <#> renderNote ipfsGatway currentId (level + 1)
+        else HH.ul [css $ "list-disc pl-6"] $ note.children <#> renderNote ipfsGatway currentId (level + 1)
     ]
 
 
@@ -239,7 +284,7 @@ render :: forall cs m. State -> H.ComponentHTML Action cs m
 render state =
   HH.div_
     [
-    HH.ul_ $ state.renderNoteList <#> renderNote state.ipfsGatway state.currentId 1
+    HH.ul [css "list-disc pl-6"] $ state.renderNoteList <#> renderNote state.ipfsGatway state.currentId 1
     ]
     
 getTextFromEvent :: Event -> Effect (Maybe String)
@@ -318,6 +363,7 @@ handleAction = case _ of
   Submit noteId note ->  do
     nowTime <- now
     void $ updateNoteById noteId { heading: note, updated: nowTime }
+    handleAction InitNote
   SubmitIpfs path -> do
     let fileId = "file-" <> path
     void $ addFile { cid: path,  id: fileId, mime: "", type: "" }

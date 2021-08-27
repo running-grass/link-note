@@ -27,6 +27,7 @@ specifiers:
   release-it: ^14.10.1
   rxdb: ^10.0.2
   rxjs: ^7.2.0
+  sanctuary: ^3.1.0
   uuid: ^8.3.2
   webpack: ^4.46.0
   webpack-cli: ^3.3.12
@@ -48,6 +49,7 @@ dependencies:
   pouchdb-adapter-idb: 7.2.2
   rxdb: 10.0.2_rxjs@7.2.0
   rxjs: 7.2.0
+  sanctuary: registry.nlark.com/sanctuary/3.1.0
   uuid: 8.3.2
 
 devDependencies:
@@ -13458,6 +13460,78 @@ packages:
     name: graceful-fs
     version: 4.2.8
     dev: true
+
+  registry.nlark.com/sanctuary-def/0.22.0:
+    resolution: {integrity: sha1-9miUUM/rbgDNZS+sKdp7MOsjEoc=, registry: https://registry.npm.taobao.org/, tarball: https://registry.nlark.com/sanctuary-def/download/sanctuary-def-0.22.0.tgz}
+    name: sanctuary-def
+    version: 0.22.0
+    dependencies:
+      sanctuary-either: registry.nlark.com/sanctuary-either/2.1.0
+      sanctuary-show: registry.nlark.com/sanctuary-show/2.0.0
+      sanctuary-type-classes: registry.nlark.com/sanctuary-type-classes/12.1.0
+      sanctuary-type-identifiers: registry.nlark.com/sanctuary-type-identifiers/3.0.0
+    dev: false
+
+  registry.nlark.com/sanctuary-either/2.1.0:
+    resolution: {integrity: sha1-zL6i/4JDkC6Z1uALP34wVbyVTjo=, registry: https://registry.npm.taobao.org/, tarball: https://registry.nlark.com/sanctuary-either/download/sanctuary-either-2.1.0.tgz}
+    name: sanctuary-either
+    version: 2.1.0
+    dependencies:
+      sanctuary-show: registry.nlark.com/sanctuary-show/2.0.0
+      sanctuary-type-classes: registry.nlark.com/sanctuary-type-classes/12.1.0
+    dev: false
+
+  registry.nlark.com/sanctuary-maybe/2.1.0:
+    resolution: {integrity: sha1-OubjW1xccsx1/gYmtnp0q8TmjZE=, registry: https://registry.npm.taobao.org/, tarball: https://registry.nlark.com/sanctuary-maybe/download/sanctuary-maybe-2.1.0.tgz}
+    name: sanctuary-maybe
+    version: 2.1.0
+    dependencies:
+      sanctuary-show: registry.nlark.com/sanctuary-show/2.0.0
+      sanctuary-type-classes: registry.nlark.com/sanctuary-type-classes/12.1.0
+    dev: false
+
+  registry.nlark.com/sanctuary-pair/2.1.0:
+    resolution: {integrity: sha1-/niNyV0WRwnIRuhlBJWFzdL8gnc=, registry: https://registry.npm.taobao.org/, tarball: https://registry.nlark.com/sanctuary-pair/download/sanctuary-pair-2.1.0.tgz}
+    name: sanctuary-pair
+    version: 2.1.0
+    dependencies:
+      sanctuary-show: registry.nlark.com/sanctuary-show/2.0.0
+      sanctuary-type-classes: registry.nlark.com/sanctuary-type-classes/12.1.0
+    dev: false
+
+  registry.nlark.com/sanctuary-show/2.0.0:
+    resolution: {integrity: sha1-Iya0dE9LD5k/GMpWop9opQ9RRjc=, registry: https://registry.npm.taobao.org/, tarball: https://registry.nlark.com/sanctuary-show/download/sanctuary-show-2.0.0.tgz}
+    name: sanctuary-show
+    version: 2.0.0
+    dev: false
+
+  registry.nlark.com/sanctuary-type-classes/12.1.0:
+    resolution: {integrity: sha1-LRRX9njLYhvNpk/lN/XQfaVVbDo=, registry: https://registry.npm.taobao.org/, tarball: https://registry.nlark.com/sanctuary-type-classes/download/sanctuary-type-classes-12.1.0.tgz}
+    name: sanctuary-type-classes
+    version: 12.1.0
+    dependencies:
+      sanctuary-type-identifiers: registry.nlark.com/sanctuary-type-identifiers/3.0.0
+    dev: false
+
+  registry.nlark.com/sanctuary-type-identifiers/3.0.0:
+    resolution: {integrity: sha1-UctIjS7Z8ZSUamT/4rQd1Jo0jAs=, registry: https://registry.npm.taobao.org/, tarball: https://registry.nlark.com/sanctuary-type-identifiers/download/sanctuary-type-identifiers-3.0.0.tgz}
+    name: sanctuary-type-identifiers
+    version: 3.0.0
+    dev: false
+
+  registry.nlark.com/sanctuary/3.1.0:
+    resolution: {integrity: sha1-KgPwJIPrmiIBMTCuntfS+dQypUI=, registry: https://registry.npm.taobao.org/, tarball: https://registry.nlark.com/sanctuary/download/sanctuary-3.1.0.tgz}
+    name: sanctuary
+    version: 3.1.0
+    dependencies:
+      sanctuary-def: registry.nlark.com/sanctuary-def/0.22.0
+      sanctuary-either: registry.nlark.com/sanctuary-either/2.1.0
+      sanctuary-maybe: registry.nlark.com/sanctuary-maybe/2.1.0
+      sanctuary-pair: registry.nlark.com/sanctuary-pair/2.1.0
+      sanctuary-show: registry.nlark.com/sanctuary-show/2.0.0
+      sanctuary-type-classes: registry.nlark.com/sanctuary-type-classes/12.1.0
+      sanctuary-type-identifiers: registry.nlark.com/sanctuary-type-identifiers/3.0.0
+    dev: false
 
   registry.nlark.com/strip-outer/1.0.1:
     resolution: {integrity: sha1-sv0qv2YEudHmATBXGV34Nrip1jE=, registry: https://registry.npm.taobao.org/, tarball: https://registry.nlark.com/strip-outer/download/strip-outer-1.0.1.tgz}

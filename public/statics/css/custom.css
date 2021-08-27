@@ -1,0 +1,3 @@
+textarea:focus-visible {
+    outline: none;
+}

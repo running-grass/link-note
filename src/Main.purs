@@ -16,6 +16,7 @@ import LinkNote.Component.AppM (runAppM)
 import LinkNote.Component.Router as Router
 import LinkNote.Component.Store (LogLevel(..))
 import LinkNote.Component.Store as Store
+import LinkNote.Component.Util (logAny)
 import LinkNote.Data.Route (routeCodec)
 import LinkNote.Data.Setting (IPFSInstanceType(..), parseIpfsInsType)
 import Routing.Duplex (parse)
@@ -39,7 +40,10 @@ foreign import _getCollection :: forall a.  (forall x. x -> Maybe x)
   -> String 
   -> Effect (Maybe (RxCollection a))
 
+foreign import _alertUser :: Effect Unit
+
 foreign import _initCollections :: RxDatabase -> Effect (Promise Boolean)
+
 
 getCollection :: forall a . RxDatabase -> String -> Effect (Maybe (RxCollection a))
 getCollection = _getCollection Just Nothing
@@ -55,7 +59,9 @@ awaitRoot = do
   maybe (throwError (error "找不到根节点！")) pure ele
 
 main :: Effect Unit
-main = runHalogenAff do
+main = do 
+  _alertUser
+  runHalogenAff do
     app <- awaitRoot 
     db <- initRxDBA unit 
     void $ initCollection db
@@ -65,7 +71,7 @@ main = runHalogenAff do
     w <- liftEffect window
     s <- liftEffect $ localStorage w
     str <- liftEffect $ getItem "ipfsInstanceType" s
-    let insType = case str of 
+    let insType = logAny $ case str of 
                     Just sss -> parseIpfsInsType sss 
                     Nothing -> Unused
     let 

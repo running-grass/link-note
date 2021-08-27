@@ -12,7 +12,7 @@ data IPFSInstanceType
 
 toString :: IPFSInstanceType -> String 
 toString = case _ of 
-    Unused -> ""
+    Unused -> "unused"
     LocalIPFS -> "local"
     JsIPFS -> "js"
     BraveBrowser -> "brave"
@@ -21,7 +21,7 @@ toString = case _ of
 
 parseIpfsInsType :: String -> IPFSInstanceType
 parseIpfsInsType = case _ of 
-    "" -> Unused
+    "unused" -> Unused
     "local" -> LocalIPFS
     "js" -> JsIPFS
     "brave" -> BraveBrowser

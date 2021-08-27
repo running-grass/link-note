@@ -4,6 +4,8 @@ const {
     addPouchPlugin,
 } = require('rxdb');
 const pouchdbAdapterIdb = require('pouchdb-adapter-idb');
+const S = require('sanctuary');
+const moment = require('moment');
 
 const notMig = doc => doc;
 
@@ -154,10 +156,14 @@ exports.initRxDB = () => () => {
 };
 
 exports._initCollections = db => () => {
+    if (S.size(db.collections)) {
+        return Promise.resolve(true);
+    }
     return db.addCollections(collectionScheme).then(() => {
         return true;
     }).catch(e => {
         console.error(e);
+        alert("数据库结构升级，旧数据库结构不再兼容，请至设置页面手动导出已有数据，然后删除数据库，然后就好啦");
         return false;
     });
 }
@@ -174,3 +180,11 @@ exports._getCollection = just => nothing => db => dbName => () => {
         return nothing;
     }
 };
+
+const alertUserKey = "has_been_alert_user_" + moment().format('YYYY-MM-DD');
+exports._alertUser = () => {
+    if (!localStorage.getItem(alertUserKey)) {
+        alert("该软件正处于快速迭代期，数据库结构随时会出现不兼容的变更。所以仅可用于测试使用，不可用来存储有用的数据。")
+        localStorage.setItem(alertUserKey, 1);
+    }
+}

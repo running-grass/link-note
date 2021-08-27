@@ -5,6 +5,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### 新特性
+- 设置页面新增三个功能
+    1. 修改配置IPFS实例配置
+    2. 导出下载数据库
+    3. 删除数据库
+- 打开IPFS的支持，且可以在设置页面切换配置。默认不使用IPFS
+- 使用上下箭头移动光标
+- 使用Shift+上下箭头在父节点下移动当前笔记
+
+### 优化
+- 主题列表——主题名称不会重复，把新建主题改为了进入主题。如果主题不存在，则自动新建主题
+- 修复调整笔记层级之后不会自动获得焦点的问题
+
 
 ## [0.3.0] - 2021-08-22
 ### 新特性

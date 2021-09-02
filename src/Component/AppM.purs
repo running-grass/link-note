@@ -2,17 +2,18 @@ module LinkNote.Component.AppM where
 
 import Prelude
 
+import Control.Monad.Error.Class (class MonadThrow, throwError)
 import Control.Promise (Promise, toAffE)
 import Data.Maybe (Maybe(..))
 import Data.String (trim)
 import Effect (Effect)
-import Effect.Aff (Aff)
+import Effect.Aff (Aff, error)
 import Effect.Aff.Class (class MonadAff, liftAff)
 import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Console as Console
 import Effect.Now as Now
 import Halogen as H
-import Halogen.Store.Monad (class MonadStore, StoreT, getStore, runStoreT, updateStore)
+import Halogen.Store.Monad (class MonadStore, StoreT, getStore, runStoreT)
 import IPFS (IPFS)
 import LinkNote.Capability.LogMessages (class LogMessages)
 import LinkNote.Capability.ManageDB (class ManageDB)
@@ -25,7 +26,8 @@ import LinkNote.Capability.Resource.Note (class ManageNote)
 import LinkNote.Capability.Resource.Topic (class ManageTopic)
 import LinkNote.Component.Store (LogLevel(..))
 import LinkNote.Component.Store as Store
-import LinkNote.Component.Util (liftMaybe, refreshWindow)
+import LinkNote.Component.Util (getCollection, refreshWindow)
+import LinkNote.Data.Data (collNames)
 import LinkNote.Data.Log as Log
 import LinkNote.Data.Route as Route
 import LinkNote.Data.Setting (toString)
@@ -37,9 +39,7 @@ import Safe.Coerce (coerce)
 import Type.Proxy (Proxy(..))
 import Web.HTML (window)
 import Web.HTML.Window (localStorage)
-import Web.Storage.Storage (clear, getItem, removeItem, setItem)
-
-
+import Web.Storage.Storage (setItem)
 
 foreign import _getGatewayUri :: 
   (forall x. x -> Maybe x) 
@@ -101,6 +101,14 @@ bulkRemoveDoc :: forall a id. RxCollection a -> Array id -> Aff Unit
 bulkRemoveDoc coll ids = toAffE $ _bulkRemoveDoc coll ids
 
 
+getCollectionByName :: forall a. String -> AppM (RxCollection a)
+getCollectionByName name = do
+  { rxdb } <- getStore
+  collMaybe <- H.liftEffect $ getCollection rxdb name
+  case collMaybe of 
+    Just coll -> pure coll
+    Nothing -> throwError $ error $ "数据表" <> name <> "未能初始化"
+
 newtype AppM a = AppM (StoreT Store.Action Store.Store Aff a)
 
 runAppM :: forall q i o. Store.Store -> H.Component q i o AppM -> Aff (H.Component q i o Aff)
@@ -114,6 +122,7 @@ derive newtype instance Monad AppM
 derive newtype instance MonadEffect AppM
 derive newtype instance MonadAff AppM
 derive newtype instance MonadStore Store.Action Store.Store AppM
+derive newtype instance MonadThrow e Aff => MonadThrow e AppM  
 
 instance Navigate AppM where
   navigate =
@@ -136,64 +145,54 @@ instance ManageIPFS AppM where
         case uri of 
           Nothing -> default
           Just uri' -> pure uri'
+          
 instance ManageStore AppM where
   setIpfsInstanceType ins = do
     w <- liftEffect window
     s <- liftEffect $ localStorage w
     liftEffect $ setItem "ipfsInstanceType" (toString ins) s
-    -- updateStore $ Store.SetIPFSType ins 
     liftEffect $ refreshWindow
-
 
 instance ManageTopic AppM where
   getTopics = do
-    { collTopic } <- getStore
-    coll <- liftMaybe collTopic
+    coll <- getCollectionByName collNames.topic
     liftAff $ getAllDocs coll
+    
   createTopic topic = do
     let newTopic = R.modify (Proxy :: Proxy "name") trim topic
-    { collTopic } <- getStore 
-    coll <- liftMaybe collTopic
+    coll <- getCollectionByName collNames.topic
     liftAff $ insertDoc coll newTopic
   getTopic id = do
-    { collTopic } <- getStore 
-    coll <- liftMaybe collTopic
+    coll <- getCollectionByName collNames.topic
     liftAff $ getDocById coll id
   updateTopicById id patch = do
-    { collTopic } <- getStore
-    coll <- liftMaybe collTopic
+    coll <- getCollectionByName collNames.topic
     liftAff $ updateDocById coll id patch
     pure true
   getTopicByName topicName = do
-    { collTopic } <- getStore
-    coll <- liftMaybe collTopic
+    coll <- getCollectionByName collNames.topic
     liftAff $ getDoc coll "name" $ trim topicName
 
 instance ManageNote AppM where
   addNote note = do
-    { collNote } <- getStore
-    coll <- liftMaybe collNote
+    coll <- getCollectionByName collNames.note
     liftAff $ insertDoc coll note
     pure true
   deleteNotes ids = do
-    { collNote } <- getStore
-    coll <- liftMaybe collNote
+    coll <- getCollectionByName collNames.note
     liftAff $ bulkRemoveDoc coll ids
     pure true
   getAllNotesByHostId hostId = do
-    { collNote } <- getStore
-    coll <- liftMaybe collNote
+    coll <- getCollectionByName collNames.note
     liftAff $ find coll { hostId } 
   updateNoteById id notePatch = do
-    { collNote } <- getStore
-    coll <- liftMaybe collNote
+    coll <- getCollectionByName collNames.note
     liftAff $ updateDocById coll id notePatch
     pure true
 
 instance ManageFile AppM where
   addFile file = do
-    { collFile } <- getStore
-    coll <- liftMaybe collFile
+    coll <- getCollectionByName collNames.file
     liftAff $ insertDoc coll file
     pure true
 
@@ -212,4 +211,3 @@ instance ManageDB AppM where
   exportLocalDB = do
     { rxdb } <- getStore
     liftAff $ exportDB rxdb
-

@@ -1,7 +1,6 @@
 const download = require('downloadjs');
 const moment = require('moment');
 exports._getAllDocs = coll => () => {
-    // return Promise.reject("errrrrrr");
     return coll.find().sort({ updated: -1}).exec().then(list => list.map(a => a.toJSON()));
 }
 

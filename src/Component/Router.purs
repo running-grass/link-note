@@ -116,10 +116,7 @@ component = connect selectAll $ H.mkComponent
   handleAction :: Action -> H.HalogenM State Action ChildSlots Void m Unit
   handleAction = case _ of
     Init -> do
-      -- first we'll get the route the user landed on
       initialRoute <- hush <<< (RD.parse routeCodec) <$> liftEffect getHash
-      -- then we'll navigate to the new route (also setting the hash)
-      H.modify_ _ { route = initialRoute }
       navigate $ fromMaybe Home initialRoute
       handleAction InitIPFS
     InitIPFS -> do

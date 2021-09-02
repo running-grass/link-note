@@ -11,7 +11,7 @@ import LinkNote.Capability.LogMessages (class LogMessages, logAny)
 import LinkNote.Capability.ManageDB (class ManageDB, deleteLocalDB, exportLocalDB)
 import LinkNote.Capability.ManageStore (class ManageStore, setIpfsInstanceType)
 import LinkNote.Component.HTML.Utils (buttonClass, css)
-import LinkNote.Data.Setting (IPFSInstanceType(..), parseIpfsInsType, toString)
+import LinkNote.Data.Setting (IPFSInstanceType, parseIpfsInsType, toString)
 
 -- import  Select  as  Select 
 -- import  Select.Setters  as  Setters

@@ -21,12 +21,11 @@ import LinkNote.Data.Route (routeCodec)
 import LinkNote.Data.Setting (IPFSInstanceType(..), parseIpfsInsType)
 import Routing.Duplex (parse)
 import Routing.Hash (matchesWith)
-import RxDB.Type (RxCollection, RxDatabase)
+import RxDB.Type (RxDatabase)
 import Web.DOM.ParentNode (QuerySelector(..))
-import Web.HTML (HTMLElement)
-import Web.HTML (window)
+import Web.HTML (HTMLElement, window)
 import Web.HTML.Window (localStorage)
-import Web.Storage.Storage (clear, getItem, removeItem, setItem)
+import Web.Storage.Storage (getItem)
 
 
 foreign import initRxDB :: Unit -> Effect (Promise RxDatabase)
@@ -34,19 +33,9 @@ foreign import initRxDB :: Unit -> Effect (Promise RxDatabase)
 initRxDBA :: Unit -> Aff RxDatabase
 initRxDBA unit = toAffE $ initRxDB unit
 
-foreign import _getCollection :: forall a.  (forall x. x -> Maybe x) 
-  -> (forall x. Maybe x) 
-  -> RxDatabase 
-  -> String 
-  -> Effect (Maybe (RxCollection a))
-
 foreign import _alertUser :: Effect Unit
 
 foreign import _initCollections :: RxDatabase -> Effect (Promise Boolean)
-
-
-getCollection :: forall a . RxDatabase -> String -> Effect (Maybe (RxCollection a))
-getCollection = _getCollection Just Nothing
 
 initCollection :: RxDatabase -> Aff Boolean
 initCollection = toAffE <<< _initCollections 
@@ -65,9 +54,6 @@ main = do
     app <- awaitRoot 
     db <- initRxDBA unit 
     void $ initCollection db
-    collNote <- H.liftEffect $ getCollection db "note"
-    collTopic <- H.liftEffect $ getCollection db "topic"
-    collFile <- H.liftEffect $ getCollection db "file"
     w <- liftEffect window
     s <- liftEffect $ localStorage w
     str <- liftEffect $ getItem "ipfsInstanceType" s
@@ -81,9 +67,6 @@ main = do
         , ipfsType : insType
         , rxdb : db
         , logLevel : Dev
-        , collTopic : collTopic 
-        , collNote : collNote
-        , collFile : collFile
       } 
     rootComponent <- runAppM initStore Router.component 
     halogenIO <- runUI rootComponent unit app 

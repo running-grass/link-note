@@ -4,9 +4,8 @@ import Prelude
 
 import Data.Maybe (Maybe(..))
 import IPFS (IPFS)
-import LinkNote.Data.Data (Note, File, Topic)
 import LinkNote.Data.Setting (IPFSInstanceType)
-import RxDB.Type (RxCollection, RxDatabase)
+import RxDB.Type (RxDatabase)
 data LogLevel = Dev | Prod
 
 derive instance eqLogLevel :: Eq LogLevel
@@ -18,9 +17,6 @@ type Store = {
     , ipfsType :: IPFSInstanceType
     , rxdb :: RxDatabase
     , logLevel :: LogLevel
-    , collTopic :: Maybe (RxCollection Topic)
-    , collNote :: Maybe (RxCollection Note)
-    , collFile :: Maybe (RxCollection File)
   }
 
 data Action

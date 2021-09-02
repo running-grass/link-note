@@ -42,3 +42,16 @@ exports._swapElem = just => nothing => idx1 => idx2 => arr => {
 exports.refreshWindow = () => {
     location.href = "";
 }
+
+exports._getCollection = just => nothing => db => dbName => () => {
+    // webpack dev环境使用
+    const windowProp = 'coll' + dbName;
+
+    const coll = db.collections[dbName];
+    if (coll) {
+        window[windowProp] = coll;
+        return just(coll);
+    } else {
+        return nothing;
+    }
+};

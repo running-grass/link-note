@@ -107,3 +107,22 @@ in  upstream
     , repo = "https://github.com/rnons/purescript-html-parser-halogen.git"
     , version = "v1.0.0"
     }
+  with halogen-store =
+    {
+       dependencies = [ "aff"
+        , "effect"
+        , "foldable-traversable"
+        , "halogen"
+        , "halogen-hooks"
+        , "halogen-subscriptions"
+        , "maybe"
+        , "prelude"
+        , "refs"
+        , "transformers"
+        , "tuples"
+        , "unsafe-coerce"
+        , "unsafe-reference"
+      ]
+      , repo = "https://github.com/running-grass/purescript-halogen-store.git"
+    , version = "main"
+    }

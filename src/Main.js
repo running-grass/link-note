@@ -168,19 +168,6 @@ exports._initCollections = db => () => {
     });
 }
 
-exports._getCollection = just => nothing => db => dbName => () => {
-    // webpack dev环境使用
-    const windowProp = 'coll' + dbName;
-
-    const coll = db.collections[dbName];
-    if (coll) {
-        window[windowProp] = coll;
-        return just(coll);
-    } else {
-        return nothing;
-    }
-};
-
 const alertUserKey = "has_been_alert_user_" + moment().format('YYYY-MM-DD');
 exports._alertUser = () => {
     if (!localStorage.getItem(alertUserKey)) {

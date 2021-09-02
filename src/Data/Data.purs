@@ -38,3 +38,16 @@ type Topic = {
   updated :: Time,
   noteIds :: Array NoteId
 }
+
+type CollNames = (
+  note :: String
+  , topic :: String
+  , file :: String
+)
+
+collNames :: Record CollNames
+collNames = {
+  note: "note"
+  , topic: "topic"
+  , file: "file"
+}

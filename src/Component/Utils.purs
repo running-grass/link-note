@@ -6,6 +6,7 @@ import Data.Maybe (Maybe(..), fromMaybe)
 import Effect (Effect)
 import Effect.Class (class MonadEffect, liftEffect)
 import Prim.TypeError (class Warn, Text)
+import RxDB.Type (RxCollection, RxDatabase)
 
 foreign import logAny :: forall a. a -> a
 
@@ -28,3 +29,14 @@ swapElem :: forall a. Int -> Int -> Array a -> Maybe (Array a)
 swapElem idx1 idx2 arr = _swapElem Just Nothing idx1 idx2 arr
 
 foreign import refreshWindow :: Effect Unit
+
+
+foreign import _getCollection :: forall a.  (forall x. x -> Maybe x) 
+  -> (forall x. Maybe x) 
+  -> RxDatabase 
+  -> String 
+  -> Effect (Maybe (RxCollection a))
+
+
+getCollection :: forall a . RxDatabase -> String -> Effect (Maybe (RxCollection a))
+getCollection = _getCollection Just Nothing

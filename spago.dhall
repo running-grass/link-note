@@ -38,7 +38,6 @@ to generate this file without the comments in this block.
   , "safe-coerce"
   , "strings"
   , "transformers"
-  , "unsafe-reference"
   , "uuid"
   , "web-clipboard"
   , "web-dom"

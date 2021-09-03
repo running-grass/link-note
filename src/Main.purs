@@ -70,6 +70,6 @@ main = do
       } 
     rootComponent <- runAppM initStore Router.component 
     halogenIO <- runUI rootComponent unit app 
-    void $ liftEffect $ matchesWith (parse routeCodec) \old new ->
+    void $ liftEffect $ matchesWith (parse routeCodec) \old new -> do      
       when (old /= Just new) do
         launchAff_ $ halogenIO.query $ H.mkTell $ Router.Navigate new

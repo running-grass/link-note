@@ -22,7 +22,6 @@ const collectionScheme = {
                 },
                 name: {
                     type: 'string',
-
                 },
                 created: {
                     type: 'integer'

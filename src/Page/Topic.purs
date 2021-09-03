@@ -3,19 +3,17 @@ module LinkNote.Page.Topic where
 import Prelude
 
 import Control.Alternative ((<|>))
-import Control.Monad.Error.Class (class MonadError, class MonadThrow, throwError)
+import Control.Monad.Error.Class (class MonadThrow, throwError)
 import Control.Monad.State (class MonadState)
 import Data.Array (cons, elem, elemIndex, filter, findIndex, index, mapWithIndex, null, sortWith)
 import Data.Array as Array
 import Data.Array.NonEmpty (NonEmptyArray, fromArray, init, last, snoc', toArray, uncons, updateAt)
 import Data.Array.NonEmpty as NArray
-import Data.Either (Either(..))
 import Data.Foldable (length)
-import Data.Maybe (Maybe(..), fromMaybe, fromMaybe')
-import Data.String.Regex (Regex, replace)
+import Data.Maybe (Maybe(..), fromMaybe, fromMaybe', isNothing)
+import Data.String.Regex (Regex, replace, replace')
 import Data.String.Regex.Flags (global)
 import Data.String.Regex.Unsafe (unsafeRegex)
-import Data.UUID as UUID
 import Effect (Effect)
 import Effect.Aff.Class (class MonadAff)
 import Effect.Exception (Error, error)
@@ -29,17 +27,17 @@ import Halogen.Store.Select (selectAll)
 import Halogen.Subscription as HS
 import Html.Renderer.Halogen as RH
 import IPFS (IPFS)
-import LinkNote.Capability.LogMessages (class LogMessages, logDebug)
+import LinkNote.Capability.LogMessages (class LogMessages, logAny, logDebug)
 import LinkNote.Capability.ManageFile (class ManageFile, addFile)
 import LinkNote.Capability.ManageIPFS (class ManageIPFS, getIpfsGatewayPrefix)
 import LinkNote.Capability.Now (class Now, now)
-import LinkNote.Capability.Resource.Note (class ManageNote, addNote, deleteNote, getAllNotesByHostId, updateNoteById)
-import LinkNote.Capability.Resource.Topic (class ManageTopic, updateTopicById)
+import LinkNote.Capability.Resource.Note (class ManageNote, createTopicNote, deleteNote, getAllNotesByHostId, updateNoteById)
+import LinkNote.Capability.Resource.Topic (class ManageTopic, getTopic, updateTopicById)
+import LinkNote.Capability.UUID (class UUID)
 import LinkNote.Component.HTML.Utils (css)
 import LinkNote.Component.Store as LS
 import LinkNote.Component.Util (liftMaybe, swapElem)
 import LinkNote.Data.Data (Note, NoteId, TopicId, Topic)
-import Unsafe.Reference (unsafeRefEq)
 import Web.Clipboard.ClipboardEvent as CE
 import Web.Event.Event (Event, currentTarget, preventDefault, stopPropagation, target)
 import Web.Event.Internal.Types (EventTarget)
@@ -59,11 +57,8 @@ newtype NoteNode = NoteNode {
   , parentId :: NoteId
   , path :: NonEmptyArray Int
 }
-
--- derive newtype instance Eq NoteNode
-
 type State = { 
-    topicId :: TopicId,
+    -- topicId :: TopicId,
     topic :: Topic,
     currentId :: Maybe String,
     noteList :: Array Note,
@@ -97,7 +92,6 @@ data Action
   | Edit String
   | Indent NoteId NodePath
   | UnIndent NoteId NodePath
-  | EditNote Event String 
   | ClickNote ME.MouseEvent NoteId
   | ChangeEditID (Maybe String)
   | UpdateSortInParent String (NoteSort -> NoteSort)
@@ -202,7 +196,17 @@ prevPath path = do
     else updateAt lasInx (las - 1) path
 
 regFileLink :: Regex
-regFileLink = unsafeRegex "\\[\\[file-(.*?)\\]\\]" global
+regFileLink = unsafeRegex "\\(\\(file-(.*?)\\)\\)" global
+
+regLink :: Regex
+regLink = unsafeRegex "\\[\\[([^\\|\\[\\]]*?)(\\|([^\\|\\[\\]]*?))?\\]\\]" global
+
+replaceLink :: String -> String
+replaceLink = replace' regLink re
+  where 
+    re _ [Just name, _,  Just id] = "<a href=\"/#/topic/" <> id <> "\">" <> name <> "</a>" 
+    re _ [Just name, _, _ ] = "<a href=\"/#/topic/" <> name <> "\">" <> name <> "</a>" 
+    re _ xs                    = show xs
 
 lastSecond :: forall a. NonEmptyArray a -> Maybe a
 lastSecond f = NArray.index f $ len - 2
@@ -279,7 +283,7 @@ renderNote ipfsGatway currentId level noteNode@(NoteNode note)  =
       _ -> HH.div [ 
         HP.style "word-break: break-all;"
       ] [ 
-        RH.render_ $ replace regFileLink ("<img src=\"" <> ipfsGatway <> "$1\">") note.heading 
+        RH.render_ $ replaceLink $ replace regFileLink ("<img src=\"" <> ipfsGatway <> "$1\">") note.heading 
       ]
 
       , if null note.children 
@@ -312,11 +316,13 @@ getTextFromEvent ev = do
 handleAction :: forall cs o m . 
   MonadAff m =>  
   Now m =>
+  UUID m =>
   ManageTopic m =>
   ManageIPFS m =>
   ManageNote m =>
   LogMessages m =>
   ManageFile m =>
+  MonadThrow Error m =>
   Action → H.HalogenM State Action cs o m Unit
 handleAction = case _ of
   ChangeEditID mb -> do 
@@ -328,26 +334,14 @@ handleAction = case _ of
     -- logDebug $ "编辑笔记" <> id
     H.liftEffect $ autoFocus id
   New pid idx -> do
-    logDebug $ "增加一个新的Note，id为" <> pid
-    hostId <- H.gets _.topicId 
-    nowTime <- now
-    uuid <- H.liftEffect UUID.genUUID
-    let id = "note-" <> UUID.toString uuid
-    let note = {
-      id,
-      heading: "",
-      content: "",
-      hostType: "topic",
-      hostId,
-      created: nowTime,
-      updated: nowTime,
-      parentId: pid,
-      childrenIds: []
-    }
-    void $ addNote note
-    handleAction $ InitNote
-    handleAction $ InsertSortInParent pid id idx
-    handleAction $ ChangeEditID $ Just id
+    topic <- H.gets _.topic 
+    note' <- createTopicNote topic.id pid ""
+    logDebug $ "增加一个新的Note，pid为" <> (show note')
+    case note' of
+      Nothing -> throwError $ error "增加note失败"
+      Just note -> do
+        handleAction $ InsertSortInParent pid note.id idx
+        handleAction $ ChangeEditID $ Just note.id
     
   UpdateSortInParent pid updateFunc -> do
     if (pid == "") 
@@ -375,7 +369,7 @@ handleAction = case _ of
   SubmitIpfs path -> do
     let fileId = "file-" <> path
     void $ addFile { cid: path,  id: fileId, mime: "", type: "" }
-    let appendText = "[[" <> fileId <> "]]"
+    let appendText = "((" <> fileId <> "))"
     void $ H.liftEffect $ insertText appendText
   InitComp -> do
     logDebug "初始化组件"
@@ -385,18 +379,23 @@ handleAction = case _ of
     ipfsGatway <- getIpfsGatewayPrefix
     H.modify_ _ { ipfsGatway = ipfsGatway}
   InitNote -> do
-    -- TODO 更新也要Topic
     logDebug "初始化State"
-    topicId <- H.gets _.topicId
-    topic <- H.gets _.topic
+    H.get >>= logAny
+    topic' <- H.gets _.topic
+    let topicId = topic'.id
+    topicMaybe <- getTopic topicId
+    when (isNothing topicMaybe) do
+      throwError $ error "更新Topic错误"
+    let topic = fromMaybe topic' topicMaybe
     notes <- getAllNotesByHostId topicId
-    if null notes 
+    let nodes = noteToTree notes "" [] topic.noteIds
+    let ids = treeToIdList nodes
+    if null nodes 
       then handleAction $ New "" 0
       else do 
-        let nodes = noteToTree notes "" [] topic.noteIds
-        let ids = treeToIdList nodes
         H.modify_  _ { 
           noteList = notes 
+          , topic = topic
           , renderNoteList = nodes
           , visionNoteIds = ids
         }
@@ -532,28 +531,12 @@ handleAction = case _ of
               | otherwise -> pure unit 
         _ -> pure unit
     | otherwise -> pure unit
-
-  EditNote ev id -> do 
-    maybeText <- H.liftEffect $ getTextFromEvent ev
-    case maybeText of 
-      Nothing -> pure unit
-      Just text -> do
-        handleAction $ Submit id text
   Edit noteId  -> do
     handleAction $ ChangeEditID $ Just noteId
   IgnorePaste ev -> H.liftEffect $ preventDefault $ CE.toEvent ev
-  Receive { context } -> do
-    ipfs <- H.gets _.ipfs 
-    let ipfs' = context.ipfs
-    when (isUpdate ipfs ipfs') do
-      H.modify_ _ { ipfs = ipfs' }
-      handleAction InitComp
-    pure unit
-    where
-      isUpdate :: Maybe IPFS -> Maybe IPFS -> Boolean
-      isUpdate Nothing Nothing = false
-      isUpdate (Just x) (Just y) = not $ unsafeRefEq (x) (y)
-      isUpdate _ _ = true
+  Receive input -> do
+    H.put $ initialState input 
+    handleAction InitComp
   where
     updateSortByPpath ppath func = do
       nodes <- H.gets _.renderNoteList
@@ -568,7 +551,7 @@ handleAction = case _ of
       handleAction InitNote
 initialState :: ConnectedInput-> State
 initialState { context, input } = { 
-  topicId: input.topicId,
+  -- topicId: input.topicId,
   currentId: Nothing,
   topic: input.topic,
   ipfsGatway: "https://dweb.link/ipfs/",
@@ -593,11 +576,13 @@ component :: forall q o m.
   MonadAff m => 
   MonadStore LS.Action LS.Store m => 
   Now m =>
+  UUID m =>
   ManageIPFS m =>
   LogMessages m =>
   ManageTopic m =>
   ManageNote m =>
   ManageFile m =>
+  MonadThrow Error m =>
   H.Component q Input o m
 component = connect selectAll $ H.mkComponent
     { 

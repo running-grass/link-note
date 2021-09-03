@@ -3,11 +3,12 @@ module LinkNote.Component.Router where
 
 import Prelude
 
+import Control.Monad.Error.Class (class MonadThrow, throwError)
 import Control.Promise (Promise, toAffE)
 import Data.Either (hush)
 import Data.Maybe (Maybe(..), fromMaybe)
 import Effect (Effect)
-import Effect.Aff (Aff)
+import Effect.Aff (Aff, Error, error)
 import Effect.Aff.Class (class MonadAff)
 import Halogen (liftEffect)
 import Halogen as H
@@ -24,10 +25,12 @@ import LinkNote.Capability.ManageStore (class ManageStore)
 import LinkNote.Capability.Navigate (class Navigate, navigate)
 import LinkNote.Capability.Now (class Now)
 import LinkNote.Capability.Resource.Note (class ManageNote)
-import LinkNote.Capability.Resource.Topic (class ManageTopic, getTopic)
+import LinkNote.Capability.Resource.Topic (class ManageTopic, createNewTopic, getTopic, getTopicByName)
+import LinkNote.Capability.UUID (class UUID)
 import LinkNote.Component.HTML.Header (header)
 import LinkNote.Component.HTML.Helper (helperHTML)
 import LinkNote.Component.Store as Store
+import LinkNote.Data.Data (isTopicId)
 import LinkNote.Data.Data as Data
 import LinkNote.Data.Route (Route(..), routeCodec)
 import LinkNote.Data.Setting (IPFSApiAddress(..), IPFSInstanceType(..))
@@ -51,6 +54,8 @@ foreign import getGlobalIPFS :: (forall x. x -> Maybe x)
                                 -> (forall x. Maybe x) 
                                 -> String 
                                 -> Effect (Promise (Maybe IPFS))
+
+
 
 getGlobalIPFSA :: String -> Aff (Maybe IPFS)
 getGlobalIPFSA addr = toAffE $ getGlobalIPFS Just Nothing addr
@@ -98,6 +103,8 @@ component :: forall m. MonadAff m
   => Navigate m
   => ManageTopic m
   => Now m 
+  => UUID m
+  => MonadThrow Error m
   => ManageIPFS m
   => ManageNote m  
   => ManageFile m
@@ -136,12 +143,20 @@ component = connect selectAll $ H.mkComponent
     Navigate dest a -> do
       { route } <-  H.get
       when (route /= Just dest) do 
+        logAny dest
         case dest of 
           Topic topicId -> do 
-            topic <- getTopic topicId
-            H.modify_ _ { currentTopic = topic }
-          _ -> pure unit
-        H.modify_ _ { route = Just dest }
+            if (isTopicId topicId)
+            then do
+              topic <- getTopic topicId
+              H.modify_ _ { currentTopic = topic, route = Just $ Topic topicId}
+            else do
+              let topicName = topicId
+              topic2' <- createNewTopic topicName
+              case topic2' of
+                Just topic2 -> navigate $ Topic topic2.id
+                Nothing -> throwError $ error "创建主题失败"
+          _ -> H.modify_ _ { route = Just dest }
       pure (Just a)
 
   render :: State -> H.ComponentHTML Action ChildSlots m

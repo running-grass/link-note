@@ -6,6 +6,7 @@ import Control.Monad.Error.Class (class MonadThrow, throwError)
 import Control.Promise (Promise, toAffE)
 import Data.Maybe (Maybe(..))
 import Data.String (trim)
+import Data.UUID as DUUID
 import Effect (Effect)
 import Effect.Aff (Aff, error)
 import Effect.Aff.Class (class MonadAff, liftAff)
@@ -24,6 +25,7 @@ import LinkNote.Capability.Navigate (class Navigate)
 import LinkNote.Capability.Now (class Now)
 import LinkNote.Capability.Resource.Note (class ManageNote)
 import LinkNote.Capability.Resource.Topic (class ManageTopic)
+import LinkNote.Capability.UUID (class UUID)
 import LinkNote.Component.Store (LogLevel(..))
 import LinkNote.Component.Store as Store
 import LinkNote.Component.Util (getCollection, refreshWindow)
@@ -85,10 +87,17 @@ foreign import _find :: forall a r. RxCollection a -> Record r -> Effect (Promis
 find :: forall a r. RxCollection a -> Record r -> Aff (Array a)
 find coll q = toAffE $ _find coll q
 
-foreign import _insertDoc :: forall a. RxCollection a -> a -> Effect (Promise Unit)
+foreign import _insertDoc :: forall a.
+  (forall x. x -> Maybe x) 
+  -> (forall x. Maybe x) 
+  -> RxCollection a 
+  -> a 
+  -> Effect (Promise (Maybe a))
 
-insertDoc :: forall a. RxCollection a -> a -> Aff Unit
-insertDoc coll doc = toAffE $ _insertDoc coll doc
+insertDoc :: forall a. RxCollection a 
+  -> a 
+  -> Aff (Maybe a)
+insertDoc coll doc = toAffE $ _insertDoc Just Nothing coll doc
 
 foreign import _updateDocById :: forall a doc. RxCollection a -> String -> doc -> Effect (Promise Unit)
 
@@ -177,7 +186,6 @@ instance ManageNote AppM where
   addNote note = do
     coll <- getCollectionByName collNames.note
     liftAff $ insertDoc coll note
-    pure true
   deleteNotes ids = do
     coll <- getCollectionByName collNames.note
     liftAff $ bulkRemoveDoc coll ids
@@ -194,8 +202,6 @@ instance ManageFile AppM where
   addFile file = do
     coll <- getCollectionByName collNames.file
     liftAff $ insertDoc coll file
-    pure true
-
 instance LogMessages AppM where
   logMessage log = do
     { logLevel } <- getStore
@@ -203,7 +209,10 @@ instance LogMessages AppM where
       Prod, Log.Debug -> pure unit
       _, _ -> Console.log $ Log.message log
   logAny = H.liftEffect <<< _log
-
+instance UUID AppM where
+  uuid = do
+    uuid' <- liftEffect DUUID.genUUID
+    pure $ DUUID.toString uuid'
 instance ManageDB AppM where
   deleteLocalDB = do
     { rxdb } <- getStore

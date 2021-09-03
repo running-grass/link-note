@@ -2,9 +2,10 @@ module LinkNote.Page.TopicList where
 
 import Prelude
 
+import Control.Monad.Error.Class (class MonadThrow, throwError)
 import Data.Maybe (Maybe(..))
-import Data.UUID as UUID
 import Effect.Aff.Class (class MonadAff)
+import Effect.Exception (Error, error)
 import Halogen as H
 import Halogen.HTML (HTML)
 import Halogen.HTML as HH
@@ -13,7 +14,8 @@ import Halogen.HTML.Properties as HP
 import LinkNote.Capability.Navigate (class Navigate, navigate)
 import LinkNote.Capability.Now (class Now, now)
 import LinkNote.Capability.Resource.Note (class ManageNote)
-import LinkNote.Capability.Resource.Topic (class ManageTopic, createTopic, getTopicByName, getTopics)
+import LinkNote.Capability.Resource.Topic (class ManageTopic, createNewTopic, createTopic, getTopicByName, getTopics)
+import LinkNote.Capability.UUID (class UUID)
 import LinkNote.Component.HTML.Utils (buttonClass, css, inputClass, safeHref)
 import LinkNote.Data.Data (Topic)
 import LinkNote.Data.Route as LR
@@ -68,6 +70,8 @@ component :: forall q  o m.
   Now m => 
   ManageNote m =>
   Navigate m =>
+  UUID m => 
+  MonadThrow Error m =>
   ManageTopic m =>
   H.Component q Input o m
 component = H.mkComponent
@@ -89,18 +93,10 @@ component = H.mkComponent
         case mbTopic of 
           Just topic -> navigate $ Route.Topic topic.id
           Nothing -> do
-            uuid <- H.liftEffect UUID.genUUID 
-            let id = "topic-" <> UUID.toString uuid
-            nowTime <- now
-            let topic = {
-              id : id
-              , name : newTopicName
-              , created : nowTime
-              , updated : nowTime
-              , noteIds : []
-            }
-            createTopic topic
-            navigate $ Route.Topic id
+            topic' <- createNewTopic newTopicName
+            case topic' of
+              Nothing -> throwError $ error "创建主题失败"
+              Just topic -> navigate $ Route.Topic topic.id
       UpdateTopicList -> do
         list <- getTopics
         H.modify_ _ { topicList = list }

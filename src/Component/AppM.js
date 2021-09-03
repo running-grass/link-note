@@ -21,8 +21,10 @@ exports._find = coll => obj => () => {
     return coll.find({selector: obj}).sort({ created: 1}).exec().then(list => list.map(a => a.toJSON()));
 }
 
-exports._insertDoc = coll => topic => () => {
-    return coll.insert(topic);
+exports._insertDoc = just => nothing => coll => topic => () => {
+    return coll.insert(topic)
+                .then(doc => just(doc))
+                .catch(() => nothing);
 }
 
 exports._bulkRemoveDoc = coll => ids => () => {

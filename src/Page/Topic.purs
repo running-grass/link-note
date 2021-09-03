@@ -3,11 +3,13 @@ module LinkNote.Page.Topic where
 import Prelude
 
 import Control.Alternative ((<|>))
+import Control.Monad.Error.Class (class MonadError, class MonadThrow, throwError)
 import Control.Monad.State (class MonadState)
 import Data.Array (cons, elem, elemIndex, filter, findIndex, index, mapWithIndex, null, sortWith)
 import Data.Array as Array
 import Data.Array.NonEmpty (NonEmptyArray, fromArray, init, last, snoc', toArray, uncons, updateAt)
 import Data.Array.NonEmpty as NArray
+import Data.Either (Either(..))
 import Data.Foldable (length)
 import Data.Maybe (Maybe(..), fromMaybe, fromMaybe')
 import Data.String.Regex (Regex, replace)
@@ -16,6 +18,7 @@ import Data.String.Regex.Unsafe (unsafeRegex)
 import Data.UUID as UUID
 import Effect (Effect)
 import Effect.Aff.Class (class MonadAff)
+import Effect.Exception (Error, error)
 import Halogen as H
 import Halogen.HTML as HH
 import Halogen.HTML.Events as HE
@@ -31,7 +34,7 @@ import LinkNote.Capability.ManageFile (class ManageFile, addFile)
 import LinkNote.Capability.ManageIPFS (class ManageIPFS, getIpfsGatewayPrefix)
 import LinkNote.Capability.Now (class Now, now)
 import LinkNote.Capability.Resource.Note (class ManageNote, addNote, deleteNote, getAllNotesByHostId, updateNoteById)
-import LinkNote.Capability.Resource.Topic (class ManageTopic, getTopic, updateTopicById)
+import LinkNote.Capability.Resource.Topic (class ManageTopic, updateTopicById)
 import LinkNote.Component.HTML.Utils (css)
 import LinkNote.Component.Store as LS
 import LinkNote.Component.Util (liftMaybe, swapElem)
@@ -61,7 +64,7 @@ newtype NoteNode = NoteNode {
 
 type State = { 
     topicId :: TopicId,
-    topic :: Maybe Topic,
+    topic :: Topic,
     currentId :: Maybe String,
     noteList :: Array Note,
     renderNoteList :: Array NoteNode,
@@ -71,7 +74,8 @@ type State = {
     }
 
 type Input = {
-  topicId :: TopicId
+  topicId :: TopicId,
+  topic :: Topic
 }
 
 type ConnectedInput = Connected LS.Store Input
@@ -176,6 +180,11 @@ flatten nodes = Array.concatMap flatten_ nodes
 findNode :: NoteId -> Array NoteNode -> Maybe NoteNode
 findNode id nodes = Array.find (\(NoteNode n) -> n.id == id) $ flatten nodes
 
+
+-- fromJust' :: forall a m e. MonadThrow Either m => Maybe a -> m a
+fromJust' = case _ of
+  Just x -> pure x 
+  Nothing -> throwError $ ""
 
 parentPath :: NodePath -> Maybe NodePath
 parentPath path = do
@@ -343,7 +352,7 @@ handleAction = case _ of
   UpdateSortInParent pid updateFunc -> do
     if (pid == "") 
       then do
-        topic <- liftMaybe =<< H.gets _.topic
+        topic <- H.gets _.topic
         let noteIds = Array.nubEq $ updateFunc topic.noteIds
         void $ updateTopicById topic.id { noteIds }
       else do
@@ -376,20 +385,15 @@ handleAction = case _ of
     ipfsGatway <- getIpfsGatewayPrefix
     H.modify_ _ { ipfsGatway = ipfsGatway}
   InitNote -> do
+    -- TODO 更新也要Topic
     logDebug "初始化State"
     topicId <- H.gets _.topicId
-    topic <- getTopic topicId
-
-    topic_ <- liftMaybe topic
-    logDebug $ "读取到topic " <> topic_.name
-    H.modify_  _ { 
-      topic = Just topic_
-    }
+    topic <- H.gets _.topic
     notes <- getAllNotesByHostId topicId
     if null notes 
       then handleAction $ New "" 0
       else do 
-        let nodes = noteToTree notes "" [] topic_.noteIds
+        let nodes = noteToTree notes "" [] topic.noteIds
         let ids = treeToIdList nodes
         H.modify_  _ { 
           noteList = notes 
@@ -470,10 +474,9 @@ handleAction = case _ of
           nodes <- H.gets _.renderNoteList
           topic <- H.gets _.topic
           let parentNode = parentPath path >>= look nodes
-          let mbPlen = case parentNode , topic of 
-                        (Just (NoteNode n)) , _ -> Just $ length n.children
-                        Nothing , (Just t) -> Just $ length t.noteIds
-                        _ , _ -> Nothing
+          let mbPlen = case parentNode of 
+                        (Just (NoteNode n)) -> Just $ length n.children
+                        Nothing  -> Just $ length topic.noteIds
           let mbPpath = parentPath path
           let currentIdx = last path
           let func = \arr -> fromMaybe arr (swapElem currentIdx (currentIdx + 1) arr)
@@ -567,7 +570,7 @@ initialState :: ConnectedInput-> State
 initialState { context, input } = { 
   topicId: input.topicId,
   currentId: Nothing,
-  topic: Nothing,
+  topic: input.topic,
   ipfsGatway: "https://dweb.link/ipfs/",
   ipfs : context.ipfs,
   noteList : [],

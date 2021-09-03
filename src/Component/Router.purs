@@ -24,10 +24,11 @@ import LinkNote.Capability.ManageStore (class ManageStore)
 import LinkNote.Capability.Navigate (class Navigate, navigate)
 import LinkNote.Capability.Now (class Now)
 import LinkNote.Capability.Resource.Note (class ManageNote)
-import LinkNote.Capability.Resource.Topic (class ManageTopic)
+import LinkNote.Capability.Resource.Topic (class ManageTopic, getTopic)
 import LinkNote.Component.HTML.Header (header)
 import LinkNote.Component.HTML.Helper (helperHTML)
 import LinkNote.Component.Store as Store
+import LinkNote.Data.Data as Data
 import LinkNote.Data.Route (Route(..), routeCodec)
 import LinkNote.Data.Setting (IPFSApiAddress(..), IPFSInstanceType(..))
 import LinkNote.Page.Home as Home
@@ -71,6 +72,7 @@ data Query a
 type State = { 
     route :: Maybe Route
     , ipfsInstanceType :: IPFSInstanceType
+    , currentTopic :: Maybe Data.Topic
   }
 
 data Action
@@ -88,6 +90,7 @@ initialState :: ConnectedInput -> State
 initialState { context } = { 
   route: Nothing
   , ipfsInstanceType : context.ipfsType
+  , currentTopic : Nothing
 }
 
 component :: forall m. MonadAff m
@@ -133,23 +136,28 @@ component = connect selectAll $ H.mkComponent
     Navigate dest a -> do
       { route } <-  H.get
       when (route /= Just dest) do 
+        case dest of 
+          Topic topicId -> do 
+            topic <- getTopic topicId
+            H.modify_ _ { currentTopic = topic }
+          _ -> pure unit
         H.modify_ _ { route = Just dest }
       pure (Just a)
 
   render :: State -> H.ComponentHTML Action ChildSlots m
-  render { route, ipfsInstanceType } = HH.div_ [
+  render { route, ipfsInstanceType, currentTopic } = HH.div_ [
     header route,
     helperHTML,
-    case route of
-      Just r -> case r of
+    case route, currentTopic of
+      Just (Topic topicId),Just topic -> HH.slot_ (Proxy :: _ "topic") unit Topic.component { topicId, topic }
+      Just r , _ -> case r of
         Home -> 
           HH.slot_ (Proxy :: _ "home") unit Home.component unit
         Setting ->
           HH.slot_ (Proxy :: _ "setting") unit Setting.component {  ipfsInstanceType } 
-        Topic topicId -> 
-          HH.slot_ (Proxy :: _ "topic") unit Topic.component { topicId }
         TopicList -> 
           HH.slot_ (Proxy :: _ "topicList") unit TopicList.component unit
-      Nothing ->
+        _ ->  HH.div_ [ HH.text "404" ]
+      Nothing, _ ->
         HH.div_ [ HH.text "Oh yeah! You get a 404 page." ]
   ] 

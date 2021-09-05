@@ -12,9 +12,9 @@ import Halogen.HTML as HH
 import Halogen.HTML.Events as HE
 import Halogen.HTML.Properties as HP
 import LinkNote.Capability.Navigate (class Navigate, navigate)
-import LinkNote.Capability.Now (class Now, now)
+import LinkNote.Capability.Now (class Now)
 import LinkNote.Capability.Resource.Note (class ManageNote)
-import LinkNote.Capability.Resource.Topic (class ManageTopic, createNewTopic, createTopic, getTopicByName, getTopics)
+import LinkNote.Capability.Resource.Topic (class ManageTopic, createNewTopic, getTopicByName, getTopics)
 import LinkNote.Capability.UUID (class UUID)
 import LinkNote.Component.HTML.Utils (buttonClass, css, inputClass, safeHref)
 import LinkNote.Data.Data (Topic)

@@ -19,6 +19,7 @@ import IPFS (IPFS)
 import LinkNote.Capability.LogMessages (class LogMessages)
 import LinkNote.Capability.ManageDB (class ManageDB)
 import LinkNote.Capability.ManageFile (class ManageFile)
+import LinkNote.Capability.ManageHTML (class ManageHTML, localStorage)
 import LinkNote.Capability.ManageIPFS (class ManageIPFS)
 import LinkNote.Capability.ManageStore (class ManageStore)
 import LinkNote.Capability.Navigate (class Navigate)
@@ -39,8 +40,7 @@ import Routing.Hash (setHash)
 import RxDB.Type (RxCollection, RxDatabase)
 import Safe.Coerce (coerce)
 import Type.Proxy (Proxy(..))
-import Web.HTML (window)
-import Web.HTML.Window (localStorage)
+import Web.HTML as HTML
 import Web.Storage.Storage (setItem)
 
 foreign import _getGatewayUri :: 
@@ -143,6 +143,9 @@ instance Now AppM where
   nowTime = liftEffect Now.nowTime
   nowDateTime = liftEffect Now.nowDateTime
 
+instance ManageHTML AppM where
+  window = liftEffect HTML.window
+
 instance ManageIPFS AppM where
   getIpfsGatewayPrefix = do 
     { ipfs } <- getStore
@@ -157,8 +160,7 @@ instance ManageIPFS AppM where
           
 instance ManageStore AppM where
   setIpfsInstanceType ins = do
-    w <- liftEffect window
-    s <- liftEffect $ localStorage w
+    s <- localStorage
     liftEffect $ setItem "ipfsInstanceType" (toString ins) s
     liftEffect $ refreshWindow
 

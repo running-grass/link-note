@@ -36,7 +36,7 @@ import LinkNote.Capability.Resource.Topic (class ManageTopic, getTopic, updateTo
 import LinkNote.Capability.UUID (class UUID)
 import LinkNote.Component.HTML.Utils (css)
 import LinkNote.Component.Store as LS
-import LinkNote.Component.Util (liftMaybe, swapElem)
+import LinkNote.Component.Util (swapElem)
 import LinkNote.Data.Data (Note, NoteId, TopicId, Topic)
 import Web.Clipboard.ClipboardEvent as CE
 import Web.Event.Event (Event, currentTarget, preventDefault, stopPropagation, target)
@@ -103,13 +103,17 @@ foreign import addPasteListenner :: (forall a. a -> Maybe a -> a) -> Maybe IPFS 
 
 type NoteSort = Array NoteId
 
+throwTextError :: forall m a. MonadThrow Error m => String -> m a
+throwTextError = throwError <<< error 
+
 findNote :: forall m .
   MonadState State m =>
   MonadAff m => 
+  MonadThrow Error m =>
   String -> m Note
 findNote id = do 
   notes <- H.gets _.noteList
-  liftMaybe $ Array.find (\n -> n.id == id) notes
+  fromJust' $ Array.find (\n -> n.id == id) notes 
 
 noteToTree :: Array Note -> NoteId -> Array Int -> NoteSort -> Array NoteNode
 noteToTree notelist parentId parentP sortIds =  mapWithIndex toTree $ sortChild filterdList
@@ -175,10 +179,10 @@ findNode :: NoteId -> Array NoteNode -> Maybe NoteNode
 findNode id nodes = Array.find (\(NoteNode n) -> n.id == id) $ flatten nodes
 
 
--- fromJust' :: forall a m e. MonadThrow Either m => Maybe a -> m a
+fromJust' :: forall a m. MonadThrow Error m => Maybe a -> m a
 fromJust' = case _ of
   Just x -> pure x 
-  Nothing -> throwError $ ""
+  Nothing -> throwError $ error $ "出现未预期的Nothing"
 
 parentPath :: NodePath -> Maybe NodePath
 parentPath path = do
@@ -330,7 +334,7 @@ handleAction = case _ of
     handleAction InitNote
   AutoFoucs -> do
     maybeId <- H.gets _.currentId 
-    id <- liftMaybe (maybeId <|> pure "dummy")
+    id <- fromJust' (maybeId <|> pure "dummy")
     -- logDebug $ "编辑笔记" <> id
     H.liftEffect $ autoFocus id
   New pid idx -> do
@@ -351,7 +355,7 @@ handleAction = case _ of
         void $ updateTopicById topic.id { noteIds }
       else do
         notes <- H.gets _.renderNoteList        
-        (NoteNode pNode) <- liftMaybe $ findNode pid notes
+        (NoteNode pNode) <- fromJust' $ findNode pid notes
         let prevChildIds = pNode.children <#> \(NoteNode n) -> n.id
         let childrenIds = Array.nubEq $ updateFunc prevChildIds
         void $ updateNoteById pid { childrenIds }
@@ -407,7 +411,7 @@ handleAction = case _ of
     handleAction $ Edit nid 
   Delete noteId -> do
     notes <- H.gets _.noteList
-    note <- liftMaybe $ Array.find (\n -> n.id == noteId) notes
+    note <- fromJust' $ Array.find (\n -> n.id == noteId) notes
     handleAction $ UpdateSortInParent note.parentId $ Array.delete noteId
     void $ deleteNote noteId
     handleAction $ ChangeEditID $ Nothing
@@ -415,7 +419,7 @@ handleAction = case _ of
   Indent id path -> do
     nodes <- H.gets _.renderNoteList
     note <- findNote id
-    NoteNode prevNode <- liftMaybe $ prevPath path >>= look nodes
+    NoteNode prevNode <- fromJust' $ prevPath path >>= look nodes
     let len = length prevNode.children
     let source = note.parentId
     let target = prevNode.id
@@ -428,7 +432,7 @@ handleAction = case _ of
   UnIndent id path -> do
     nodes <- H.gets _.renderNoteList
     note <- findNote id
-    NoteNode parentNode <- liftMaybe $ parentPath path >>= look nodes
+    NoteNode parentNode <- fromJust' $ parentPath path >>= look nodes
     let source = note.parentId
     let target = parentNode.parentId 
     void $ updateNoteById id { parentId: parentNode.parentId }

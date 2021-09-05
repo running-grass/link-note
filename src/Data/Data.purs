@@ -62,3 +62,17 @@ collNames = {
   , topic: "topic"
   , file: "file"
 }
+
+-- 焦点元素的激活位置和前后文本
+type CaretInfo = {
+  position :: Int
+  , beforeText :: String
+  , afterText :: String
+}
+
+-- 各种的x，y坐标
+type Point = {
+  x :: Number
+  , y :: Number
+}
+

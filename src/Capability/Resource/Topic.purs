@@ -2,7 +2,7 @@ module LinkNote.Capability.Resource.Topic where
 
 import Prelude
 
-import Data.Maybe (Maybe(..))
+import Data.Maybe (Maybe, isNothing)
 import Halogen (HalogenM, lift)
 import LinkNote.Capability.Now (class Now, now)
 import LinkNote.Capability.UUID (class UUID, genTopicId)
@@ -30,16 +30,16 @@ createNewTopic :: forall m .
   => String -> m (Maybe Topic)
 createNewTopic newTopicName = do
   maybeTopic <- getTopicByName newTopicName
-  case maybeTopic of
-    Just topic -> pure maybeTopic
-    Nothing -> do
-      id <- genTopicId
-      nowTime <- now
-      let topic = {
-        id : id
-        , name : newTopicName
-        , created : nowTime
-        , updated : nowTime
-        , noteIds : []
-      }
-      createTopic topic
+  if isNothing maybeTopic
+  then pure maybeTopic
+  else do
+    id <- genTopicId
+    nowTime <- now
+    let topic = {
+      id : id
+      , name : newTopicName
+      , created : nowTime
+      , updated : nowTime
+      , noteIds : []
+    }
+    createTopic topic

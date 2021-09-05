@@ -1,6 +1,5 @@
 module LinkNote.Component.HTML.Helper where
 
-import Prelude
 
 import Halogen.HTML as HH
 import Halogen.HTML.Properties (title)

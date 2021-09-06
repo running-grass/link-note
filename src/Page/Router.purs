@@ -1,5 +1,4 @@
-module LinkNote.Component.Router where
-
+module LinkNote.Page.Router where
 
 import Prelude
 
@@ -17,9 +16,10 @@ import Halogen.Store.Connect (Connected, connect)
 import Halogen.Store.Monad (class MonadStore, getStore, updateStore)
 import Halogen.Store.Select (selectAll)
 import IPFS (IPFS)
-import LinkNote.Capability.LogMessages (class LogMessages, logAny)
+import LinkNote.Capability.LogMessages (class LogMessages, logAnyM)
 import LinkNote.Capability.ManageDB (class ManageDB)
 import LinkNote.Capability.ManageFile (class ManageFile)
+import LinkNote.Capability.ManageHTML (class ManageHTML)
 import LinkNote.Capability.ManageIPFS (class ManageIPFS)
 import LinkNote.Capability.ManageStore (class ManageStore)
 import LinkNote.Capability.Navigate (class Navigate, navigate)
@@ -108,6 +108,7 @@ component :: forall m. MonadAff m
   => ManageIPFS m
   => ManageNote m  
   => ManageFile m
+  => ManageHTML m
   => ManageStore m
   => ManageDB m
   => LogMessages m
@@ -131,7 +132,7 @@ component = connect selectAll $ H.mkComponent
       handleAction InitIPFS
     InitIPFS -> do
       { ipfsType } <- getStore
-      logAny ipfsType
+      logAnyM ipfsType
       let addr = getIpfsAddrByType ipfsType
       ipfs <- H.liftAff $ getGlobalIPFSA addr
       case ipfs of 
@@ -143,7 +144,7 @@ component = connect selectAll $ H.mkComponent
     Navigate dest a -> do
       { route } <-  H.get
       when (route /= Just dest) do 
-        logAny dest
+        logAnyM dest
         case dest of 
           Topic topicId -> do 
             if (isTopicId topicId)

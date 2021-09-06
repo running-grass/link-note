@@ -23,12 +23,12 @@ import Halogen (HalogenM)
 -- | to decide what to do with the log once created.
 class Monad m <= LogMessages m where
   logMessage :: Log -> m Unit
-  logAny :: forall a . a -> m Unit
+  logAnyM :: forall a . a -> m Unit
 
 -- | This instance lets us avoid having to use `lift` when we use these functions in a component.
 instance logMessagesHalogenM :: LogMessages m => LogMessages (HalogenM st act slots msg m) where
   logMessage = lift <<< logMessage
-  logAny = lift <<< logAny
+  logAnyM = lift <<< logAnyM
 
 -- | Next, we'll provide a few helper functions to help users easily create and dispatch logs
 -- | from anywhere in the application. Each helper composes a couple of small functions together

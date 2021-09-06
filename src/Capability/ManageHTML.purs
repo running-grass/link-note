@@ -4,7 +4,7 @@ import Prelude
 
 import Data.Maybe (Maybe(..))
 import Data.String (splitAt)
-import Effect.Class (class MonadEffect)
+import Effect.Class (class MonadEffect, liftEffect)
 import Halogen (HalogenM, lift, liftEffect)
 import LinkNote.Data.Data (CaretInfo)
 import Web.HTML (HTMLDocument, HTMLElement, Window)
@@ -38,9 +38,18 @@ activeElement = do
   doc <- document
   liftEffect $ HD.activeElement doc
 
+getActiveElementReact :: forall m. ManageHTML m => m (Maybe HE.DOMRect)
+getActiveElementReact = do
+  ae <- activeElement
+  case ae of 
+    Nothing -> pure Nothing
+    Just ae' -> do
+      r <- liftEffect $ HE.getBoundingClientRect ae'
+      pure $ Just r
+
 -- 获取当前激活输入元素中的输入焦点信息
-caretInfo :: forall m . ManageHTML m => m (Maybe CaretInfo)
-caretInfo = do
+getCaretInfo :: forall m . ManageHTML m => m (Maybe CaretInfo)
+getCaretInfo = do
   ae <- activeElement
   case ae of
     Nothing -> pure Nothing
@@ -53,21 +62,21 @@ caretInfo = do
           val <- liftEffect $ HTE.value textarea
           start <- liftEffect $ HTE.selectionStart textarea
           end <- liftEffect $ HTE.selectionEnd textarea
-          return val start end
+          return ae' val start end
         Nothing, Just input -> do 
           val <- liftEffect $ HIE.value input
           start <- liftEffect $ HIE.selectionStart input
           end <- liftEffect $ HIE.selectionEnd input
-          return val start end
+          return ae' val start end
         _,_ -> pure Nothing 
   where 
-    return val start end = do
+    return el val start end = do
       if start /= end 
       then pure Nothing
-      else pure $ Just $ genCarentInfo start val
-    genCarentInfo :: Int -> String -> CaretInfo
-    genCarentInfo position value = {
+      else pure $ Just $ genCarentInfo el start val
+    genCarentInfo element position value = {
       position
+      , element
       , beforeText
       , afterText
     }

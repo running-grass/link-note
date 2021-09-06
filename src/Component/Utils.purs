@@ -6,7 +6,7 @@ import Data.Maybe (Maybe(..))
 import Effect (Effect)
 import RxDB.Type (RxCollection, RxDatabase)
 
-foreign import logAny :: forall a. a -> a
+foreign import logAnyE :: forall a. a -> Effect Unit
 
 foreign import _maybeToEffect :: forall a. (forall x.x -> Maybe x -> x) ->  Maybe a -> Effect a
 

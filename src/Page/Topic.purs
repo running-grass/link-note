@@ -11,15 +11,17 @@ import Data.Array.NonEmpty (NonEmptyArray, fromArray, init, last, snoc', toArray
 import Data.Array.NonEmpty as NArray
 import Data.Foldable (length)
 import Data.Maybe (Maybe(..), fromMaybe, fromMaybe', isNothing)
-import Data.String.Regex (Regex, replace, replace')
-import Data.String.Regex.Flags (global)
+import Data.String.Regex (Regex, replace, replace', test)
+import Data.String.Regex.Flags (global, noFlags)
 import Data.String.Regex.Unsafe (unsafeRegex)
 import Effect (Effect)
 import Effect.Aff.Class (class MonadAff)
 import Effect.Exception (Error, error)
+import Halogen (liftEffect)
 import Halogen as H
 import Halogen.HTML as HH
 import Halogen.HTML.Events as HE
+import Halogen.HTML.Properties (style)
 import Halogen.HTML.Properties as HP
 import Halogen.Store.Connect (Connected, connect)
 import Halogen.Store.Monad (class MonadStore)
@@ -27,20 +29,22 @@ import Halogen.Store.Select (selectAll)
 import Halogen.Subscription as HS
 import Html.Renderer.Halogen as RH
 import IPFS (IPFS)
-import LinkNote.Capability.LogMessages (class LogMessages, logAny, logDebug)
+import LinkNote.Capability.LogMessages (class LogMessages, logAnyM, logDebug)
 import LinkNote.Capability.ManageFile (class ManageFile, addFile)
+import LinkNote.Capability.ManageHTML (class ManageHTML, getActiveElementReact, getCaretInfo)
 import LinkNote.Capability.ManageIPFS (class ManageIPFS, getIpfsGatewayPrefix)
 import LinkNote.Capability.Now (class Now, now)
 import LinkNote.Capability.Resource.Note (class ManageNote, createTopicNote, deleteNote, getAllNotesByHostId, updateNoteById)
-import LinkNote.Capability.Resource.Topic (class ManageTopic, getTopic, updateTopicById)
+import LinkNote.Capability.Resource.Topic (class ManageTopic, getTopic, getTopics, updateTopicById)
 import LinkNote.Capability.UUID (class UUID)
 import LinkNote.Component.HTML.Utils (css)
 import LinkNote.Component.Store as LS
 import LinkNote.Component.Util (swapElem)
-import LinkNote.Data.Data (Note, NoteId, TopicId, Topic)
+import LinkNote.Data.Data (Note, NoteId, Topic, TopicId, Point)
 import Web.Clipboard.ClipboardEvent as CE
 import Web.Event.Event (Event, currentTarget, preventDefault, stopPropagation, target)
 import Web.Event.Internal.Types (EventTarget)
+import Web.HTML.HTMLElement (getBoundingClientRect)
 import Web.HTML.HTMLTextAreaElement as HTAE
 import Web.UIEvent.KeyboardEvent as KE
 import Web.UIEvent.MouseEvent as ME
@@ -58,14 +62,15 @@ newtype NoteNode = NoteNode {
   , path :: NonEmptyArray Int
 }
 type State = { 
-    -- topicId :: TopicId,
-    topic :: Topic,
-    currentId :: Maybe String,
-    noteList :: Array Note,
-    renderNoteList :: Array NoteNode,
-    ipfs :: Maybe IPFS,
-    ipfsGatway :: String
+    topic :: Topic
+    , currentId :: Maybe String
+    , noteList :: Array Note
+    , renderNoteList :: Array NoteNode
+    , ipfs :: Maybe IPFS
+    , ipfsGatway :: String
     , visionNoteIds :: Array NoteId
+    , popoverPosition :: Maybe Point
+    , popoverList :: Array Topic
     }
 
 type Input = {
@@ -203,13 +208,16 @@ regFileLink :: Regex
 regFileLink = unsafeRegex "\\(\\(file-(.*?)\\)\\)" global
 
 regLink :: Regex
-regLink = unsafeRegex "\\[\\[([^\\|\\[\\]]*?)(\\|([^\\|\\[\\]]*?))?\\]\\]" global
+regLink = unsafeRegex "\\[\\[([^\\|\\[\\]]+?)(\\|([^\\|\\[\\]]+?))?\\]\\]" global
+
+isStartLinkInput :: String -> Boolean
+isStartLinkInput = test $ unsafeRegex "\\[\\[$" noFlags
 
 replaceLink :: String -> String
 replaceLink = replace' regLink re
   where 
-    re _ [Just name, _,  Just id] = "<a href=\"/#/topic/" <> id <> "\">" <> name <> "</a>" 
-    re _ [Just name, _, _ ] = "<a href=\"/#/topic/" <> name <> "\">" <> name <> "</a>" 
+    re _ [Just name, _,  Just id] = "<a class=\"text-pink-800\" href=\"/#/topic/" <> id <> "\">" <> name <> "</a>" 
+    re _ [Just name, _, _ ] = "<a class=\"text-pink-800\" href=\"/#/topic/" <> name <> "\">" <> name <> "</a>" 
     re _ xs                    = show xs
 
 lastSecond :: forall a. NonEmptyArray a -> Maybe a
@@ -301,6 +309,14 @@ render state =
   HH.div_
     [
     HH.ul [css "list-disc pl-6"] $ state.renderNoteList <#> renderNote state.ipfsGatway state.currentId 1
+    , case state.popoverPosition of
+        Just p -> HH.div [ 
+          css "fixed bg-blue-300 h-80 w-80", 
+          style $ ("left: " <> show p.x <> "px; top: " <> show p.y <> "px;") ] [ 
+            HH.ul_ $ state.popoverList <#> \topic -> HH.li_ [HH.text topic.name]
+            
+          ]
+        Nothing -> HH.span_ []
     ]
     
 getTextFromEvent :: Event -> Effect (Maybe String)
@@ -325,17 +341,19 @@ handleAction :: forall cs o m .
   ManageIPFS m =>
   ManageNote m =>
   LogMessages m =>
+  ManageHTML m =>
   ManageFile m =>
   MonadThrow Error m =>
   Action → H.HalogenM State Action cs o m Unit
 handleAction = case _ of
   ChangeEditID mb -> do 
-    H.modify_ _ { currentId = mb}
+    H.modify_ _ { currentId = mb
+                , popoverPosition = Nothing
+                , popoverList = [] }
     handleAction InitNote
   AutoFoucs -> do
     maybeId <- H.gets _.currentId 
     id <- fromJust' (maybeId <|> pure "dummy")
-    -- logDebug $ "编辑笔记" <> id
     H.liftEffect $ autoFocus id
   New pid idx -> do
     topic <- H.gets _.topic 
@@ -384,7 +402,6 @@ handleAction = case _ of
     H.modify_ _ { ipfsGatway = ipfsGatway}
   InitNote -> do
     logDebug "初始化State"
-    H.get >>= logAny
     topic' <- H.gets _.topic
     let topicId = topic'.id
     topicMaybe <- getTopic topicId
@@ -533,6 +550,18 @@ handleAction = case _ of
             Just text 
               | "" == text -> handleAction $ Delete note.id 
               | otherwise -> pure unit 
+        "[" -> do 
+          caret <- getCaretInfo
+          logAnyM caret
+          case caret of
+            (Just caret') | isStartLinkInput caret'.beforeText -> do
+              r <- liftEffect $ getBoundingClientRect caret'.element
+              topics <- getTopics
+              H.modify_ _ { 
+                popoverPosition = Just {x: r.left , y: r.bottom}
+                , popoverList = topics 
+              }
+            _ -> pure unit
         _ -> pure unit
     | otherwise -> pure unit
   Edit noteId  -> do
@@ -555,14 +584,15 @@ handleAction = case _ of
       handleAction InitNote
 initialState :: ConnectedInput-> State
 initialState { context, input } = { 
-  -- topicId: input.topicId,
-  currentId: Nothing,
-  topic: input.topic,
-  ipfsGatway: "https://dweb.link/ipfs/",
-  ipfs : context.ipfs,
-  noteList : [],
-  renderNoteList: []
+  currentId: Nothing
+  , topic: input.topic
+  , ipfsGatway: "https://dweb.link/ipfs/"
+  , ipfs : context.ipfs
+  , noteList : []
+  , renderNoteList: []
   , visionNoteIds: []
+  , popoverPosition: Nothing
+  , popoverList: []
   }
 
 subscriptPaste :: forall m. 
@@ -586,6 +616,7 @@ component :: forall q o m.
   ManageTopic m =>
   ManageNote m =>
   ManageFile m =>
+  ManageHTML m =>
   MonadThrow Error m =>
   H.Component q Input o m
 component = connect selectAll $ H.mkComponent

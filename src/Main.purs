@@ -13,10 +13,9 @@ import Halogen as H
 import Halogen.Aff (awaitLoad, runHalogenAff, selectElement)
 import Halogen.VDom.Driver (runUI)
 import LinkNote.Component.AppM (runAppM)
-import LinkNote.Component.Router as Router
+import LinkNote.Page.Router as Router
 import LinkNote.Component.Store (LogLevel(..))
 import LinkNote.Component.Store as Store
-import LinkNote.Component.Util (logAny)
 import LinkNote.Data.Route (routeCodec)
 import LinkNote.Data.Setting (IPFSInstanceType(..), parseIpfsInsType)
 import Routing.Duplex (parse)
@@ -57,7 +56,7 @@ main = do
     w <- liftEffect window
     s <- liftEffect $ localStorage w
     str <- liftEffect $ getItem "ipfsInstanceType" s
-    let insType = logAny $ case str of 
+    let insType = case str of 
                     Just sss -> parseIpfsInsType sss 
                     Nothing -> Unused
     let 

@@ -95,7 +95,7 @@ component = H.mkComponent
           Nothing -> do
             topic' <- createNewTopic newTopicName
             case topic' of
-              Nothing -> throwError $ error "创建主题失败"
+              Nothing -> throwError $ error $ "创建主题[" <> newTopicName <> "]失败"
               Just topic -> navigate $ Route.Topic topic.id
       UpdateTopicList -> do
         list <- getTopics

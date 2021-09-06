@@ -6,6 +6,7 @@ import Data.DateTime.Instant (Instant)
 import Data.String.Regex (test)
 import Data.String.Regex.Flags (global)
 import Data.String.Regex.Unsafe (unsafeRegex)
+import Web.HTML (HTMLElement)
 
 type Time = Instant
 type NoteId = String
@@ -66,6 +67,7 @@ collNames = {
 -- 焦点元素的激活位置和前后文本
 type CaretInfo = {
   position :: Int
+  , element :: HTMLElement
   , beforeText :: String
   , afterText :: String
 }

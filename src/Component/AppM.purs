@@ -29,7 +29,7 @@ import LinkNote.Capability.Resource.Topic (class ManageTopic)
 import LinkNote.Capability.UUID (class UUID)
 import LinkNote.Component.Store (LogLevel(..))
 import LinkNote.Component.Store as Store
-import LinkNote.Component.Util (getCollection, refreshWindow)
+import LinkNote.Component.Util (getCollection, logAnyE, refreshWindow)
 import LinkNote.Data.Data (collNames)
 import LinkNote.Data.Log as Log
 import LinkNote.Data.Route as Route
@@ -210,7 +210,7 @@ instance LogMessages AppM where
     liftEffect case logLevel, Log.reason log of
       Prod, Log.Debug -> pure unit
       _, _ -> Console.log $ Log.message log
-  logAny = H.liftEffect <<< _log
+  logAnyM = H.liftEffect <<< logAnyE
 instance UUID AppM where
   uuid = do
     uuid' <- liftEffect DUUID.genUUID

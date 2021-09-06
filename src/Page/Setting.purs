@@ -7,7 +7,7 @@ import Halogen as H
 import Halogen.HTML as HH
 import Halogen.HTML.Events as HE
 import Halogen.HTML.Properties as HP
-import LinkNote.Capability.LogMessages (class LogMessages, logAny)
+import LinkNote.Capability.LogMessages (class LogMessages)
 import LinkNote.Capability.ManageDB (class ManageDB, deleteLocalDB, exportLocalDB)
 import LinkNote.Capability.ManageStore (class ManageStore, setIpfsInstanceType)
 import LinkNote.Component.HTML.Utils (buttonClass, css)
@@ -79,4 +79,3 @@ component =
       ChangeIpfsInsType insType -> do
         H.modify_ _ { selected = insType}
         setIpfsInstanceType $ parseIpfsInsType insType
-        logAny insType

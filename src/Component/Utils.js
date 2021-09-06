@@ -1,8 +1,6 @@
-exports.logAny = a => {
+exports.logAnyE = a => () => {
     console.log(a);
-    return a;
 }
-
 
 // exports._liftMaybeToPromise = fromMaybe => maybe => () => {
 //     const val = fromMaybe(null)(maybe);

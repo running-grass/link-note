@@ -4,13 +4,14 @@ import Prelude
 
 import Control.Alternative ((<|>))
 import Control.Monad.Error.Class (class MonadThrow, throwError)
-import Control.Monad.State (class MonadState)
+import Control.Monad.State (class MonadState, modify_)
 import Data.Array (cons, elem, elemIndex, filter, findIndex, index, mapWithIndex, null, sortWith)
 import Data.Array as Array
 import Data.Array.NonEmpty (NonEmptyArray, fromArray, init, last, snoc', toArray, uncons, updateAt)
 import Data.Array.NonEmpty as NArray
 import Data.Foldable (length)
 import Data.Maybe (Maybe(..), fromMaybe, fromMaybe', isNothing)
+import Data.String (splitAt)
 import Data.String.Regex (Regex, replace, replace', test)
 import Data.String.Regex.Flags (global, noFlags)
 import Data.String.Regex.Unsafe (unsafeRegex)
@@ -31,7 +32,7 @@ import Html.Renderer.Halogen as RH
 import IPFS (IPFS)
 import LinkNote.Capability.LogMessages (class LogMessages, logAnyM, logDebug)
 import LinkNote.Capability.ManageFile (class ManageFile, addFile)
-import LinkNote.Capability.ManageHTML (class ManageHTML, getActiveElementReact, getCaretInfo)
+import LinkNote.Capability.ManageHTML (class ManageHTML, getCaretInfo)
 import LinkNote.Capability.ManageIPFS (class ManageIPFS, getIpfsGatewayPrefix)
 import LinkNote.Capability.Now (class Now, now)
 import LinkNote.Capability.Resource.Note (class ManageNote, createTopicNote, deleteNote, getAllNotesByHostId, updateNoteById)
@@ -71,6 +72,7 @@ type State = {
     , visionNoteIds :: Array NoteId
     , popoverPosition :: Maybe Point
     , popoverList :: Array Topic
+    , currentTextArea :: Maybe HTAE.HTMLTextAreaElement
     }
 
 type Input = {
@@ -95,6 +97,7 @@ data Action
   | SubmitIpfs String
   | Delete String 
   | Edit String
+  | InsertTopicLink Topic
   | Indent NoteId NodePath
   | UnIndent NoteId NodePath
   | ClickNote ME.MouseEvent NoteId
@@ -210,15 +213,21 @@ regFileLink = unsafeRegex "\\(\\(file-(.*?)\\)\\)" global
 regLink :: Regex
 regLink = unsafeRegex "\\[\\[([^\\|\\[\\]]+?)(\\|([^\\|\\[\\]]+?))?\\]\\]" global
 
+regLinkStart :: Regex
+regLinkStart = unsafeRegex "\\[\\[$" noFlags
+
 isStartLinkInput :: String -> Boolean
-isStartLinkInput = test $ unsafeRegex "\\[\\[$" noFlags
+isStartLinkInput = test regLinkStart
+
+linkStr :: String -> String -> String
+linkStr id name = "<a class=\"text-pink-800\" onClick=\"event.stopPropagation();\" href=\"/#/topic/" <> id <> "\">" <> name <> "</a>"
 
 replaceLink :: String -> String
 replaceLink = replace' regLink re
   where 
-    re _ [Just name, _,  Just id] = "<a class=\"text-pink-800\" href=\"/#/topic/" <> id <> "\">" <> name <> "</a>" 
-    re _ [Just name, _, _ ] = "<a class=\"text-pink-800\" href=\"/#/topic/" <> name <> "\">" <> name <> "</a>" 
-    re _ xs                    = show xs
+    re _ [Just name, _,  Just id] = linkStr id name
+    re _ [Just name, _, _ ]       = linkStr name name
+    re _ xs                       = show xs
 
 lastSecond :: forall a. NonEmptyArray a -> Maybe a
 lastSecond f = NArray.index f $ len - 2
@@ -267,7 +276,7 @@ renderNote ipfsGatway currentId level noteNode@(NoteNode note)  =
   HH.li [ 
     HP.id note.id 
     , HE.onClick \ev -> ClickNote ev note.id 
-    , css "bg-gray-50"
+    , css "bg-gray-50 cursor-text"
     , HP.style "min-height: 30px;"
     ] 
     [
@@ -293,7 +302,7 @@ renderNote ipfsGatway currentId level noteNode@(NoteNode note)  =
         ] 
 
       _ -> HH.div [ 
-        HP.style "word-break: break-all;"
+        HP.style contentStyle
       ] [ 
         RH.render_ $ replaceLink $ replace regFileLink ("<img src=\"" <> ipfsGatway <> "$1\">") note.heading 
       ]
@@ -313,8 +322,8 @@ render state =
         Just p -> HH.div [ 
           css "fixed bg-blue-300 h-80 w-80", 
           style $ ("left: " <> show p.x <> "px; top: " <> show p.y <> "px;") ] [ 
-            HH.ul_ $ state.popoverList <#> \topic -> HH.li_ [HH.text topic.name]
-            
+            HH.ul_ $ state.popoverList <#> \topic -> HH.li [ HE.onClick \_ -> InsertTopicLink topic ] [HH.text topic.name]
+
           ]
         Nothing -> HH.span_ []
     ]
@@ -364,7 +373,24 @@ handleAction = case _ of
       Just note -> do
         handleAction $ InsertSortInParent pid note.id idx
         handleAction $ ChangeEditID $ Just note.id
-    
+  InsertTopicLink topic -> do
+    -- void $ addFile { cid: path,  id: fileId, mime: "", type: "" }
+    let appendText = "[[" <> topic.name <> "|" <> topic.id <> "]]"
+    textarea <- H.gets _.currentTextArea 
+    case textarea of
+      Just ta -> do
+        insertPoint <- liftEffect $ HTAE.selectionStart ta
+        val  <- liftEffect $ HTAE.value ta
+        void $ H.liftEffect $ insertText appendText
+        let r = splitAt insertPoint val
+        let newBefore = replace regLinkStart appendText r.before 
+        H.liftEffect $ HTAE.setValue (newBefore <> r.after) ta
+        modify_ _ {
+          popoverPosition = Nothing
+          , popoverList = [] 
+        }
+        autoFoucsCurrentArea
+      _ -> pure unit
   UpdateSortInParent pid updateFunc -> do
     if (pid == "") 
       then do
@@ -552,14 +578,16 @@ handleAction = case _ of
               | otherwise -> pure unit 
         "[" -> do 
           caret <- getCaretInfo
-          logAnyM caret
           case caret of
             (Just caret') | isStartLinkInput caret'.beforeText -> do
               r <- liftEffect $ getBoundingClientRect caret'.element
               topics <- getTopics
+              let mayArea = HTAE.fromEventTarget =<< (target $ KE.toEvent kbe)
+              logAnyM $ (target $ KE.toEvent kbe)
               H.modify_ _ { 
                 popoverPosition = Just {x: r.left , y: r.bottom}
                 , popoverList = topics 
+                , currentTextArea = mayArea
               }
             _ -> pure unit
         _ -> pure unit
@@ -568,9 +596,12 @@ handleAction = case _ of
     handleAction $ ChangeEditID $ Just noteId
   IgnorePaste ev -> H.liftEffect $ preventDefault $ CE.toEvent ev
   Receive input -> do
-    H.put $ initialState input 
+    H.put $ initialState input
     handleAction InitComp
   where
+    autoFoucsCurrentArea = do
+      maybeId <- H.gets _.currentId 
+      H.liftEffect $ autoFocus $ fromMaybe "dummy" maybeId
     updateSortByPpath ppath func = do
       nodes <- H.gets _.renderNoteList
       case ppath of
@@ -582,6 +613,8 @@ handleAction = case _ of
             Nothing -> pure unit 
         Nothing -> handleAction $ UpdateSortInParent "" func
       handleAction InitNote
+    
+
 initialState :: ConnectedInput-> State
 initialState { context, input } = { 
   currentId: Nothing
@@ -593,6 +626,7 @@ initialState { context, input } = {
   , visionNoteIds: []
   , popoverPosition: Nothing
   , popoverList: []
+  , currentTextArea : Nothing
   }
 
 subscriptPaste :: forall m. 

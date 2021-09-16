@@ -14,6 +14,7 @@ class Monad m <= ManageTopic m where
   getTopic :: TopicId -> m (Maybe Topic)
   updateTopicById :: forall r. TopicId -> Record r -> m Boolean
   getTopicByName :: String -> m (Maybe Topic)
+  searchTopicsByName :: String -> m (Array Topic)
 
 instance manageTopicHalogenM :: ManageTopic m => ManageTopic (HalogenM st act slots msg m) where
   getTopics = lift  getTopics
@@ -21,7 +22,7 @@ instance manageTopicHalogenM :: ManageTopic m => ManageTopic (HalogenM st act sl
   getTopic = lift <<< getTopic
   updateTopicById id = lift <<< updateTopicById id
   getTopicByName = lift <<< getTopicByName
-
+  searchTopicsByName = lift <<< searchTopicsByName
 
 createNewTopic :: forall m . 
   UUID m 

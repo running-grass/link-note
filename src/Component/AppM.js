@@ -18,8 +18,12 @@ exports._getDoc = just => nothing => coll => key => val => () => {
 }
 
 exports._find = coll => obj => () => {
-    return coll.find({selector: obj}).sort({ created: 1}).exec().then(list => list.map(a => a.toJSON()));
+    return coll.find({selector: obj}).sort({ updated: 1}).exec().then(list => list.map(a => a.toJSON()));
 }
+// exports._findDocumentsBySelector = coll => obj => () => {
+//     return coll.find({selector: obj}).sort({ created: 1}).exec().then(list => list.map(a => a.toJSON()));
+// }
+
 
 exports._insertDoc = just => nothing => coll => topic => () => {
     return coll.insert(topic)
@@ -53,3 +57,4 @@ exports._exportDB = db => () => {
         download(JSON.stringify(json), 'Link-Node备份-' + moment().format("YYYY-MM-DD-hh-mm-ss") + '.json', 'text/json');
     }).then(() => true);
 }
+

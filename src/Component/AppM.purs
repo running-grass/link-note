@@ -109,6 +109,7 @@ foreign import _bulkRemoveDoc :: forall a id. RxCollection a -> Array id -> Effe
 bulkRemoveDoc :: forall a id. RxCollection a -> Array id -> Aff Unit
 bulkRemoveDoc coll ids = toAffE $ _bulkRemoveDoc coll ids
 
+-- foreign import _findDocumentsBySelector :: forall a r. RxCollection a -> Record r -> Effect (Promise (Array a))
 
 getCollectionByName :: forall a. String -> AppM (RxCollection a)
 getCollectionByName name = do
@@ -183,7 +184,9 @@ instance ManageTopic AppM where
   getTopicByName topicName = do
     coll <- getCollectionByName collNames.topic
     liftAff $ getDoc coll "name" $ trim topicName
-
+  searchTopicsByName namePart = do
+    coll <- getCollectionByName collNames.topic
+    liftAff $ find coll { name: { "$regex" : ".*" <> trim namePart <> ".*" } }
 instance ManageNote AppM where
   addNote note = do
     coll <- getCollectionByName collNames.note

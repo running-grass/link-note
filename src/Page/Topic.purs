@@ -85,27 +85,15 @@ type ConnectedInput = Connected LS.Store Input
 type NodePath = NonEmptyArray Int
 
 data Action
-  = Submit String String 
-  | InitNote 
-  | AutoFoucs
-  | New NoteId Int -- int 为在父元素中的索引
+  = ChangeNoteText String String 
   | IgnorePaste CE.ClipboardEvent
   | HandleKeyUp NoteNode KE.KeyboardEvent
   | HandleKeyDown KE.KeyboardEvent
   | InitComp
   | Receive ConnectedInput
   | SubmitIpfs String
-  | Delete String 
-  | Edit String
   | InsertTopicLink Topic
-  | Indent NoteId NodePath
-  | UnIndent NoteId NodePath
   | ClickNote ME.MouseEvent NoteId
-  | ChangeEditID (Maybe String)
-  | UpdateSortInParent String (NoteSort -> NoteSort)
-  | DeleteSortInParent String NoteId
-  | InsertSortInParent String NoteId Int -- maybe noteid为插入到哪个元素后面
-  | MoveSort NoteId String String Int -- 把noteid从哪里到哪里
 
 foreign import addPasteListenner :: (forall a. a -> Maybe a -> a) -> Maybe IPFS -> (Function String (Effect Unit)) -> Effect Unit
 
@@ -296,7 +284,7 @@ renderNote ipfsGatway currentId level noteNode@(NoteNode note)  =
               , HE.onKeyUp \kbe -> HandleKeyUp noteNode kbe 
               , HE.onKeyDown \kbe -> HandleKeyDown kbe
               , HE.onPaste IgnorePaste
-              , HE.onValueInput \val -> Submit note.id val
+              , HE.onValueInput \val -> ChangeNoteText note.id val
             -- , HE.onBlur \_ -> ChangeEditID Nothing
           ]
         ] 
@@ -355,24 +343,7 @@ handleAction :: forall cs o m .
   MonadThrow Error m =>
   Action → H.HalogenM State Action cs o m Unit
 handleAction = case _ of
-  ChangeEditID mb -> do 
-    H.modify_ _ { currentId = mb
-                , popoverPosition = Nothing
-                , popoverList = [] }
-    handleAction InitNote
-  AutoFoucs -> do
-    maybeId <- H.gets _.currentId 
-    id <- fromJust' (maybeId <|> pure "dummy")
-    H.liftEffect $ autoFocus id
-  New pid idx -> do
-    topic <- H.gets _.topic 
-    note' <- createTopicNote topic.id pid ""
-    logDebug $ "增加一个新的Note，pid为" <> (show note')
-    case note' of
-      Nothing -> throwError $ error "增加note失败"
-      Just note -> do
-        handleAction $ InsertSortInParent pid note.id idx
-        handleAction $ ChangeEditID $ Just note.id
+
   InsertTopicLink topic -> do
     -- void $ addFile { cid: path,  id: fileId, mime: "", type: "" }
     let appendText = "[[" <> topic.name <> "|" <> topic.id <> "]]"
@@ -391,29 +362,11 @@ handleAction = case _ of
         }
         autoFoucsCurrentArea
       _ -> pure unit
-  UpdateSortInParent pid updateFunc -> do
-    if (pid == "") 
-      then do
-        topic <- H.gets _.topic
-        let noteIds = Array.nubEq $ updateFunc topic.noteIds
-        void $ updateTopicById topic.id { noteIds }
-      else do
-        notes <- H.gets _.renderNoteList        
-        (NoteNode pNode) <- fromJust' $ findNode pid notes
-        let prevChildIds = pNode.children <#> \(NoteNode n) -> n.id
-        let childrenIds = Array.nubEq $ updateFunc prevChildIds
-        void $ updateNoteById pid { childrenIds }
-  InsertSortInParent pid id idx -> do
-    handleAction $ UpdateSortInParent pid \ids -> fromMaybe' (\_ -> Array.snoc ids id) (Array.insertAt idx id ids)
-  DeleteSortInParent pid id -> do
-    handleAction $ UpdateSortInParent pid $ Array.delete id
-  MoveSort noteId sourcePid targetPid targetIdx -> do 
-    handleAction $ InsertSortInParent targetPid noteId targetIdx
-    handleAction $ DeleteSortInParent sourcePid noteId
-  Submit noteId note ->  do
+
+  ChangeNoteText noteId note ->  do
     nowTime <- now
     void $ updateNoteById noteId { heading: note, updated: nowTime }
-    handleAction InitNote
+    -- initNote
   SubmitIpfs path -> do
     let fileId = "file-" <> path
     void $ addFile { cid: path,  id: fileId, mime: "", type: "" }
@@ -421,71 +374,15 @@ handleAction = case _ of
     void $ H.liftEffect $ insertText appendText
   InitComp -> do
     logDebug "初始化组件"
-    handleAction InitNote
+    initNote
     maybeIpfs <- H.gets _.ipfs
     _ <- H.subscribe =<< subscriptPaste maybeIpfs
     ipfsGatway <- getIpfsGatewayPrefix
     H.modify_ _ { ipfsGatway = ipfsGatway}
-  InitNote -> do
-    logDebug "初始化State"
-    topic' <- H.gets _.topic
-    let topicId = topic'.id
-    topicMaybe <- getTopic topicId
-    when (isNothing topicMaybe) do
-      throwError $ error "更新Topic错误"
-    let topic = fromMaybe topic' topicMaybe
-    notes <- getAllNotesByHostId topicId
-    let nodes = noteToTree notes "" [] topic.noteIds
-    let ids = treeToIdList nodes
-    if null nodes 
-      then handleAction $ New "" 0
-      else do 
-        H.modify_  _ { 
-          noteList = notes 
-          , topic = topic
-          , renderNoteList = nodes
-          , visionNoteIds = ids
-        }
-        logDebug "笔记列表已刷新"
-        handleAction AutoFoucs
 
   ClickNote mev nid -> do
     H.liftEffect $ stopPropagation $ ME.toEvent mev
-    handleAction $ Edit nid 
-  Delete noteId -> do
-    notes <- H.gets _.noteList
-    note <- fromJust' $ Array.find (\n -> n.id == noteId) notes
-    handleAction $ UpdateSortInParent note.parentId $ Array.delete noteId
-    void $ deleteNote noteId
-    handleAction $ ChangeEditID $ Nothing
-  
-  Indent id path -> do
-    nodes <- H.gets _.renderNoteList
-    note <- findNote id
-    NoteNode prevNode <- fromJust' $ prevPath path >>= look nodes
-    let len = length prevNode.children
-    let source = note.parentId
-    let target = prevNode.id
-    
-    void $ updateNoteById id { parentId: target }
-
-    -- logDebug $ "上一个节点的子元素个数为  " <> show len
-    handleAction $ MoveSort id source target len
-    handleAction InitNote
-  UnIndent id path -> do
-    nodes <- H.gets _.renderNoteList
-    note <- findNote id
-    NoteNode parentNode <- fromJust' $ parentPath path >>= look nodes
-    let source = note.parentId
-    let target = parentNode.parentId 
-    void $ updateNoteById id { parentId: parentNode.parentId }
-    handleAction $ MoveSort id source target toTargetIdx
-    handleAction InitNote
-      where 
-        toTargetIdx :: Int 
-        toTargetIdx =  case lastSecond path of 
-          Nothing -> 0
-          Just idx -> 1 + idx
+    changeEditID $ Just nid
   HandleKeyDown kbe 
     | elem (KE.key kbe) ["Tab", "Enter", "ArrowUp", "ArrowDown"] -> do 
       H.liftEffect $ stopPropagation $ KE.toEvent kbe
@@ -500,7 +397,7 @@ handleAction = case _ of
         "Tab" -> do 
           H.liftEffect $ stopPropagation $ KE.toEvent kbe
           H.liftEffect $ preventDefault $ KE.toEvent kbe
-          handleAction $ UnIndent note.id note.path
+          unIndent note.id note.path
         -- 把当前标题向上移动
         "ArrowUp" -> do 
           H.liftEffect $ stopPropagation $ KE.toEvent kbe
@@ -529,7 +426,7 @@ handleAction = case _ of
           case mbPlen of 
             (Just len) | currentIdx < len - 1 -> updateSortByPpath mbPpath func
             _ -> pure unit 
-          handleAction InitNote
+          initNote
           pure unit
         _ -> pure unit
     | KE.altKey kbe -> do
@@ -542,16 +439,16 @@ handleAction = case _ of
       case KE.key kbe of
         "Enter" -> do 
           H.liftEffect $ preventDefault $ KE.toEvent kbe
-          handleAction $ New note.parentId insertIdx
+          newNote note.parentId insertIdx
           where 
             insertIdx = 1 + last note.path
         "Tab" -> do
           H.liftEffect $ stopPropagation $ KE.toEvent kbe
           H.liftEffect $ preventDefault $ KE.toEvent kbe
           -- logDebug $ "缩进元素的path为" <> show note.path
-          handleAction $ Indent note.id note.path
+          indent note.id note.path
         "Escape" -> do 
-          handleAction $ ChangeEditID Nothing
+          changeEditID Nothing
           let maybeTarget = currentTarget $ KE.toEvent kbe
           case maybeTarget of
             Just target -> do 
@@ -561,20 +458,20 @@ handleAction = case _ of
           ids <- H.gets _.visionNoteIds
           let prevId = visionPrevId ids note.id
           case prevId of
-            (Just id) -> handleAction $ ChangeEditID $ Just id
+            (Just id) -> changeEditID $ Just id
             _ -> pure unit
         "ArrowDown" -> do 
           ids <- H.gets _.visionNoteIds
           let nextId = visionNextId ids note.id
           case nextId of
-            (Just id) -> handleAction $ ChangeEditID $ Just id
+            (Just id) -> changeEditID $ Just id
             _ -> pure unit
         "Backspace" -> do 
           maybeText <- H.liftEffect $ getTextFromEvent $ KE.toEvent kbe
           case maybeText of 
             Nothing -> pure unit
             Just text 
-              | "" == text -> handleAction $ Delete note.id 
+              | "" == text -> delete note.id 
               | otherwise -> pure unit 
         "[" -> do 
           caret <- getCaretInfo
@@ -591,9 +488,7 @@ handleAction = case _ of
               }
             _ -> pure unit
         _ -> pure unit
-    | otherwise -> pure unit
-  Edit noteId  -> do
-    handleAction $ ChangeEditID $ Just noteId
+    | otherwise -> pure unit 
   IgnorePaste ev -> H.liftEffect $ preventDefault $ CE.toEvent ev
   Receive input -> do
     H.put $ initialState input
@@ -609,12 +504,103 @@ handleAction = case _ of
           let parentNode' = look nodes path
           case parentNode' of
             Just (NoteNode parentNode) -> do
-              handleAction $ UpdateSortInParent parentNode.id func
+              updateSortInParent parentNode.id func
             Nothing -> pure unit 
-        Nothing -> handleAction $ UpdateSortInParent "" func
-      handleAction InitNote
-    
+        Nothing -> updateSortInParent "" func
+      initNote
+    updateSortInParent pid updateFunc = do
+      if (pid == "") 
+      then do
+        topic <- H.gets _.topic
+        let noteIds = Array.nubEq $ updateFunc topic.noteIds
+        void $ updateTopicById topic.id { noteIds }
+      else do
+        notes <- H.gets _.renderNoteList        
+        (NoteNode pNode) <- fromJust' $ findNode pid notes
+        let prevChildIds = pNode.children <#> \(NoteNode n) -> n.id
+        let childrenIds = Array.nubEq $ updateFunc prevChildIds
+        void $ updateNoteById pid { childrenIds }
+    insertSortInParent pid id idx = do
+      updateSortInParent pid \ids -> fromMaybe' (\_ -> Array.snoc ids id) (Array.insertAt idx id ids)
+    deleteSortInParent pid id = do
+      updateSortInParent pid $ Array.delete id
+    moveSort noteId sourcePid targetPid targetIdx = do 
+      insertSortInParent targetPid noteId targetIdx
+      deleteSortInParent sourcePid noteId    
+    initNote = do
+      logDebug "初始化State"
+      topic' <- H.gets _.topic
+      let topicId = topic'.id
+      topicMaybe <- getTopic topicId
+      when (isNothing topicMaybe) do
+        throwError $ error "更新Topic错误"
+      let topic = fromMaybe topic' topicMaybe
+      notes <- getAllNotesByHostId topicId
+      let nodes = noteToTree notes "" [] topic.noteIds
+      let ids = treeToIdList nodes
+      if null nodes 
+        then newNote "" 0
+        else do 
+          H.modify_  _ { 
+            noteList = notes 
+            , topic = topic
+            , renderNoteList = nodes
+            , visionNoteIds = ids
+          }
+          logDebug "笔记列表已刷新"
+          handdleAutoFoucs
+    newNote pid idx = do
+      topic <- H.gets _.topic 
+      note' <- createTopicNote topic.id pid ""
+      logDebug $ "增加一个新的Note，pid为" <> (show note')
+      case note' of
+        Nothing -> throwError $ error "增加note失败"
+        Just note -> do
+          insertSortInParent pid note.id idx
+          changeEditID $ Just note.id
+    handdleAutoFoucs = do
+      maybeId <- H.gets _.currentId 
+      id <- fromJust' (maybeId <|> pure "dummy")
+      H.liftEffect $ autoFocus id
+    changeEditID mb = do 
+      H.modify_ _ { currentId = mb
+                  , popoverPosition = Nothing
+                  , popoverList = [] }
+      initNote
+    delete noteId = do
+      notes <- H.gets _.noteList
+      note <- fromJust' $ Array.find (\n -> n.id == noteId) notes
+      updateSortInParent note.parentId $ Array.delete noteId
+      void $ deleteNote noteId
+      changeEditID Nothing
 
+    indent id path = do
+      nodes <- H.gets _.renderNoteList
+      note <- findNote id
+      NoteNode prevNode <- fromJust' $ prevPath path >>= look nodes
+      let len = length prevNode.children
+      let source = note.parentId
+      let target = prevNode.id
+      
+      void $ updateNoteById id { parentId: target }
+
+      -- logDebug $ "上一个节点的子元素个数为  " <> show len
+      moveSort id source target len
+      initNote
+    unIndent id path = do
+      nodes <- H.gets _.renderNoteList
+      note <- findNote id
+      NoteNode parentNode <- fromJust' $ parentPath path >>= look nodes
+      let source = note.parentId
+      let target = parentNode.parentId 
+      void $ updateNoteById id { parentId: parentNode.parentId }
+      moveSort id source target toTargetIdx
+      initNote
+        where 
+          toTargetIdx :: Int 
+          toTargetIdx =  case lastSecond path of 
+            Nothing -> 0
+            Just idx -> 1 + idx
 initialState :: ConnectedInput-> State
 initialState { context, input } = { 
   currentId: Nothing

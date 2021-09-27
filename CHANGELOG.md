@@ -6,7 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### 新特性
-- 双中括号打开最近使用过的主题，单击可以快速增加链接
+- 双中括号打开最近使用过的主题列表弹窗
+    - 单击可以快速增加链接
+    - 可以使用上下箭头来导航
+- 首页增加使用说明
 
 ## 优化
 - 修复单击链接会触发编辑状态的问题

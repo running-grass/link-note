@@ -57,3 +57,11 @@ exports.autoFocus  = (id) => () => {
         }
     })
 }
+
+exports.unFocus  = (id = "unknow") => () => {
+    const target = document.querySelector(`li#${id} textarea`);
+    if (target) {
+        $target.blur()
+    }
+}
+

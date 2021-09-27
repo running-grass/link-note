@@ -54,7 +54,7 @@ foreign import doBlur :: EventTarget -> Effect Unit
 foreign import innerText :: EventTarget -> Effect String
 foreign import insertText :: String -> Effect Boolean 
 foreign import autoFocus :: String -> Effect Unit 
-
+foreign import unFocus :: String -> Effect Unit
 newtype NoteNode = NoteNode {
   id :: NoteId
   , heading :: String
@@ -72,6 +72,7 @@ type State = {
     , visionNoteIds :: Array NoteId
     , popoverPosition :: Maybe Point
     , popoverList :: Array Topic
+    , popoverCurrent :: Int
     , currentTextArea :: Maybe HTAE.HTMLTextAreaElement
     }
 
@@ -310,8 +311,7 @@ render state =
         Just p -> HH.div [ 
           css "fixed bg-blue-300 h-80 w-80", 
           style $ ("left: " <> show p.x <> "px; top: " <> show p.y <> "px;") ] [ 
-            HH.ul_ $ state.popoverList <#> \topic -> HH.li [ HE.onClick \_ -> InsertTopicLink topic ] [HH.text topic.name]
-
+            HH.ul_ $ mapWithIndex (\idx topic -> HH.li [ HE.onClick \_ -> InsertTopicLink topic, css $ if state.popoverCurrent == idx then "bg-red-500" else "" ] [HH.text topic.name]) state.popoverList 
           ]
         Nothing -> HH.span_ []
     ]
@@ -347,21 +347,7 @@ handleAction = case _ of
   InsertTopicLink topic -> do
     -- void $ addFile { cid: path,  id: fileId, mime: "", type: "" }
     let appendText = "[[" <> topic.name <> "|" <> topic.id <> "]]"
-    textarea <- H.gets _.currentTextArea 
-    case textarea of
-      Just ta -> do
-        insertPoint <- liftEffect $ HTAE.selectionStart ta
-        val  <- liftEffect $ HTAE.value ta
-        void $ H.liftEffect $ insertText appendText
-        let r = splitAt insertPoint val
-        let newBefore = replace regLinkStart appendText r.before 
-        H.liftEffect $ HTAE.setValue (newBefore <> r.after) ta
-        modify_ _ {
-          popoverPosition = Nothing
-          , popoverList = [] 
-        }
-        autoFoucsCurrentArea
-      _ -> pure unit
+    insertLinkToNote appendText
 
   ChangeNoteText noteId note ->  do
     nowTime <- now
@@ -413,21 +399,25 @@ handleAction = case _ of
         "ArrowDown" -> do
           H.liftEffect $ stopPropagation $ KE.toEvent kbe
           H.liftEffect $ preventDefault $ KE.toEvent kbe
-          let path = note.path
-          nodes <- H.gets _.renderNoteList
-          topic <- H.gets _.topic
-          let parentNode = parentPath path >>= look nodes
-          let mbPlen = case parentNode of 
-                        (Just (NoteNode n)) -> Just $ length n.children
-                        Nothing  -> Just $ length topic.noteIds
-          let mbPpath = parentPath path
-          let currentIdx = last path
-          let func = \arr -> fromMaybe arr (swapElem currentIdx (currentIdx + 1) arr)
-          case mbPlen of 
-            (Just len) | currentIdx < len - 1 -> updateSortByPpath mbPpath func
-            _ -> pure unit 
-          initNote
-          pure unit
+
+          moveNoteToDown
+          where
+            moveNoteToDown = do
+              let path = note.path
+              nodes <- H.gets _.renderNoteList
+              topic <- H.gets _.topic
+              let parentNode = parentPath path >>= look nodes
+              let mbPlen = case parentNode of 
+                            (Just (NoteNode n)) -> Just $ length n.children
+                            Nothing  -> Just $ length topic.noteIds
+              let mbPpath = parentPath path
+              let currentIdx = last path
+              let func = \arr -> fromMaybe arr (swapElem currentIdx (currentIdx + 1) arr)
+              case mbPlen of 
+                (Just len) | currentIdx < len - 1 -> updateSortByPpath mbPpath func
+                _ -> pure unit 
+              initNote
+              pure unit
         _ -> pure unit
     | KE.altKey kbe -> do
       pure unit
@@ -435,45 +425,65 @@ handleAction = case _ of
       pure unit
     | KE.ctrlKey kbe -> do 
       pure unit
-    | (not KE.shiftKey kbe) && (not KE.ctrlKey kbe) && (not KE.altKey kbe) && (not KE.metaKey kbe)-> do
-      case KE.key kbe of
-        "Enter" -> do 
+    | (not KE.shiftKey kbe) && (not KE.ctrlKey kbe) && (not KE.altKey kbe) && (not KE.metaKey kbe)-> do -- 没有任何按键修饰符
+      popoverPosition <- H.gets _.popoverPosition            
+      case KE.key kbe, popoverPosition of
+        "Enter", Just _ -> do 
+          H.liftEffect $ preventDefault $ KE.toEvent kbe
+          idx <- H.gets _.popoverCurrent
+          list <- H.gets _.popoverList
+          let topic' = index list idx
+          case topic' of 
+            Nothing -> insertLinkToNote $ "[[" <> "" <> "]]"
+            Just topic -> handleAction $ InsertTopicLink topic
+        "Enter", _ -> do 
           H.liftEffect $ preventDefault $ KE.toEvent kbe
           newNote note.parentId insertIdx
           where 
             insertIdx = 1 + last note.path
-        "Tab" -> do
+        "Tab", _ -> do
           H.liftEffect $ stopPropagation $ KE.toEvent kbe
           H.liftEffect $ preventDefault $ KE.toEvent kbe
           -- logDebug $ "缩进元素的path为" <> show note.path
           indent note.id note.path
-        "Escape" -> do 
+        "Escape", _ -> do 
           changeEditID Nothing
           let maybeTarget = currentTarget $ KE.toEvent kbe
           case maybeTarget of
             Just target -> do 
               H.liftEffect $ doBlur target
             Nothing -> pure unit
-        "ArrowUp" -> do 
+        "ArrowUp", Just _ -> do 
+          popoverCurrent <- H.gets _.popoverCurrent
+          if popoverCurrent == -1 
+          then pure unit
+          else H.modify_ _ { popoverCurrent = popoverCurrent - 1}
+        "ArrowUp", _ -> do 
           ids <- H.gets _.visionNoteIds
           let prevId = visionPrevId ids note.id
           case prevId of
             (Just id) -> changeEditID $ Just id
             _ -> pure unit
-        "ArrowDown" -> do 
+        "ArrowDown", Just _ -> do 
+          popoverCurrent <- H.gets _.popoverCurrent
+          list <- H.gets _.popoverList
+          if popoverCurrent == (length list) - 1
+          then pure unit
+          else H.modify_ _ { popoverCurrent = popoverCurrent + 1}
+        "ArrowDown", _ -> do 
           ids <- H.gets _.visionNoteIds
           let nextId = visionNextId ids note.id
           case nextId of
             (Just id) -> changeEditID $ Just id
             _ -> pure unit
-        "Backspace" -> do 
+        "Backspace", _ -> do 
           maybeText <- H.liftEffect $ getTextFromEvent $ KE.toEvent kbe
           case maybeText of 
             Nothing -> pure unit
             Just text 
               | "" == text -> delete note.id 
               | otherwise -> pure unit 
-        "[" -> do 
+        "[", _ -> do 
           caret <- getCaretInfo
           case caret of
             (Just caret') | isStartLinkInput caret'.beforeText -> do
@@ -485,9 +495,10 @@ handleAction = case _ of
                 popoverPosition = Just {x: r.left , y: r.bottom}
                 , popoverList = topics 
                 , currentTextArea = mayArea
+                , popoverCurrent = -1
               }
             _ -> pure unit
-        _ -> pure unit
+        _, _ -> pure unit
     | otherwise -> pure unit 
   IgnorePaste ev -> H.liftEffect $ preventDefault $ CE.toEvent ev
   Receive input -> do
@@ -601,6 +612,22 @@ handleAction = case _ of
           toTargetIdx =  case lastSecond path of 
             Nothing -> 0
             Just idx -> 1 + idx
+    insertLinkToNote appendText = do
+      textarea <- H.gets _.currentTextArea 
+      case textarea of
+        Just ta -> do
+          insertPoint <- liftEffect $ HTAE.selectionStart ta
+          val  <- liftEffect $ HTAE.value ta
+          void $ H.liftEffect $ insertText appendText
+          let r = splitAt insertPoint val
+          let newBefore = replace regLinkStart appendText r.before 
+          H.liftEffect $ HTAE.setValue (newBefore <> r.after) ta
+          modify_ _ {
+            popoverPosition = Nothing
+            , popoverList = [] 
+          }
+          autoFoucsCurrentArea
+        _ -> pure unit
 initialState :: ConnectedInput-> State
 initialState { context, input } = { 
   currentId: Nothing
@@ -612,6 +639,7 @@ initialState { context, input } = {
   , visionNoteIds: []
   , popoverPosition: Nothing
   , popoverList: []
+  , popoverCurrent: -1
   , currentTextArea : Nothing
   }
 

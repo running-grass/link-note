@@ -36,6 +36,7 @@ to generate this file without the comments in this block.
   , "routing"
   , "routing-duplex"
   , "safe-coerce"
+  , "spec"
   , "strings"
   , "transformers"
   , "uuid"
@@ -48,5 +49,5 @@ to generate this file without the comments in this block.
   , "web-uievents"
   ]
 , packages = ./packages.dhall
-, sources = [ "src/**/*.purs" ]
+, sources = [ "src/**/*.purs", "test/**/*.purs" ]
 }

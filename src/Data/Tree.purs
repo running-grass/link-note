@@ -34,6 +34,8 @@ instance Foldable Tree where
 instance Show a => Show (Tree a) where
   show (Node node forest) = "<Tree " <> show node <> " " <> show forest <> ">"
 
+
+--------------------------  Forest ------------------------------
 newtype Forest a = Forest (Array (Tree a))
 derive newtype instance Eq a => Eq (Forest a)
 derive newtype instance Ord a => Ord (Forest a)
@@ -46,8 +48,16 @@ instance FunctorWithIndex ForestIndexPath Forest where
                 Node (f currIdx a) (mapWithIndex 
                                     (\i ta' -> innerMap (NEA.snoc currIdx i) ta') 
                                     forest)
+-- instance Foldable Forest where
+--   foldMap = foldMapDefaultR
+--   foldr f acc (Forest fs) = foldr f acc fs
+--   foldl f acc (Node a rest) = foldl (foldl f) (f acc a) rest
+
+
 instance Show a => Show (Forest a) where
   show (Forest forest) = show forest
+
+----------------------------------------------
 
 emptyForest :: forall a . Forest a
 emptyForest = Forest []
@@ -55,17 +65,14 @@ emptyForest = Forest []
 leaf :: forall a. a -> Tree a
 leaf x = Node x []
 
+
 -- look 可以使用foldable+maybe来实现
 -- look :: forall a. Forest a -> ForestIndexPath -> Maybe a
--- look nodes path = do
---   let us = NEA.uncons path
---   current@(NoteNode curr) <- NEA.index nodes us.head 
---   if null us.tail 
---     then pure current
---     else do
---       tail <- fromArray us.tail
---       look curr.children tail
-
+-- look forest path = foldl func Nothing $ A.fromFoldable $ mapWithIndex (\fip node -> if fip == path then Just node else Nothing) forest
+--   where 
+--     func :: Maybe a -> Maybe a -> Maybe a
+--     func Nothing (Just x) = Just x
+--     func _ _ = Nothing
 
 -- findNode :: NoteId -> Array NoteNode -> Maybe NoteNode
 -- findNode id nodes = Array.find (\(NoteNode n) -> n.id == id) $ flatten nodes

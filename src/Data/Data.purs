@@ -2,6 +2,7 @@ module LinkNote.Data.Data where
 
 import Prelude
 
+import Data.Array.NonEmpty (NonEmptyArray)
 import Data.DateTime.Instant (Instant)
 import Data.String.Regex (test)
 import Data.String.Regex.Flags (global)

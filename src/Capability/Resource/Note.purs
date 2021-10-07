@@ -2,6 +2,7 @@ module LinkNote.Capability.Resource.Note where
 
 import Prelude
 
+import Data.Array.NonEmpty (singleton)
 import Data.Maybe (Maybe)
 import Halogen (HalogenM, lift)
 import LinkNote.Capability.Now (class Now, now)

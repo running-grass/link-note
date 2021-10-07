@@ -5,11 +5,13 @@ import Prelude
 import Control.Alternative ((<|>))
 import Control.Monad.Error.Class (class MonadThrow, throwError)
 import Control.Monad.State (class MonadState, modify_)
-import Data.Array (cons, elem, elemIndex, filter, findIndex, index, mapWithIndex, null, sortWith)
+import Data.Array (elem, elemIndex, filter, findIndex, fromFoldable, index, mapWithIndex, null, sortWith)
 import Data.Array as Array
-import Data.Array.NonEmpty (NonEmptyArray, fromArray, init, last, snoc', toArray, uncons, updateAt)
+import Data.Array.NonEmpty (NonEmptyArray, last)
 import Data.Array.NonEmpty as NArray
 import Data.Foldable (length)
+import Data.Foldable as Foldable
+import Data.FoldableWithIndex (findWithIndex)
 import Data.Maybe (Maybe(..), fromMaybe, fromMaybe', isNothing)
 import Data.String (splitAt)
 import Data.String.Regex (Regex, replace, replace', test)
@@ -42,6 +44,7 @@ import LinkNote.Component.HTML.Utils (css)
 import LinkNote.Component.Store as LS
 import LinkNote.Component.Util (swapElem)
 import LinkNote.Data.Data (Note, NoteId, Topic, TopicId, Point)
+import LinkNote.Data.Tree as Tree
 import Web.Clipboard.ClipboardEvent as CE
 import Web.Event.Event (Event, currentTarget, preventDefault, stopPropagation, target)
 import Web.Event.Internal.Types (EventTarget)
@@ -55,18 +58,11 @@ foreign import innerText :: EventTarget -> Effect String
 foreign import insertText :: String -> Effect Boolean 
 foreign import autoFocus :: String -> Effect Unit 
 foreign import unFocus :: String -> Effect Unit
-newtype NoteNode = NoteNode {
-  id :: NoteId
-  , heading :: String
-  , children :: Array NoteNode
-  , parentId :: NoteId
-  , path :: NonEmptyArray Int
-}
 type State = { 
     topic :: Topic
+    , noteForest :: Tree.Forest Note
     , currentId :: Maybe String
     , noteList :: Array Note
-    , renderNoteList :: Array NoteNode
     , ipfs :: Maybe IPFS
     , ipfsGatway :: String
     , visionNoteIds :: Array NoteId
@@ -83,12 +79,10 @@ type Input = {
 
 type ConnectedInput = Connected LS.Store Input
 
-type NodePath = NonEmptyArray Int
-
 data Action
   = ChangeNoteText String String 
   | IgnorePaste CE.ClipboardEvent
-  | HandleKeyUp NoteNode KE.KeyboardEvent
+  | HandleKeyUp (Tree.Tree Note) KE.KeyboardEvent
   | HandleKeyDown KE.KeyboardEvent
   | InitComp
   | Receive ConnectedInput
@@ -112,26 +106,14 @@ findNote id = do
   notes <- H.gets _.noteList
   fromJust' $ Array.find (\n -> n.id == id) notes 
 
-noteToTree :: Array Note -> NoteId -> Array Int -> NoteSort -> Array NoteNode
-noteToTree notelist parentId parentP sortIds =  mapWithIndex toTree $ sortChild filterdList
+noteToTree' :: Array Note -> NoteId -> NoteSort -> Tree.Forest Note
+noteToTree' notelist parentId sortIds = Tree.Forest $ map toTree $ sortChild filterdList
   where
     filterdList :: Array Note
     filterdList = filter (\note -> note.parentId == parentId && (Array.elem note.id sortIds) ) notelist
-    toTree idx note = NoteNode {
-      id: note.id
-      , heading: note.heading
-      , parentId: note.parentId
-      , path : snoc' parentP idx
-      , children: noteToTree notelist note.id (toArray $ snoc' parentP idx) note.childrenIds
-    }
+    toTree note = Tree.Node note $ noteToTree' notelist note.id note.childrenIds
     sortChild :: Array Note -> Array Note
     sortChild = sortWith \node -> fromMaybe (length sortIds) (elemIndex node.id sortIds)    
-
-treeToIdList :: Array NoteNode -> Array NoteId
-treeToIdList nodes = do
-  node' <- nodes
-  let (NoteNode  node) = node' 
-  cons node.id $ treeToIdList node.children
 
 visionPrevId :: Array NoteId -> NoteId -> Maybe NoteId
 visionPrevId ids id = do
@@ -156,45 +138,10 @@ searchPrevNoteId notes id = do
     note <- index notes $ idx - 1
     pure note.id
 
-look :: Array NoteNode -> NodePath -> Maybe NoteNode
-look nodes path = do
-  let us = uncons path
-  current@(NoteNode curr) <- index nodes us.head 
-  if null us.tail 
-    then pure current
-    else do
-      tail <- fromArray us.tail
-      look curr.children tail
-
-flatten_ :: NoteNode -> Array NoteNode 
-flatten_ node@(NoteNode node_) = Array.cons node (Array.concatMap flatten_ node_.children)
-
-flatten :: Array NoteNode -> Array NoteNode 
-flatten nodes = Array.concatMap flatten_ nodes
-
-findNode :: NoteId -> Array NoteNode -> Maybe NoteNode
-findNode id nodes = Array.find (\(NoteNode n) -> n.id == id) $ flatten nodes
-
-
 fromJust' :: forall a m. MonadThrow Error m => Maybe a -> m a
 fromJust' = case _ of
   Just x -> pure x 
   Nothing -> throwError $ error $ "出现未预期的Nothing"
-
-parentPath :: NodePath -> Maybe NodePath
-parentPath path = do
-  let len = length path
-  if len == 1 
-    then Nothing
-    else fromArray $ init path
-
-prevPath :: NodePath -> Maybe NodePath
-prevPath path = do
-  let las = last path
-  let lasInx = (length path) - 1
-  if las == 0 
-    then Nothing
-    else updateAt lasInx (las - 1) path
 
 regFileLink :: Regex
 regFileLink = unsafeRegex "\\(\\(file-(.*?)\\)\\)" global
@@ -260,8 +207,8 @@ contentStyle =  """
     word-wrap: break-word;
     word-break: break-word;
 """
-renderNote :: forall  a. String -> Maybe String -> Int ->  NoteNode -> HH.HTML a Action
-renderNote ipfsGatway currentId level noteNode@(NoteNode note)  = 
+renderNote :: forall  a. String -> Maybe String -> Int -> Tree.Tree Note  -> HH.HTML a Action
+renderNote ipfsGatway currentId level noteTree@(Tree.Node note (Tree.Forest children))  = 
   HH.li [ 
     HP.id note.id 
     , HE.onClick \ev -> ClickNote ev note.id 
@@ -282,7 +229,7 @@ renderNote ipfsGatway currentId level noteNode@(NoteNode note)  =
               HP.value note.heading
               , css "focus:ring-0"
               , HP.style $ textareaStyle <> contentStyle
-              , HE.onKeyUp \kbe -> HandleKeyUp noteNode kbe 
+              , HE.onKeyUp \kbe -> HandleKeyUp noteTree kbe 
               , HE.onKeyDown \kbe -> HandleKeyDown kbe
               , HE.onPaste IgnorePaste
               , HE.onValueInput \val -> ChangeNoteText note.id val
@@ -296,9 +243,9 @@ renderNote ipfsGatway currentId level noteNode@(NoteNode note)  =
         RH.render_ $ replaceLink $ replace regFileLink ("<img src=\"" <> ipfsGatway <> "$1\">") note.heading 
       ]
 
-      , if null note.children 
+      , if null children 
         then HH.span_ []
-        else HH.ul [css $ "list-disc pl-6"] $ note.children <#> renderNote ipfsGatway currentId (level + 1)
+        else HH.ul [css $ "list-disc pl-6"] $ children <#> renderNote ipfsGatway currentId (level + 1)
     ]
 
 
@@ -306,7 +253,7 @@ render :: forall cs m. State -> H.ComponentHTML Action cs m
 render state =
   HH.div_
     [
-    HH.ul [css "list-disc pl-6"] $ state.renderNoteList <#> renderNote state.ipfsGatway state.currentId 1
+    HH.ul [css "list-disc pl-6"] $ renderList state.noteForest
     , case state.popoverPosition of
         Just p -> HH.div [ 
           css "fixed bg-blue-300 h-80 w-80", 
@@ -315,6 +262,8 @@ render state =
           ]
         Nothing -> HH.span_ []
     ]
+  where 
+    renderList (Tree.Forest tas) = tas <#> renderNote state.ipfsGatway state.currentId 1
     
 getTextFromEvent :: Event -> Effect (Maybe String)
 getTextFromEvent ev = do
@@ -375,42 +324,44 @@ handleAction = case _ of
       H.liftEffect $ preventDefault $ KE.toEvent kbe
     | otherwise -> pure unit
   
-  HandleKeyUp (NoteNode note) kbe 
+  HandleKeyUp (Tree.Node note _) kbe 
     -- 按下Shift修饰键的情况
     | KE.shiftKey kbe -> do
-      case KE.key kbe of
+      nodes <- H.gets _.noteForest 
+      let path_ = findWithIndex (\_ d -> d.id == note.id) nodes <#> \r -> r.index
+      case KE.key kbe, path_ of
         -- 反缩进
-        "Tab" -> do 
+        "Tab",Just path' -> do 
           H.liftEffect $ stopPropagation $ KE.toEvent kbe
           H.liftEffect $ preventDefault $ KE.toEvent kbe
-          unIndent note.id note.path
+          unIndent note.id path'
         -- 把当前标题向上移动
-        "ArrowUp" -> do 
+        "ArrowUp", Just path' -> do 
           H.liftEffect $ stopPropagation $ KE.toEvent kbe
           H.liftEffect $ preventDefault $ KE.toEvent kbe
-          let path = note.path
-          let mbPid = parentPath path
+          let path = path'
+          let mbPid = Tree.parentPath path
           let currentIdx = last path
           let func = \arr -> fromMaybe arr (swapElem currentIdx (currentIdx - 1) arr)
           if currentIdx == 0 
             then pure unit
             else updateSortByPpath mbPid func 
         -- 把当前标题向下移动
-        "ArrowDown" -> do
+        "ArrowDown", Just path' -> do
           H.liftEffect $ stopPropagation $ KE.toEvent kbe
           H.liftEffect $ preventDefault $ KE.toEvent kbe
 
           moveNoteToDown
           where
             moveNoteToDown = do
-              let path = note.path
-              nodes <- H.gets _.renderNoteList
+              let path = path'
+              notess <- H.gets _.noteForest
               topic <- H.gets _.topic
-              let parentNode = parentPath path >>= look nodes
+              let parentNode = Tree.parentPath path >>= Tree.look notess
               let mbPlen = case parentNode of 
-                            (Just (NoteNode n)) -> Just $ length n.children
+                            (Just ta) -> Just $ Tree.childrenLenth ta
                             Nothing  -> Just $ length topic.noteIds
-              let mbPpath = parentPath path
+              let mbPpath = Tree.parentPath path
               let currentIdx = last path
               let func = \arr -> fromMaybe arr (swapElem currentIdx (currentIdx + 1) arr)
               case mbPlen of 
@@ -418,7 +369,7 @@ handleAction = case _ of
                 _ -> pure unit 
               initNote
               pure unit
-        _ -> pure unit
+        _, _ -> pure unit
     | KE.altKey kbe -> do
       pure unit
     | KE.metaKey kbe -> do
@@ -426,9 +377,11 @@ handleAction = case _ of
     | KE.ctrlKey kbe -> do 
       pure unit
     | (not KE.shiftKey kbe) && (not KE.ctrlKey kbe) && (not KE.altKey kbe) && (not KE.metaKey kbe)-> do -- 没有任何按键修饰符
-      popoverPosition <- H.gets _.popoverPosition            
-      case KE.key kbe, popoverPosition of
-        "Enter", Just _ -> do 
+      popoverPosition <- H.gets _.popoverPosition
+      nodes <- H.gets _.noteForest 
+      let path_ = findWithIndex (\_ d -> d.id == note.id) nodes <#> \r -> r.index
+      case KE.key kbe, popoverPosition, path_ of
+        "Enter", Just _, _ -> do 
           H.liftEffect $ preventDefault $ KE.toEvent kbe
           idx <- H.gets _.popoverCurrent
           list <- H.gets _.popoverList
@@ -436,54 +389,53 @@ handleAction = case _ of
           case topic' of 
             Nothing -> insertLinkToNote $ "[[" <> "" <> "]]"
             Just topic -> handleAction $ InsertTopicLink topic
-        "Enter", _ -> do 
+        "Enter", _,Just path -> do 
           H.liftEffect $ preventDefault $ KE.toEvent kbe
           newNote note.parentId insertIdx
           where 
-            insertIdx = 1 + last note.path
-        "Tab", _ -> do
+            insertIdx = 1 + last path
+        "Tab", _, Just path -> do
           H.liftEffect $ stopPropagation $ KE.toEvent kbe
           H.liftEffect $ preventDefault $ KE.toEvent kbe
-          -- logDebug $ "缩进元素的path为" <> show note.path
-          indent note.id note.path
-        "Escape", _ -> do 
+          indent note.id path
+        "Escape", _, _ -> do 
           changeEditID Nothing
           let maybeTarget = currentTarget $ KE.toEvent kbe
           case maybeTarget of
             Just target -> do 
               H.liftEffect $ doBlur target
             Nothing -> pure unit
-        "ArrowUp", Just _ -> do 
+        "ArrowUp", Just _, _ -> do 
           popoverCurrent <- H.gets _.popoverCurrent
           if popoverCurrent == -1 
           then pure unit
           else H.modify_ _ { popoverCurrent = popoverCurrent - 1}
-        "ArrowUp", _ -> do 
+        "ArrowUp", _, _ -> do 
           ids <- H.gets _.visionNoteIds
           let prevId = visionPrevId ids note.id
           case prevId of
             (Just id) -> changeEditID $ Just id
             _ -> pure unit
-        "ArrowDown", Just _ -> do 
+        "ArrowDown", Just _, _ -> do 
           popoverCurrent <- H.gets _.popoverCurrent
           list <- H.gets _.popoverList
           if popoverCurrent == (length list) - 1
           then pure unit
           else H.modify_ _ { popoverCurrent = popoverCurrent + 1}
-        "ArrowDown", _ -> do 
+        "ArrowDown", _, _ -> do 
           ids <- H.gets _.visionNoteIds
           let nextId = visionNextId ids note.id
           case nextId of
             (Just id) -> changeEditID $ Just id
             _ -> pure unit
-        "Backspace", _ -> do 
+        "Backspace", _, _ -> do 
           maybeText <- H.liftEffect $ getTextFromEvent $ KE.toEvent kbe
           case maybeText of 
             Nothing -> pure unit
             Just text 
               | "" == text -> delete note.id 
               | otherwise -> pure unit 
-        "[", _ -> do 
+        "[", _, _ -> do 
           caret <- getCaretInfo
           case caret of
             (Just caret') | isStartLinkInput caret'.beforeText -> do
@@ -498,7 +450,7 @@ handleAction = case _ of
                 , popoverCurrent = -1
               }
             _ -> pure unit
-        _, _ -> pure unit
+        _, _, _ -> pure unit
     | otherwise -> pure unit 
   IgnorePaste ev -> H.liftEffect $ preventDefault $ CE.toEvent ev
   Receive input -> do
@@ -509,12 +461,12 @@ handleAction = case _ of
       maybeId <- H.gets _.currentId 
       H.liftEffect $ autoFocus $ fromMaybe "dummy" maybeId
     updateSortByPpath ppath func = do
-      nodes <- H.gets _.renderNoteList
+      nodes <- H.gets _.noteForest
       case ppath of
         Just path -> do 
-          let parentNode' = look nodes path
+          let parentNode' = Tree.look' nodes path
           case parentNode' of
-            Just (NoteNode parentNode) -> do
+            Just parentNode -> do
               updateSortInParent parentNode.id func
             Nothing -> pure unit 
         Nothing -> updateSortInParent "" func
@@ -526,9 +478,9 @@ handleAction = case _ of
         let noteIds = Array.nubEq $ updateFunc topic.noteIds
         void $ updateTopicById topic.id { noteIds }
       else do
-        notes <- H.gets _.renderNoteList        
-        (NoteNode pNode) <- fromJust' $ findNode pid notes
-        let prevChildIds = pNode.children <#> \(NoteNode n) -> n.id
+        notess <- H.gets _.noteForest
+        sublings <- fromJust' $ Tree.findChildrenByTree (\n -> n.id == pid) notess
+        let prevChildIds = sublings <#> \n -> n.id
         let childrenIds = Array.nubEq $ updateFunc prevChildIds
         void $ updateNoteById pid { childrenIds }
     insertSortInParent pid id idx = do
@@ -547,15 +499,16 @@ handleAction = case _ of
         throwError $ error "更新Topic错误"
       let topic = fromMaybe topic' topicMaybe
       notes <- getAllNotesByHostId topicId
-      let nodes = noteToTree notes "" [] topic.noteIds
-      let ids = treeToIdList nodes
-      if null nodes 
+      let noteForest = noteToTree' notes "" topic.noteIds
+      let noteTrees = fromFoldable noteForest
+      let ids = map (\n -> n.id) noteTrees
+      if Foldable.null noteForest 
         then newNote "" 0
         else do 
           H.modify_  _ { 
             noteList = notes 
             , topic = topic
-            , renderNoteList = nodes
+            , noteForest = noteForest
             , visionNoteIds = ids
           }
           logDebug "笔记列表已刷新"
@@ -586,12 +539,13 @@ handleAction = case _ of
       changeEditID Nothing
 
     indent id path = do
-      nodes <- H.gets _.renderNoteList
+      nodes <- H.gets _.noteForest
       note <- findNote id
-      NoteNode prevNode <- fromJust' $ prevPath path >>= look nodes
-      let len = length prevNode.children
+      prevNode <- fromJust' $ Tree.prevPath path >>= Tree.look nodes
+      let len = Tree.childrenLenth prevNode
       let source = note.parentId
-      let target = prevNode.id
+      let prevNote = Tree.getData prevNode
+      let target = prevNote.id
       
       void $ updateNoteById id { parentId: target }
 
@@ -599,9 +553,9 @@ handleAction = case _ of
       moveSort id source target len
       initNote
     unIndent id path = do
-      nodes <- H.gets _.renderNoteList
+      nodes <- H.gets _.noteForest
       note <- findNote id
-      NoteNode parentNode <- fromJust' $ parentPath path >>= look nodes
+      parentNode <- fromJust' $ Tree.parentPath path >>= Tree.look' nodes
       let source = note.parentId
       let target = parentNode.parentId 
       void $ updateNoteById id { parentId: parentNode.parentId }
@@ -634,8 +588,8 @@ initialState { context, input } = {
   , topic: input.topic
   , ipfsGatway: "https://dweb.link/ipfs/"
   , ipfs : context.ipfs
+  , noteForest : Tree.emptyForest
   , noteList : []
-  , renderNoteList: []
   , visionNoteIds: []
   , popoverPosition: Nothing
   , popoverList: []

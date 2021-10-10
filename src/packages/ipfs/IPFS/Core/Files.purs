@@ -1,11 +1,9 @@
 module IPFS.Core.Files where
 
-import IPFS
-import Prelude
+import IPFS (IPFS)
 
 import Control.Promise (Promise)
 import Effect (Effect)
-import Web.File.Blob (Blob)
 
 foreign import data FileContent :: Type 
 

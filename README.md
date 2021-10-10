@@ -52,14 +52,8 @@ nix-env -iA nixpkgs.direnv
 
 ### 使用pnpm安装node_modeules依赖
 ```bash
-pnpm install
+pnpm i
 ```
-
-### 使用spago编译purs文件
-```bash
-spago build
-```
-
 
 ### 启动调试模式
 ```bash

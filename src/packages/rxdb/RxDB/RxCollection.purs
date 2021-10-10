@@ -3,7 +3,6 @@ module RxDB.RxCollection where
 import Prelude
 
 import Control.Promise (Promise, toAffE)
-import Data.Maybe (Maybe)
 import Effect (Effect)
 import Effect.Aff (Aff)
 import RxDB.Type (QueryObject, RxCollection, RxDatabase, RxDocument, RxQuery)

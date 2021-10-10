@@ -6,8 +6,8 @@
   "scripts": {
     "build:purs": "spago build",
     "test": "spago test",
-    "debug": "cross-env mode=development DEBUG=true webpack-dev-server --progress --inline --hot",
-    "build": "cross-env mode=production webpack",
+    "debug": "pnpm build:purs && cross-env mode=development DEBUG=true webpack-dev-server --progress --inline --hot",
+    "build": "pnpm build:purs && cross-env mode=production webpack",
     "publish": "node deployToPage.js",
     "release": "pnpm run build && dotenv release-it -e .env.local -- && pnpm run publish"
   },

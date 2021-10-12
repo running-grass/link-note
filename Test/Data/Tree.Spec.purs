@@ -20,6 +20,7 @@ spec =
     let treeString = T.mkNode "a" [ T.mkNode "b" [T.leaf "c" , T.leaf "d" ], T.leaf "e"]
     let forest1 = Forest [treeString, treeString]
     let forest2 = Forest [tree1, tree1]
+    let forest3 = Forest [tree1]
     let leaf1 = T.leaf "singleton"
     describe "测试Tree" do
       describe "测试Tree的ClassType" do
@@ -61,6 +62,7 @@ spec =
                 T.leaf (NEA.cons' 1 [0, 1])], 
               T.leaf (NEA.cons' 1 [1])]
           ]
+        T.modify (const 110) (NEA.cons' 0 [0, 0]) forest3 `shouldEqual` Forest [T.mkNode 1 [T.mkNode 2 [T.leaf 110, T.leaf 4], T.mkNode 5 [T.leaf 6, T.leaf 7]] ]
       it "测试foldable" do
         foldl (+) 0 forest2 `shouldEqual` 56
         foldr (+) 0 forest2 `shouldEqual` 56

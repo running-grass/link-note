@@ -84,6 +84,9 @@ getData (Node x _) = x
 getChildrenData :: forall a. Tree a -> Array a
 getChildrenData (Node _ (Forest xs)) = xs <#> getData
 
+modify :: forall a. (a -> a) -> ForestIndexPath -> Forest a -> Forest a
+modify f path fa = mapWithIndex (\i x -> if i == path then f x else x) fa
+
 look' :: forall a. Forest a -> ForestIndexPath -> Maybe a
 look' fs xs = look fs xs <#> getData
 

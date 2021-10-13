@@ -81,3 +81,10 @@ spec =
         T.findSubTree (\n -> n == "b") treeString `shouldEqual` Just (T.mkNode "b" [T.leaf "c" , T.leaf "d" ])
         T.findTree (\n -> n == "b") forest1 `shouldEqual` Just (T.mkNode "b" [T.leaf "c" , T.leaf "d" ])        
         T.findChildrenByTree (\n -> n == "b") forest1 `shouldEqual` Just ["c", "d"]
+      it "测试insertSubTree" do
+        T.insertSubTree (NEA.cons' 0 []) (T.leaf "c") (Forest [T.leaf "a"]) `shouldEqual` Just (Forest [T.leaf "c", T.leaf "a"])        
+        T.insertSubTree (NEA.cons' 0 [1,2]) (T.leaf "c") (Forest [T.leaf "a"]) `shouldEqual` Nothing        
+        T.insertSubTree (NEA.cons' 3 []) (T.leaf "c") (Forest [T.leaf "a"]) `shouldEqual` Nothing
+        T.insertSubTree (NEA.cons' 0 [1,0]) (T.leaf 120) forest3 `shouldEqual` Just (Forest [T.mkNode 1 [T.mkNode 2 [T.leaf 3, T.leaf 4], T.mkNode 5 [T.leaf 120, T.leaf 6, T.leaf 7]] ])
+        T.insertSubTree (NEA.cons' 0 [1,3]) (T.leaf 120) forest3 `shouldEqual` Nothing
+        T.insertSubTree (NEA.cons' 0 [1,2]) (T.leaf 120) forest3 `shouldEqual` Just (Forest [T.mkNode 1 [T.mkNode 2 [T.leaf 3, T.leaf 4], T.mkNode 5 [T.leaf 6, T.leaf 7, T.leaf 120]] ])

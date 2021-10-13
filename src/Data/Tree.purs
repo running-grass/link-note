@@ -4,6 +4,7 @@ import Prelude
 
 import Data.Array as A
 import Data.Array.NonEmpty as NEA
+import Data.Either (Either)
 import Data.Foldable (class Foldable, foldMapDefaultR, foldl, foldr)
 import Data.FoldableWithIndex (class FoldableWithIndex, foldMapWithIndexDefaultR)
 import Data.FoldableWithIndex as FoldableWithIndex
@@ -100,6 +101,22 @@ look (Forest trees) xs = case pathLen, currNode, restPath of
     pathLen = NEA.length xs
     currNode = A.index trees currIdx
     restPath = NEA.fromArray (NEA.tail xs)
+
+insertSubTree :: forall a . ForestIndexPath -> Tree a -> Forest a -> Maybe (Forest a)
+insertSubTree path tx (Forest ax) = case pathLen, restPath, currNode of 
+  1, _, _ -> Forest <$> A.insertAt currIdx tx ax
+  _, Just restPath', Just (Node x' fx') -> 
+    insertSubTree restPath' tx fx' >>= \newFx -> 
+      Forest <$> A.updateAt currIdx (Node x' newFx) ax
+  _, _, _ -> Nothing
+  where
+    pathLen = NEA.length path
+    currIdx = NEA.head path
+    currNode = A.index ax currIdx
+    restPath = NEA.fromArray (NEA.tail path)
+
+insertLeaf :: forall a . ForestIndexPath -> a -> Forest a -> Maybe (Forest a)
+insertLeaf path x fx = insertSubTree path (leaf x) fx
 
 findTree :: forall a. (a -> Boolean) -> Forest a -> Maybe (Tree a)
 findTree p (Forest trees) = foldr go Nothing trees

@@ -2,6 +2,7 @@ module LinkNote.Data.Tree where
 
 import Prelude
 
+import Data.Array ((:))
 import Data.Array as A
 import Data.Array.NonEmpty as NEA
 import Data.Either (Either)
@@ -11,6 +12,7 @@ import Data.FoldableWithIndex as FoldableWithIndex
 import Data.FunctorWithIndex (class FunctorWithIndex, mapWithIndex)
 import Data.Maybe (Maybe(..))
 import Prim.TypeError (class Warn, Text)
+import Safe.Coerce (coerce)
 
 type TreeIndexPath = Array Int
 type ForestIndexPath = NEA.NonEmptyArray Int
@@ -117,6 +119,19 @@ insertSubTree path tx (Forest ax) = case pathLen, restPath, currNode of
 
 insertLeaf :: forall a . ForestIndexPath -> a -> Forest a -> Maybe (Forest a)
 insertLeaf path x fx = insertSubTree path (leaf x) fx
+
+deleteAt :: forall a . ForestIndexPath -> Forest a -> Maybe (Forest a)
+deleteAt path (Forest ax) =  case pathLen, restPath, currNode of 
+  1, _, _ -> Forest <$> A.deleteAt currIdx ax
+  _, Just restPath', Just (Node x' fx') -> 
+    deleteAt restPath' fx' >>= \newFx -> 
+      Forest <$> A.updateAt currIdx (Node x' newFx) ax
+  _, _, _ -> Nothing
+  where
+    pathLen = NEA.length path
+    currIdx = NEA.head path
+    currNode = A.index ax currIdx
+    restPath = NEA.fromArray (NEA.tail path)
 
 findTree :: forall a. (a -> Boolean) -> Forest a -> Maybe (Tree a)
 findTree p (Forest trees) = foldr go Nothing trees

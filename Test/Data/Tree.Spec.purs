@@ -88,3 +88,11 @@ spec =
         T.insertSubTree (NEA.cons' 0 [1,0]) (T.leaf 120) forest3 `shouldEqual` Just (Forest [T.mkNode 1 [T.mkNode 2 [T.leaf 3, T.leaf 4], T.mkNode 5 [T.leaf 120, T.leaf 6, T.leaf 7]] ])
         T.insertSubTree (NEA.cons' 0 [1,3]) (T.leaf 120) forest3 `shouldEqual` Nothing
         T.insertSubTree (NEA.cons' 0 [1,2]) (T.leaf 120) forest3 `shouldEqual` Just (Forest [T.mkNode 1 [T.mkNode 2 [T.leaf 3, T.leaf 4], T.mkNode 5 [T.leaf 6, T.leaf 7, T.leaf 120]] ])
+      it "deleteAt" do
+        T.deleteAt (NEA.cons' 0 [])  (Forest [T.leaf "a"]) `shouldEqual` Just (Forest [])        
+        T.deleteAt (NEA.cons' 0 [1,2]) (Forest [T.leaf "a"]) `shouldEqual` Nothing        
+        T.deleteAt (NEA.cons' 3 [])  (Forest [T.leaf "a"]) `shouldEqual` Nothing
+        T.deleteAt (NEA.cons' 0 [1,0])  forest3 `shouldEqual` Just (Forest [T.mkNode 1 [T.mkNode 2 [T.leaf 3, T.leaf 4], T.mkNode 5 [T.leaf 7]] ])
+        T.deleteAt (NEA.cons' 0 [1,3])  forest3 `shouldEqual` Nothing
+        T.deleteAt (NEA.cons' 0 [1,2])  forest3 `shouldEqual` Nothing
+        

@@ -37,7 +37,7 @@
     "downloadjs": "^1.4.7",
     "filemanager-webpack-plugin": "^6.1.4",
     "ipfs": "^0.59.1",
-    "ipfs-core": "^0.9.1",
+    "ipfs-core": "^0.11.1",
     "ipfs-http-client": "^51.0.1",
     "ipfs-provider": "^2.0.1",
     "moment": "^2.29.1",

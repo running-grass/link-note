@@ -25,6 +25,27 @@ instance manageNoteHalogenM :: ManageNote m => ManageNote (HalogenM st act slots
 deleteNote :: forall m. ManageNote m => String -> m Boolean
 deleteNote id = deleteNotes [id]
 
+
+generateEmptyNote :: forall m . 
+  UUID m 
+  => Now m 
+  => String -> String -> String  -> String -> m Note
+generateEmptyNote hostType hostId parentId heading = do
+  nowTime <- now
+  id <- genNoteId
+  pure {
+    id,
+    heading,
+    content: "",
+    hostType,
+    hostId,
+    created: nowTime,
+    updated: nowTime,
+    parentId,
+    childrenIds: []
+  }
+
+
 createNewNote :: forall m . 
   UUID m 
   => Now m 

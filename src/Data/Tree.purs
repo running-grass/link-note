@@ -85,6 +85,9 @@ instance Show a => Show (Forest a) where
 emptyForest :: forall a . Forest a
 emptyForest = Forest []
 
+length :: forall a . Forest a -> Int 
+length (Forest as) = A.length as
+
 leaf :: forall a. a -> Tree a
 leaf x = Node x emptyForest
 

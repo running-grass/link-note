@@ -2,18 +2,20 @@ module LinkNote.Data.Tree where
 
 import Prelude
 
-import Data.Array ((:))
 import Data.Array as A
 import Data.Array.NonEmpty as NEA
-import Data.Either (Either)
+import Data.Either (Either(..))
 import Data.Foldable (class Foldable, foldMapDefaultR, foldl, foldr)
 import Data.FoldableWithIndex (class FoldableWithIndex, foldMapWithIndexDefaultR)
 import Data.FoldableWithIndex as FoldableWithIndex
 import Data.FunctorWithIndex (class FunctorWithIndex, mapWithIndex)
-import Data.Maybe (Maybe(..))
+import Data.Lens (Lens', lens')
+import Data.Lens.AffineTraversal (affineTraversal)
+import Data.Lens.Index (class Index)
+import Data.Maybe (Maybe(..), maybe)
+import Data.Tuple (Tuple(..))
 import LinkNote.Data.Array (startsWithNonEmptyArray)
 import Prim.TypeError (class Warn, Text)
-import Safe.Coerce (coerce)
 
 type TreeIndexPath = Array Int
 type ForestIndexPath = NEA.NonEmptyArray Int
@@ -56,7 +58,14 @@ instance Foldable Forest where
   foldMap = foldMapDefaultR
   foldr f acc (Forest fs) = foldr (flip (foldr f)) acc fs
   foldl f acc (Forest fs) = foldl (foldl f) acc fs
-  
+instance Index (Forest a) ForestIndexPath a where
+  ix path = affineTraversal set pre
+    where
+      set :: Forest a -> a -> Forest a
+      set fx x = modify_ x path fx
+      pre :: Forest a -> Either (Forest a) a
+      pre fx = maybe (Left fx) Right $ look' fx path
+
 instance FoldableWithIndex ForestIndexPath Forest where
   foldMapWithIndex = foldMapWithIndexDefaultR
   foldrWithIndex :: forall a b. (ForestIndexPath -> a -> b -> b) -> b -> Forest a -> b
@@ -90,6 +99,9 @@ getChildrenData (Node _ (Forest xs)) = xs <#> getData
 
 modify :: forall a. (a -> a) -> ForestIndexPath -> Forest a -> Forest a
 modify f path fa = mapWithIndex (\i x -> if i == path then f x else x) fa
+
+modify_ :: forall a. a -> ForestIndexPath -> Forest a -> Forest a
+modify_ x = modify $ const x
 
 look' :: forall a. Forest a -> ForestIndexPath -> Maybe a
 look' fs xs = look fs xs <#> getData
@@ -180,3 +192,18 @@ prevPath path = do
   if las == 0 
     then Nothing
     else NEA.updateAt lasInx (las - 1) path
+
+
+-- lens
+_data :: forall a . Lens' (Tree a) a
+_data = lens' \(Node x fa) -> 
+  Tuple
+    x
+    (\x' -> Node x' fa)
+
+_subTrees :: forall a . Lens' (Tree a) (Array (Tree a))
+_subTrees = lens' \(Node x (Forest xs)) ->
+  Tuple
+    xs
+    (\xs' -> Node x (Forest xs'))
+

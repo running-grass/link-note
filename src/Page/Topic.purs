@@ -5,7 +5,7 @@ import Prelude
 import Control.Alternative ((<|>))
 import Control.Monad.Error.Class (class MonadThrow, throwError)
 import Control.Monad.State (modify_)
-import Data.Array (elem, elemIndex, filter, findIndex, fromFoldable, index, mapWithIndex, null, sortWith)
+import Data.Array (elem, elemIndex, filter, fromFoldable, index, mapWithIndex, null, sortWith)
 import Data.Array as Array
 import Data.Array.NonEmpty (NonEmptyArray, last)
 import Data.Array.NonEmpty as NArray

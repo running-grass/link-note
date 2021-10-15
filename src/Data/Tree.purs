@@ -11,6 +11,7 @@ import Data.FoldableWithIndex (class FoldableWithIndex, foldMapWithIndexDefaultR
 import Data.FoldableWithIndex as FoldableWithIndex
 import Data.FunctorWithIndex (class FunctorWithIndex, mapWithIndex)
 import Data.Maybe (Maybe(..))
+import LinkNote.Data.Array (startsWithNonEmptyArray)
 import Prim.TypeError (class Warn, Text)
 import Safe.Coerce (coerce)
 
@@ -132,6 +133,19 @@ deleteAt path (Forest ax) =  case pathLen, restPath, currNode of
     currIdx = NEA.head path
     currNode = A.index ax currIdx
     restPath = NEA.fromArray (NEA.tail path)
+
+moveSubTree :: forall a . ForestIndexPath -> ForestIndexPath -> Forest a -> Maybe (Forest a)
+moveSubTree fromPath toPath fa = case compare fromPath toPath, pathValid of 
+  EQ, _ -> Just fa
+  -- 先插入后删除
+  LT, true -> targetSubTree >>= \subTree -> insertSubTree toPath subTree fa >>= deleteAt fromPath
+  -- 先删除后插入
+  GT, true -> targetSubTree >>= \subTree -> deleteAt fromPath fa >>= insertSubTree toPath subTree
+  _, false -> Nothing
+  where 
+    targetSubTree = look fa fromPath
+    -- 如果[0,1] => [0,1,3,5]，那么移动路径非法
+    pathValid = not $ startsWithNonEmptyArray fromPath toPath
 
 findTree :: forall a. (a -> Boolean) -> Forest a -> Maybe (Tree a)
 findTree p (Forest trees) = foldr go Nothing trees

@@ -1,4 +1,4 @@
-module LinkNote.Test.Data.Tree.Spec where
+module LinkNote.Data.Tree.Spec where
 
 import Prelude
 
@@ -8,15 +8,19 @@ import Data.Foldable (foldl, foldr)
 import Data.FoldableWithIndex (findWithIndex, foldlWithIndex, foldrWithIndex)
 import Data.FunctorWithIndex (mapWithIndex)
 import Data.Maybe (Maybe(..))
-import LinkNote.Data.Tree (Forest(..))
+import LinkNote.Data.Tree (Forest(..), moveSubTree)
 import LinkNote.Data.Tree as T
 import Test.Spec (Spec, describe, it)
 import Test.Spec.Assertions (shouldEqual)
 
+t = T.mkNode
+l = T.leaf
+f = Forest
+
 spec :: Spec Unit
 spec =
   describe "测试Tree及Forest" do
-    let tree1 = T.mkNode 1 [T.mkNode 2 [T.leaf 3, T.leaf 4], T.mkNode 5 [T.leaf 6, T.leaf 7]] 
+    let tree1 = t 1 [t 2 [l 3, l 4], t 5 [l 6, l 7]] 
     let treeString = T.mkNode "a" [ T.mkNode "b" [T.leaf "c" , T.leaf "d" ], T.leaf "e"]
     let forest1 = Forest [treeString, treeString]
     let forest2 = Forest [tree1, tree1]
@@ -95,4 +99,8 @@ spec =
         T.deleteAt (NEA.cons' 0 [1,0])  forest3 `shouldEqual` Just (Forest [T.mkNode 1 [T.mkNode 2 [T.leaf 3, T.leaf 4], T.mkNode 5 [T.leaf 7]] ])
         T.deleteAt (NEA.cons' 0 [1,3])  forest3 `shouldEqual` Nothing
         T.deleteAt (NEA.cons' 0 [1,2])  forest3 `shouldEqual` Nothing
-        
+      it "moveSubTree" do
+        T.moveSubTree (NEA.cons' 0 []) (NEA.cons' 0 []) forest3 `shouldEqual` Just forest3
+        -- 非法移动路径
+        T.moveSubTree (NEA.cons' 0 []) (NEA.cons' 0 [1,1]) forest3 `shouldEqual` Nothing
+        T.moveSubTree (NEA.cons' 0 [1, 1]) (NEA.cons' 0 []) forest3 `shouldEqual` Just (f [l 7, t 1 [t 2 [l 3, l 4], t 5 [l 6]] ])

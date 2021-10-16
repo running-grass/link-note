@@ -181,6 +181,23 @@ findChildrenByTree p fa = case findTree p fa of
 childrenLenth :: forall a. Tree a -> Int
 childrenLenth (Node _ (Forest xs)) = A.length xs
 
+mapWithIndex' :: forall a b . (ForestIndexPath → Tree a → b) → Forest a → Forest b 
+mapWithIndex' f (Forest trees) = Forest $ mapWithIndex (\idx tree -> innerMap (NEA.singleton idx) tree) trees
+    where 
+        innerMap :: ForestIndexPath -> Tree a -> Tree b
+        innerMap currIdx node@(Node a (Forest xs)) = 
+            Node (f currIdx node) (Forest $ mapWithIndex 
+                                (\i ta' -> innerMap (NEA.snoc currIdx i) ta') 
+                                xs)
+
+map' :: forall a b . (Tree a → b) → Forest a → Forest b
+map' f (Forest trees) = Forest $ map innerMap trees
+  where
+    innerMap node@(Node _ (Forest ts)) = Node 
+                                          (f node) 
+                                          (Forest $ map innerMap ts)
+
+
 parentPath :: ForestIndexPath -> Maybe ForestIndexPath
 parentPath path = do
   let len = NEA.length path

@@ -36,7 +36,7 @@ exports._bulkRemoveDoc = coll => ids => () => {
 }
 
 exports._updateDocById = coll => id => doc => () => {
-    return coll.findOne(id).update({ "$set" : doc});
+    return coll.upsert(doc);
 }
 
 exports._getGatewayUri = just => nothing => ipfs => () => {

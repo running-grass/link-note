@@ -29,8 +29,8 @@ deleteNote id = deleteNotes [id]
 generateEmptyNote :: forall m . 
   UUID m 
   => Now m 
-  => String -> String -> String  -> String -> m Note
-generateEmptyNote hostType hostId parentId heading = do
+  => String -> String -> String -> m Note
+generateEmptyNote hostType hostId heading = do
   nowTime <- now
   id <- genNoteId
   pure {
@@ -41,7 +41,7 @@ generateEmptyNote hostType hostId parentId heading = do
     hostId,
     created: nowTime,
     updated: nowTime,
-    parentId,
+    parentId: "",
     childrenIds: []
   }
 

@@ -7,15 +7,18 @@ import Control.Monad.State (modify_)
 import Data.Array (elem, elemIndex, filter, fromFoldable, index, null, sortWith)
 import Data.Array as Array
 import Data.Array.NonEmpty as NArray
+import Data.Foldable (for_)
 import Data.Foldable as Foldable
 import Data.FunctorWithIndex (mapWithIndex)
-import Data.Lens (set)
+import Data.Lens (Lens', Traversal', over, set, traversed, view)
 import Data.Lens.Index (ix)
+import Data.Lens.Record (prop)
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.String (splitAt)
 import Data.String.Regex (Regex, replace, replace', test)
 import Data.String.Regex.Flags (global, noFlags)
 import Data.String.Regex.Unsafe (unsafeRegex)
+import Data.Traversable (class Traversable)
 import Data.Tuple (Tuple(..))
 import Effect (Effect)
 import Effect.Aff.Class (class MonadAff)
@@ -37,8 +40,8 @@ import LinkNote.Capability.ManageFile (class ManageFile, addFile)
 import LinkNote.Capability.ManageHTML (class ManageHTML, getCaretInfo)
 import LinkNote.Capability.ManageIPFS (class ManageIPFS, getIpfsGatewayPrefix)
 import LinkNote.Capability.Now (class Now, now)
-import LinkNote.Capability.Resource.Note (class ManageNote, generateEmptyNote, getAllNotesByHostId)
-import LinkNote.Capability.Resource.Topic (class ManageTopic, getTopics)
+import LinkNote.Capability.Resource.Note (class ManageNote, generateEmptyNote, getAllNotesByHostId, updateNoteById)
+import LinkNote.Capability.Resource.Topic (class ManageTopic, getTopics, updateTopicById)
 import LinkNote.Capability.UUID (class UUID)
 import LinkNote.Component.HTML.Utils (css)
 import LinkNote.Component.Store as LS
@@ -46,6 +49,7 @@ import LinkNote.Data.Array (modifyAtLast, modifyAtLastArray)
 import LinkNote.Data.Data (Note, NoteId, Topic, TopicId, Point)
 import LinkNote.Data.Tree (ForestIndexPath)
 import LinkNote.Data.Tree as Tree
+import Type.Proxy (Proxy(..))
 import Web.Clipboard.ClipboardEvent as CE
 import Web.Event.Event (Event, currentTarget, preventDefault, stopPropagation, target)
 import Web.Event.Internal.Types (EventTarget)
@@ -92,14 +96,26 @@ data Action
 
 foreign import addPasteListenner :: (forall a. a -> Maybe a -> a) -> Maybe IPFS -> (Function String (Effect Unit)) -> Effect Unit
 
-noteToTree :: Array Note -> NoteId -> Array NoteId -> Tree.Forest Note
-noteToTree notelist parentId sortIds = Tree.Forest $ map toTree $ sortChild filterdList
+noteToTree :: Array Note -> Array NoteId -> Tree.Forest Note
+noteToTree notelist sortIds = Tree.Forest $ map toTree $ sortChild filterdList
   where
     filterdList :: Array Note
-    filterdList = filter (\note -> note.parentId == parentId && (Array.elem note.id sortIds) ) notelist
-    toTree note = Tree.Node note $ noteToTree notelist note.id note.childrenIds
+    filterdList = filter (\note -> Array.elem note.id sortIds) notelist
+    toTree note = Tree.Node note $ noteToTree notelist note.childrenIds
     sortChild :: Array Note -> Array Note
     sortChild = sortWith \node -> fromMaybe (Array.length sortIds) (elemIndex node.id sortIds)    
+
+_childIds :: Lens' (Tree.Tree Note) String
+_childIds = Tree._data <<< prop (Proxy :: Proxy "id")
+
+_getChildIds :: Array (Tree.Tree Note) -> Array String
+_getChildIds = over traversed (view _childIds)
+
+updateChildId :: Tree.Forest Note -> Tree.Forest Note
+updateChildId = Tree.map' \(Tree.Node x (Tree.Forest xs)) -> x { childrenIds = _getChildIds xs }
+
+updateTopicChildId :: Tree.Forest Note -> Topic -> Topic
+updateTopicChildId (Tree.Forest fs) topic = topic { noteIds = _getChildIds fs }
 
 visionPrevId :: Array NoteId -> NoteId -> Maybe NoteId
 visionPrevId ids id = do
@@ -284,11 +300,11 @@ handleAction = case _ of
     topic <- H.gets _.topic
     notes <- getAllNotesByHostId topic.id
 
-    let noteForest = noteToTree notes "" topic.noteIds
+    let noteForest = noteToTree notes topic.noteIds
     let noteTrees = fromFoldable noteForest
     let ids = map (\n -> n.id) noteTrees
     if Foldable.null noteForest 
-      then newNote "" $ NArray.singleton (0 - 1)
+      then newNote $ NArray.singleton (0 - 1)
       else do 
         H.modify_  _ { 
           noteForest = noteForest
@@ -324,7 +340,12 @@ handleAction = case _ of
       case KE.key kbe of
         -- 反缩进
         "Tab" -> do
-          unIndent path
+          updateNoteForest $ targetPath >>= \p -> Tree.moveSubTree path p nodes 
+          where 
+            targetPath :: Maybe ForestIndexPath
+            targetPath = case NArray.length path of
+              1 -> Nothing
+              _ -> NArray.fromArray =<< (modifyAtLastArray (_ + 1) $ NArray.init path)
         -- 把当前标题向上移动
         "ArrowUp" -> do 
           let prevPath = modifyAtLast (_ - 1) path
@@ -354,8 +375,19 @@ handleAction = case _ of
           case topic' of 
             Nothing -> insertLinkToNote $ "[[" <> "" <> "]]"
             Just topic -> handleAction $ InsertTopicLink topic
-        "Enter", _ -> newNote note.parentId path
-        "Tab", _ -> indent path
+        "Enter", _ -> newNote path
+        "Tab", _ -> do 
+          nodes <- H.gets _.noteForest
+          case isHead of 
+            true -> pure unit
+            false -> do
+              prevNode <- fromJust' $ Tree.prevPath path >>= Tree.look nodes
+              let len = Tree.childrenLenth prevNode
+              let targetPath = NArray.snoc (modifyAtLast (_ - 1) path) len
+              updateNoteForest $ Tree.moveSubTree path targetPath nodes
+          where
+            isHead = NArray.last path == 0
+        
         "Escape", _ -> do 
           changeEditID Nothing
           let maybeTarget = currentTarget $ KE.toEvent kbe
@@ -421,10 +453,10 @@ handleAction = case _ of
       H.liftEffect $ stopPropagation $ KE.toEvent kbe
       H.liftEffect $ preventDefault $ KE.toEvent kbe
 
-    newNote pid path = do
+    newNote path = do
       topic <- H.gets _.topic 
       nodes <- H.gets _.noteForest
-      note <- generateEmptyNote "topic" topic.id pid ""
+      note <- generateEmptyNote "topic" topic.id ""
       let newPath = modifyAtLast (_ + 1) path
       
       updateNoteForest $ Tree.insertLeaf newPath note nodes
@@ -443,26 +475,19 @@ handleAction = case _ of
       changeEditID Nothing
     syncToDB = do
       logAnyM "save to db"
-      pure unit
-    indent path = do
       nodes <- H.gets _.noteForest
-      case isHead of 
-        true -> pure unit
-        false -> do
-          prevNode <- fromJust' $ Tree.prevPath path >>= Tree.look nodes
-          let len = Tree.childrenLenth prevNode
-          let targetPath = NArray.snoc (modifyAtLast (_ - 1) path) len
-          updateNoteForest $ Tree.moveSubTree path targetPath nodes
-      where
-        isHead = NArray.last path == 0
-    unIndent path = do
-      nodes <- H.gets _.noteForest
-      updateNoteForest $ targetPath >>= \p -> Tree.moveSubTree path p nodes 
-      where 
-        targetPath :: Maybe ForestIndexPath
-        targetPath = case NArray.length path of
-          1 -> Nothing
-          _ -> NArray.fromArray =<< (modifyAtLastArray (_ + 1) $ NArray.init path)
+      topic <- H.gets _.topic 
+      let nodes' = updateChildId nodes
+      let topic' = updateTopicChildId nodes topic
+
+      logAnyM nodes'
+      void $ updateTopicById topic'.id topic'
+      for_ nodes' $ \note -> updateNoteById note.id note
+      H.modify_ _ {
+        noteForest = nodes'
+        , topic = topic'
+      }
+      
     updateNoteForest Nothing = pure unit  
     updateNoteForest (Just noteForest) = do
       let noteTrees = fromFoldable noteForest

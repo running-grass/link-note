@@ -23,6 +23,7 @@ render _ =
       , HH.li_ [HH.text "Shift-Tab: 反缩进"]
       , HH.li_ [HH.text " ⬆️/⬇️: 移动光标 "]
       , HH.li_ [HH.text "Shift-⬆️/Shift-⬇️: 调整顺序"]
+      , HH.li_ [HH.text "Control-s: 保存"]
     ]
     , HH.br_
     , HH.h4_ [ HH.text "快捷提示弹窗状态下"]

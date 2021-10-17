@@ -90,6 +90,7 @@ data Action
   | HandleKeyDown KE.KeyboardEvent
   | InitComp
   | Receive ConnectedInput
+  | ChangeCurrentId (Maybe NoteId)
   | SubmitIpfs String
   | InsertTopicLink Topic
   | ClickNote ME.MouseEvent NoteId
@@ -239,7 +240,8 @@ renderNote ipfsGatway currentId noteTree@(Tree.Node (Tuple note path) (Tree.Fore
 
 render :: forall cs m. State -> H.ComponentHTML Action cs m
 render state =
-  HH.div_
+  HH.div
+    [HE.onClick \_ -> ChangeCurrentId Nothing]
     [
     HH.ul [css "list-disc pl-6"] $ renderList noteForest_
     , case state.popoverPosition of
@@ -320,6 +322,7 @@ handleAction = case _ of
   ClickNote mev nid -> do
     H.liftEffect $ stopPropagation $ ME.toEvent mev
     changeEditID $ Just nid
+  ChangeCurrentId mb -> do changeEditID mb
   HandleKeyDown kbe 
     | elem (KE.key kbe) ["Tab", "Enter", "ArrowUp", "ArrowDown"] -> do 
       ignoreEvent kbe
@@ -465,16 +468,20 @@ handleAction = case _ of
       maybeId <- H.gets _.currentId 
       H.liftEffect $ autoFocus $ fromMaybe "dummy" maybeId
     changeEditID mb = do 
-      H.modify_ _ { currentId = mb
-                  , popoverPosition = Nothing
-                  , popoverList = [] }
-      handdleAutoFoucs
+      currentId <- H.gets _.currentId
+      if currentId == mb 
+        then pure unit
+        else do
+          H.modify_ _ { currentId = mb
+                      , popoverPosition = Nothing
+                      , popoverList = [] }
+          handdleAutoFoucs
+          syncToDB
     delete path = do
       nodes <- H.gets _.noteForest
       updateNoteForest $ Tree.deleteAt path nodes
       changeEditID Nothing
     syncToDB = do
-      logAnyM "save to db"
       nodes <- H.gets _.noteForest
       topic <- H.gets _.topic 
       let nodes' = updateChildId nodes
@@ -487,6 +494,7 @@ handleAction = case _ of
         noteForest = nodes'
         , topic = topic'
       }
+      logAnyM "save to db"
       
     updateNoteForest Nothing = pure unit  
     updateNoteForest (Just noteForest) = do

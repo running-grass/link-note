@@ -5,6 +5,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [0.7.0] - 2021-10-17
 ### 新特性
 这一个版本主要是把对于笔记树形结构的组织和操作进行了重构
 ### 优化
@@ -79,7 +81,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Init Project
 
 
-[Unreleased]: https://github.com/link-note/link-note/compare/0.6.0...HEAD
+[Unreleased]: https://github.com/link-note/link-note/compare/0.7.0...HEAD
+[0.7.0]: https://github.com/link-note/link-note/compare/0.6.0...0.7.0
 [0.6.0]: https://github.com/link-note/link-note/compare/0.5.0...0.6.0
 [0.5.0]: https://github.com/link-note/link-note/compare/0.4.0...0.5.0
 [0.4.0]: https://github.com/link-note/link-note/compare/0.3.0...0.4.0

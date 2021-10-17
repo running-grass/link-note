@@ -5,7 +5,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
-
+### 新特性
+这一个版本主要是把对于笔记树形结构的组织和操作进行了重构
+### 优化
+- 修改笔记时的保存从实时保存改为了笔记焦点变更才会统一保存一次。避免编辑时的数据冲突
+- 增加Control-S手动保存数据到本地数据库的快捷键
 ## [0.6.0] - 2021-09-27
 ### 新特性
 - 双中括号打开最近使用过的主题列表弹窗

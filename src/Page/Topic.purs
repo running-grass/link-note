@@ -87,7 +87,7 @@ data Action
   = ChangeNoteText ForestIndexPath Note String 
   | IgnorePaste CE.ClipboardEvent
   | HandleKeyUp (Tree.Tree (Tuple Note ForestIndexPath)) KE.KeyboardEvent
-  | HandleKeyDown KE.KeyboardEvent
+  | HandleKeyDown (Tree.Tree (Tuple Note ForestIndexPath)) KE.KeyboardEvent
   | InitComp
   | Receive ConnectedInput
   | ChangeCurrentId (Maybe NoteId)
@@ -220,7 +220,7 @@ renderNote ipfsGatway currentId noteTree@(Tree.Node (Tuple note path) (Tree.Fore
               , css "focus:ring-0"
               , HP.style $ textareaStyle <> contentStyle
               , HE.onKeyUp \kbe -> HandleKeyUp noteTree kbe 
-              , HE.onKeyDown \kbe -> HandleKeyDown kbe
+              , HE.onKeyDown \kbe -> HandleKeyDown noteTree kbe
               , HE.onPaste IgnorePaste
               , HE.onValueInput \val -> ChangeNoteText path note val
             -- , HE.onBlur \_ -> ChangeEditID Nothing
@@ -298,22 +298,14 @@ handleAction = case _ of
     void $ H.liftEffect $ insertText appendText
   InitComp -> do
     logDebug "初始化组件"
-    
+
     topic <- H.gets _.topic
     notes <- getAllNotesByHostId topic.id
 
     let noteForest = noteToTree notes topic.noteIds
-    let noteTrees = fromFoldable noteForest
-    let ids = map (\n -> n.id) noteTrees
     if Foldable.null noteForest 
       then newNote $ NArray.singleton (0 - 1)
-      else do 
-        H.modify_  _ { 
-          noteForest = noteForest
-          , visionNoteIds = ids
-        }
-        handdleAutoFoucs
-
+      else updateNoteForest $ Just noteForest
     maybeIpfs <- H.gets _.ipfs
     _ <- H.subscribe =<< subscriptPaste maybeIpfs
     ipfsGatway <- getIpfsGatewayPrefix
@@ -323,7 +315,7 @@ handleAction = case _ of
     H.liftEffect $ stopPropagation $ ME.toEvent mev
     changeEditID $ Just nid
   ChangeCurrentId mb -> do changeEditID mb
-  HandleKeyDown kbe 
+  HandleKeyDown (Tree.Node (Tuple note path) _) kbe 
     | elem (KE.key kbe) ["Tab", "Enter", "ArrowUp", "ArrowDown"] -> do 
       ignoreEvent kbe
     | KE.metaKey kbe -> do 
@@ -332,6 +324,15 @@ handleAction = case _ of
           ignoreEvent kbe
           syncToDB
         _ -> pure unit
+    | (not KE.shiftKey kbe) && (not KE.ctrlKey kbe) && (not KE.altKey kbe) && (not KE.metaKey kbe)-> do 
+      popoverPosition <- H.gets _.popoverPosition
+      case KE.key kbe, popoverPosition of
+        "Backspace", _ -> do 
+          maybeText <- H.liftEffect $ getTextFromEvent $ KE.toEvent kbe
+          case maybeText of 
+            Just "" -> delete path 
+            _ -> pure unit
+        _ , _ -> do pure unit
     | otherwise -> do 
       pure unit
   
@@ -421,13 +422,7 @@ handleAction = case _ of
           case nextId of
             (Just id) -> changeEditID $ Just id
             _ -> pure unit
-        "Backspace", _ -> do 
-          maybeText <- H.liftEffect $ getTextFromEvent $ KE.toEvent kbe
-          case maybeText of 
-            Nothing -> pure unit
-            Just text 
-              | "" == text -> delete path 
-              | otherwise -> pure unit 
+
         "[", _ -> do 
           caret <- getCaretInfo
           case caret of
@@ -479,8 +474,15 @@ handleAction = case _ of
           syncToDB
     delete path = do
       nodes <- H.gets _.noteForest
+      currentId <- H.gets _.currentId
+      visionNoteIds <- H.gets _.visionNoteIds
+
+      let id' = currentId >>= 
+                  flip Array.elemIndex visionNoteIds >>= 
+                    \i -> Just (i - 1) >>=
+                      Array.index visionNoteIds
       updateNoteForest $ Tree.deleteAt path nodes
-      changeEditID Nothing
+      changeEditID id'
     syncToDB = do
       nodes <- H.gets _.noteForest
       topic <- H.gets _.topic 
@@ -491,8 +493,8 @@ handleAction = case _ of
       void $ updateTopicById topic'.id topic'
       for_ nodes' $ \note -> updateNoteById note.id note
       H.modify_ _ {
-        noteForest = nodes'
-        , topic = topic'
+        -- noteForest = nodes'
+        topic = topic'
       }
       logAnyM "save to db"
       

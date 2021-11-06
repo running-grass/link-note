@@ -5,13 +5,17 @@ import Prelude
 import Control.Monad.Error.Class (class MonadThrow, throwError)
 import Control.Promise (Promise, toAffE)
 import Data.Either (hush)
-import Data.Maybe (Maybe(..), fromMaybe)
+import Data.Maybe (Maybe(..), fromMaybe, maybe)
+import Data.Tuple.Nested ((/\))
 import Effect (Effect)
 import Effect.Aff (Aff, Error, error)
 import Effect.Aff.Class (class MonadAff)
 import Halogen (liftEffect)
 import Halogen as H
 import Halogen.HTML as HH
+import Halogen.Hooks (type (<>), Hook, HookM, UseEffect, UseState)
+import Halogen.Hooks as Hooks
+import Halogen.Query.Event (eventListener)
 import Halogen.Store.Connect (Connected, connect)
 import Halogen.Store.Monad (class MonadStore, getStore, updateStore)
 import Halogen.Store.Select (selectAll)
@@ -41,6 +45,9 @@ import LinkNote.Page.TopicList as TopicList
 import Routing.Duplex as RD
 import Routing.Hash (getHash)
 import Type.Proxy (Proxy(..))
+import Web.Event.Event as Event
+import Web.HTML (Window, window)
+import Web.HTML.Window as Window
 
 
 
@@ -89,6 +96,7 @@ type ChildSlots =
   , setting :: OpaqueSlot Unit
   , topicList :: OpaqueSlot Unit
   , topic :: OpaqueSlot Unit
+  , pomodoro :: OpaqueSlot Unit
   )
 
 initialState :: ConnectedInput -> State
@@ -163,6 +171,7 @@ component = connect selectAll $ H.mkComponent
   render :: State -> H.ComponentHTML Action ChildSlots m
   render { route, ipfsInstanceType, currentTopic } = HH.div_ [
     header route,
+    HH.slot_ (Proxy :: _ "pomodoro") unit myComponent unit,
     helperHTML,
     case route, currentTopic of
       Just (Topic topicId),Just topic -> HH.slot_ (Proxy :: _ "topic") unit Topic.component { topicId, topic }
@@ -177,3 +186,46 @@ component = connect selectAll $ H.mkComponent
       Nothing, _ ->
         HH.div_ [ HH.text "Oh yeah! You get a 404 page." ]
   ] 
+
+type UseWindowWidth = UseState (Maybe Int) <> UseEffect <> Hooks.Pure
+
+useWindowWidth
+  :: forall m
+   . MonadAff m
+  => Hook m UseWindowWidth (Maybe Int)
+useWindowWidth = Hooks.do
+  width /\ widthId <- Hooks.useState Nothing -- [1]
+
+  Hooks.useLifecycleEffect do -- [2]
+    subscriptionId <- subscribeToWindow (Hooks.put widthId)
+    pure $ Just $ Hooks.unsubscribe subscriptionId -- [3]
+
+  Hooks.pure width -- [4]
+  where
+  -- we'll define the `subscribeToWindow` function in the next section, as it's
+  -- ordinary effectful code and not Hooks specific.
+  -- subscribeToWindow modifyWidth = ...
+  subscribeToWindow :: ((Maybe Int) -> HookM m Unit)
+    -- this is the same type variable `m` introduced by `useWindowWidth`
+    -> HookM m H.SubscriptionId
+  subscribeToWindow modifyWidth = do
+    let
+      readWidth :: Window -> HookM m Unit
+      readWidth =
+        modifyWidth <<< Just <=< liftEffect <<< Window.innerWidth
+
+    window <- liftEffect window
+    subscriptionId <- Hooks.subscribe do
+      eventListener
+        (Event.EventType "resize")
+        (Window.toEventTarget window)
+        (Event.target >=> Window.fromEventTarget >>> map readWidth)
+
+    readWidth window
+    pure subscriptionId
+
+myComponent :: forall q i o m. MonadAff m => H.Component q i o m
+myComponent = Hooks.component \_ _ -> Hooks.do
+  width <- useWindowWidth -- our custom Hook
+  Hooks.pure do
+    HH.p_ [ HH.text $ "Window width is " <> maybe "" show width ]

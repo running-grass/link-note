@@ -46,7 +46,7 @@ awaitRoot = do
   ele <- selectElement (QuerySelector "#halogen-app")
   maybe (throwError (error "找不到根节点！")) pure ele
 
-main :: Effect Unit
+main :: Effect Unit 
 main = do 
   _alertUser
   runHalogenAff do

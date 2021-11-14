@@ -3,11 +3,14 @@ module LinkNote.Component.Pomodoro
 
 import Prelude
 
-import Data.Argonaut (JsonDecodeError(..), decodeJson, parseJson, stringify)
+import Data.Argonaut (class DecodeJson, class EncodeJson, JsonDecodeError(..), decodeJson, parseJson, stringify)
+import Data.Argonaut.Decode.Generic (genericDecodeJson)
 import Data.Argonaut.Encode.Class (encodeJson)
+import Data.Argonaut.Encode.Generic (genericEncodeJson)
 import Data.DateTime.Instant (Instant, unInstant)
 import Data.Either (Either(..), note)
 import Data.Formatter.Internal (repeat)
+import Data.Generic.Rep (class Generic)
 import Data.Int (floor, toNumber)
 import Data.Maybe (Maybe(..))
 import Data.String (length)
@@ -21,14 +24,27 @@ import Halogen.HTML.Events as HE
 import Halogen.Hooks (HookM, useTickEffect)
 import Halogen.Hooks as Hooks
 import LinkNote.Component.Notification as N
-import LinkNote.Hooks.UseLocalStorage (useLocalStorage)
 import LinkNote.Hooks.UseSecondTick (useSecondTick)
+import LinkNote.Hooks.UseSessionStorage (useSessionStorage)
 import Math (abs)
 
-type PomodoroLog = {
-  dur :: Int -- 番茄的时长
-  , start :: Number -- 番茄开始时间
+data Status = Unset 
+            | Timeing Number
+            | ShortBreaking Number
+            | LongBreaking Number -- 未开始、专注中、休息中
+
+type CurrentStatus = {
+  status :: Status
+  , breakCount :: Int
 }
+
+derive instance Generic Status _
+instance EncodeJson Status where
+  encodeJson = genericEncodeJson
+
+instance DecodeJson Status where
+  decodeJson = genericDecodeJson
+
 type Dur = {
   min :: Int
   , sec :: Int
@@ -56,31 +72,53 @@ diff m1 m2 = { min
     secs = floor $ ms / 1000.0
     ms = abs $ m1 - m2
 
-component :: forall q i o m.  
-  MonadAff m => 
-  H.Component q i o m
-component = Hooks.component \_ _ -> Hooks.do
-  nowTickMB <- useSecondTick
-  currentPomodoroStr /\ setPomodoroStr <- useLocalStorage "pomodoro-time"
+type Input = {
+  timer :: Int
+  , shortBreak :: Int 
+}
 
+component :: forall q o m.  
+  MonadAff m => 
+  H.Component q Input o m
+component = Hooks.component \_ input -> Hooks.do
+  nowTickMB <- useSecondTick
+  statusStr /\ setStatusStr <- useSessionStorage "pomodoro-time"
   let 
-    currentPomodoroEt :: Either JsonDecodeError PomodoroLog
-    currentPomodoroEt = (decodeJson =<< parseJson =<< note MissingValue currentPomodoroStr)
+    statusEither :: Either JsonDecodeError CurrentStatus
+    statusEither = (decodeJson =<< parseJson =<< note MissingValue statusStr)
+
+    setStatus :: CurrentStatus -> HookM m Unit
+    setStatus = setStatusStr <<< Just <<< stringify <<< encodeJson
 
     stop :: forall a . a -> HookM m Unit
     stop _ = do
+      liftEffect $ N.notify "停止吧"
+      setStatus { status: Unset, breakCount: 0 }
+    breakFinish breakCount = do
+      liftEffect $ N.notify "完成一个休息"
+      setStatus { status: Unset, breakCount }
+
+    break :: Number -> Int -> HookM m Unit
+    break start count = do
       liftEffect $ N.notify "开始休息吧"
-      setPomodoroStr $ Nothing
-  
+      setStatus { status: ShortBreaking start, breakCount: count }
+
+    -- start :: forall a . a -> HookM m Unit
+    startPdmr nowTick breakCount = do
+      setStatus { status:  Timeing nowTick, breakCount }
+      void $ liftAff $ N.requestPermission  -- 先请求一下弹窗权限
+      liftEffect $ N.notify "开始新的番茄钟"
   Hooks.captures { nowTickMB } useTickEffect do
-    case currentPomodoroEt, nowTickMB of
-      Right pomodoro, Just nowTick 
-        | (instantToNumber nowTick - pomodoro.start) / 60000.0 > toNumber pomodoro.dur -> stop unit
+    case statusEither, nowTickMB of
+      Right { status : Timeing start, breakCount }, Just nowTick 
+        | (instantToNumber nowTick - start) / 60000.0 > toNumber input.timer -> break (instantToNumber nowTick) (breakCount + 1)
+      Right { status : ShortBreaking start, breakCount }, Just nowTick 
+        | (instantToNumber nowTick - start) / 60000.0 > toNumber input.shortBreak -> breakFinish (breakCount)
       _, _ -> pure unit
     pure Nothing
 
-  case currentPomodoroEt , nowTickMB of
-    Right p, Just nowTick -> do 
+  case statusEither , nowTickMB of
+    Right { status : Timeing start }, Just nowTick -> do
       Hooks.pure do
         HH.p_ [ 
           HH.text $ "🍅： " <> durStr <> " "
@@ -88,19 +126,20 @@ component = Hooks.component \_ _ -> Hooks.do
           ]
       where
         durStr = showInt 2 durRec.min <> ":" <> showInt 2 durRec.sec
-        durRec = diff (p.start + toNumber (p.dur * 60 * 1000)) $ instantToNumber nowTick 
-    _, Just nowTick ->  Hooks.pure $ HH.p_ [
-      HH.button [ HE.onClick start ] [HH.text "🍅： ▶️"]
-    ]
+        durRec = diff (start + toNumber (input.timer * 60 * 1000)) $ instantToNumber nowTick
+    Right { status: ShortBreaking start, breakCount }, Just nowTick -> do
+      Hooks.pure do
+        HH.p_ [ 
+          HH.text $ "🍅休息中……： " <> durStr <> " "
+          , HH.button [ HE.onClick \_ -> startPdmr (instantToNumber nowTick) (breakCount) ] [HH.text "▶️"]
+          ]
       where
-        start :: forall a . a -> HookM m Unit
-        start _ = do
-          setPomodoroStr $ Just $ 
-            stringify (encodeJson 
-              { 
-                dur: 25
-                , start: instantToNumber nowTick
-              })
-          void $ liftAff $ N.requestPermission  -- 先请求一下弹窗权限
-          liftEffect $ N.notify "开始新的番茄钟"
+        durStr = showInt 2 durRec.min <> ":" <> showInt 2 durRec.sec
+        durRec = diff (start + toNumber (input.shortBreak * 60 * 1000)) $ instantToNumber nowTick
+    Right { status: Unset, breakCount }, Just nowTick ->  Hooks.pure $ HH.p_ [
+      HH.button [ HE.onClick \_ -> startPdmr (instantToNumber nowTick) breakCount ] [HH.text "🍅： ▶️"]
+    ]
+    _, Just nowTick ->  Hooks.pure $ HH.p_ [
+      HH.button [ HE.onClick \_ -> startPdmr (instantToNumber nowTick) 0 ] [HH.text "🍅： ▶️"]
+    ]
     _, _ -> Hooks.pure $ HH.span_ []

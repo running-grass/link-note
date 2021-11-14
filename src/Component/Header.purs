@@ -43,11 +43,11 @@ component = H.mkComponent
   render { route } = HH.nav
     [ css "mb-4 px-2 bg-gray-200 rounded" ]
     [  HH.ul
-        [ css "flex space-x-4" ]
+        [ css "flex space-x-4" ] 
         [ navItem Home  [ HH.text "首页" ] $ isActiveRoute Home
         , navItem TopicList  [ HH.text "主题" ] $ isActiveRoute TopicList
         , navItem Setting  [ HH.text "设置" ] $ isActiveRoute Setting
-        , slot_ (Proxy :: _ "pomodoro") unit Pomodoro.component unit
+        , slot_ (Proxy :: _ "pomodoro") unit Pomodoro.component { timer: 2, shortBreak: 1 }
         ]
     ]
       where

@@ -47,7 +47,7 @@ component = H.mkComponent
         [ navItem Home  [ HH.text "首页" ] $ isActiveRoute Home
         , navItem TopicList  [ HH.text "主题" ] $ isActiveRoute TopicList
         , navItem Setting  [ HH.text "设置" ] $ isActiveRoute Setting
-        , slot_ (Proxy :: _ "pomodoro") unit Pomodoro.component { timer: 2, shortBreak: 1 }
+        , slot_ (Proxy :: _ "pomodoro") unit Pomodoro.component { timer: 25, shortBreak: 5 }
         ]
     ]
       where

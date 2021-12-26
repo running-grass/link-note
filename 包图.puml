@@ -1,0 +1,30 @@
+@startuml 包依赖图
+package "Link Note App" {
+  [UI组件]
+  [UI组件] --> [libs]
+  [UI组件] --> [widgets]
+  [widgets] -> [libs]
+}
+database firebase
+package "models" {
+    [Service]
+    [Mapper]
+  [Service] -> [Mapper]
+  [Mapper] --> [PO]
+  [Service] --> [BO]
+  [Service] --> [PO]
+  [Mapper] -> [firebase]
+}
+
+package "libs" {
+    ' [libs]
+}
+
+package "widgets" {
+   
+}
+[UI组件] --> [Service]
+
+
+
+@enduml

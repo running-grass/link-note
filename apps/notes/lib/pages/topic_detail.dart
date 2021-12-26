@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:models/primTypeDefs.dart';
-import 'package:models/topic.dart';
+import 'package:get/get.dart';
+import 'package:models/models.dart';
 
 class TopicDetail extends StatefulWidget {
-  final TopicId topicId;
-
+  final int topicId;
   const TopicDetail({Key? key, required this.topicId}) : super(key: key);
-
   @override
   State<StatefulWidget> createState() {
     return _TopicState();
@@ -15,21 +13,19 @@ class TopicDetail extends StatefulWidget {
 
 // 主题的状态监听，不做渲染
 class _TopicState extends State<TopicDetail> {
-  late Stream<Topic?> topicStream;
+  final TopicService topicService = Get.find<TopicService>();
+  late final Stream<Topic> topicStream;
 
   @override
   void initState() {
-    topicStream = topicRef
-        .whereTopicId(isEqualTo: widget.topicId)
-        .limit(1)
-        .snapshots()
-        .map((event) => event.docs.isEmpty ? null : event.docs[0].data);
     super.initState();
+
+    topicStream = topicService.getTopicX(widget.topicId);
   }
 
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder<Topic?>(
+    return StreamBuilder<Topic>(
         stream: topicStream,
         builder: (_, snapshot) {
           if (snapshot.hasError) {
@@ -47,7 +43,7 @@ class _TopicState extends State<TopicDetail> {
 
           return Scaffold(
               appBar: AppBar(
-            title: Text(topic.topicName),
+            title: Text(topic.name),
           ));
         });
   }

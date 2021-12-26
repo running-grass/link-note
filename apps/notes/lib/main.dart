@@ -1,16 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:notes/page_routes.dart';
-import 'firebase_options.dart';
+import 'package:models/models.dart';
+import 'package:get/get.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
-  // await FirebaseFirestore.instance.clearPersistence();
+  await initModel();
 
-  // Firebase.app();
-  //     const Settings(persistenceEnabled: false);
+  Get.put(TopicService());
+  // Get.put(NoteService());
   runApp(const AppRoutes());
 }

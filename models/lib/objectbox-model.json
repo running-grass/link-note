@@ -1,0 +1,97 @@
+{
+  "_note1": "KEEP THIS FILE! Check it into a version control system (VCS) like git.",
+  "_note2": "ObjectBox manages crucial IDs for your object model. See docs for details.",
+  "_note3": "If you have VCS merge conflicts, you must resolve them according to ObjectBox docs.",
+  "entities": [
+    {
+      "id": "1:6982083494255468818",
+      "lastPropertyId": "8:3018144189272499669",
+      "name": "Note",
+      "properties": [
+        {
+          "id": "1:8046029469376208444",
+          "name": "id",
+          "type": 6,
+          "flags": 1
+        },
+        {
+          "id": "2:1396143653258340247",
+          "name": "heading",
+          "type": 9
+        },
+        {
+          "id": "3:3916338933042732974",
+          "name": "hostId",
+          "type": 6
+        },
+        {
+          "id": "4:2263209739778943288",
+          "name": "created",
+          "type": 10
+        },
+        {
+          "id": "5:6957555029595781360",
+          "name": "updated",
+          "type": 10
+        },
+        {
+          "id": "6:7337653828649379800",
+          "name": "sort",
+          "type": 6
+        },
+        {
+          "id": "8:3018144189272499669",
+          "name": "dbHostType",
+          "type": 6
+        }
+      ],
+      "relations": []
+    },
+    {
+      "id": "2:3776260088135967609",
+      "lastPropertyId": "4:4194465525803451613",
+      "name": "Topic",
+      "properties": [
+        {
+          "id": "1:1082495477619517297",
+          "name": "id",
+          "type": 6,
+          "flags": 1
+        },
+        {
+          "id": "2:1007320869159049661",
+          "name": "name",
+          "type": 9,
+          "flags": 2080,
+          "indexId": "1:453444612888480580"
+        },
+        {
+          "id": "3:2471867717588145268",
+          "name": "created",
+          "type": 10
+        },
+        {
+          "id": "4:4194465525803451613",
+          "name": "updated",
+          "type": 10,
+          "flags": 8,
+          "indexId": "2:3977556944673999604"
+        }
+      ],
+      "relations": []
+    }
+  ],
+  "lastEntityId": "2:3776260088135967609",
+  "lastIndexId": "2:3977556944673999604",
+  "lastRelationId": "0:0",
+  "lastSequenceId": "0:0",
+  "modelVersion": 5,
+  "modelVersionParserMinimum": 5,
+  "retiredEntityUids": [],
+  "retiredIndexUids": [],
+  "retiredPropertyUids": [
+    667535159863864105
+  ],
+  "retiredRelationUids": [],
+  "version": 1
+}

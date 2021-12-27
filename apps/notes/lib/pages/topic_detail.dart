@@ -14,13 +14,25 @@ class TopicDetail extends StatefulWidget {
 // 主题的状态监听，不做渲染
 class _TopicState extends State<TopicDetail> {
   final TopicService topicService = Get.find<TopicService>();
+  final NoteService noteService = Get.find<NoteService>();
   late final Stream<Topic> topicStream;
+  bool hadInitNote = false;
+  int? editingNoteId;
 
   @override
   void initState() {
     super.initState();
 
-    topicStream = topicService.getTopicX(widget.topicId);
+    topicStream = topicService.loadTopicAndFillX(widget.topicId);
+  }
+
+  Widget renderRow(Note note) {
+    return GestureDetector(
+        onTap: () {
+          editingNoteId = note.id;
+        },
+        child: Container(
+            color: Colors.amber, width: 1000, child: Text(note.content)));
   }
 
   @override
@@ -36,15 +48,31 @@ class _TopicState extends State<TopicDetail> {
           }
 
           var topic = snapshot.data;
-
           if (topic == null) {
             return const Text("数据加载错误2");
           }
 
+          assert(topic.noteTree != null, "此处noteTree应该被填充");
+
+          // 如果是空的需要调整
+          if (!hadInitNote && topic.notes.isEmpty) {
+            noteService.addTopicNote(topic, "", 100);
+            hadInitNote = true;
+          } else if (hadInitNote && topic.notes.isEmpty) {
+            throw Error();
+          }
+
           return Scaffold(
               appBar: AppBar(
-            title: Text(topic.name),
-          ));
+                title: Text(topic.name),
+              ),
+              body: Row(
+                children: [
+                  Column(
+                    children: topic.noteTree!.map(renderRow).toList(),
+                  ),
+                ],
+              ));
         });
   }
 }

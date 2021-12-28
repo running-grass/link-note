@@ -6,6 +6,4 @@ void main() async {
 
   var topicService = TopicService();
   topicService.addTopic("测试名称");
-
-  var list = topicService.getAllTopic();
 }

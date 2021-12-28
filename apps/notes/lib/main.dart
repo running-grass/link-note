@@ -7,8 +7,11 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initModel();
 
+  initServices();
+  runApp(const AppRoutes());
+}
+
+initServices() {
   Get.put(TopicService());
   Get.put(NoteService());
-  // Get.put(NoteService());
-  runApp(const AppRoutes());
 }

@@ -5,14 +5,32 @@ import '../store.dart';
 import '../topic.dart';
 
 class NoteService {
-  Box<Note> noteBox = store.box<Note>();
+  // 单例处理
+  NoteService._internal();
+  factory NoteService() => _instance;
+  static late final NoteService _instance = NoteService._internal();
 
-  int addTopicNote(Topic topic, String content, int sort) {
+  late final Box<Note> _noteBox = store.box<Note>();
+
+  Note addTopicNote(Topic topic, String content, int sort) {
     var note = Note(
         content: content,
         dbHostType: HostType.topic.index,
         topicHost: topic,
         sort: sort);
-    return noteBox.put(note);
+    _noteBox.put(note);
+    return note;
+  }
+
+  Stream<List<Note>> getNotesXByTopicId(int topicId) {
+    return _noteBox
+        .query(Note_.topicHost.equals(topicId))
+        .watch(triggerImmediately: true)
+        .map((event) => event.find());
+  }
+
+  int updateNote(Note note) {
+    assert(note.id != 0);
+    return _noteBox.put(note);
   }
 }

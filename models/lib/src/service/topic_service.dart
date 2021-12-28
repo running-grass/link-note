@@ -3,13 +3,18 @@ import 'dart:async';
 import 'package:models/objectbox.g.dart';
 import 'package:models/src/service/note_service.dart';
 import 'package:models/src/topic.dart';
-
+import 'package:rxdart/rxdart.dart';
 import '../note.dart';
 import '../store.dart';
 
 class TopicService {
-  Box<Topic> _topicBox = store.box<Topic>();
-  NoteService _noteService = NoteService();
+  // 单例处理
+  TopicService._internal();
+  factory TopicService() => _instance;
+  static late final TopicService _instance = TopicService._internal();
+
+  late final Box<Topic> _topicBox = store.box<Topic>();
+  late final NoteService _noteService = NoteService();
 
   Stream<Query<Topic>>? __allTopicX;
 
@@ -56,8 +61,12 @@ class TopicService {
   }
 
   Stream<Topic> loadTopicAndFillX(int topicId) {
-    return getTopicX(topicId).map((Topic topic) {
-      topic.noteTree = topic.notes.toList();
+    var qx = _noteService.getNotesXByTopicId(topicId);
+
+    return CombineLatestStream.combine2<Topic, List<Note>, Topic>(
+        getTopicX(topicId), qx, (Topic topic, List<Note> notes) {
+      topic.noteTree = notes;
+      topic.noteTree?.sort((a, b) => a.sort.compareTo(b.sort));
       return topic;
     });
   }
@@ -76,5 +85,10 @@ class TopicService {
       qt..limit = 10;
       return qt.find();
     });
+  }
+
+  bool remove(Topic topic) {
+    assert(topic.id != 0);
+    return _topicBox.remove(topic.id);
   }
 }

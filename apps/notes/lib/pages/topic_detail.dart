@@ -1,6 +1,11 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:models/models.dart';
+
+enum NoteStatus { normal, selected, editing }
 
 class TopicDetail extends StatefulWidget {
   final int topicId;
@@ -18,6 +23,8 @@ class _TopicState extends State<TopicDetail> {
   late final Stream<Topic> topicStream;
   bool hadInitNote = false;
   int? editingNoteId;
+  Map<int, NoteStatus> statusMap = {};
+  TextEditingController teContr = TextEditingController();
 
   @override
   void initState() {
@@ -27,12 +34,54 @@ class _TopicState extends State<TopicDetail> {
   }
 
   Widget renderRow(Note note) {
+    // note.content = "abcd";
+
     return GestureDetector(
+        key: Key(note.id.toString()),
         onTap: () {
-          editingNoteId = note.id;
+          // if (event.kind == PointerDeviceKind.) {
+          // editingNoteId = note.id;
+          // teContr.text = note.content;
+          setState(() {
+            editingNoteId = note.id;
+            teContr.text = note.content;
+          });
+          // }
         },
-        child: Container(
-            color: Colors.amber, width: 1000, child: Text(note.content)));
+        child: KeyboardListener(
+            focusNode: FocusNode(skipTraversal: true),
+            onKeyEvent: (event) {
+              if (event.runtimeType == KeyDownEvent) {
+                if (event.physicalKey == PhysicalKeyboardKey.enter) {
+                  Note newNote = noteService.addTopicNote(
+                      note.topicHost.target!, "", note.sort + 100);
+
+                  setState(() {
+                    editingNoteId = newNote.id;
+                    teContr.text = "";
+                  });
+                }
+              }
+            },
+            child: Container(
+                color: Colors.amber,
+                padding: const EdgeInsets.all(10),
+                width: 1000,
+                height: 50,
+                child: editingNoteId == note.id
+                    ? TextField(
+                        controller: teContr,
+                        onChanged: (val) {
+                          note.content = val;
+                          noteService.updateNote(note);
+                        },
+                        // initialValue: note.content == "" ? " " : note.content,
+                        autofocus: true,
+                        // onEditingComplete: ,
+                      )
+                    : Text(
+                        note.content,
+                      ))));
   }
 
   @override
@@ -62,17 +111,27 @@ class _TopicState extends State<TopicDetail> {
             throw Error();
           }
 
-          return Scaffold(
-              appBar: AppBar(
-                title: Text(topic.name),
-              ),
-              body: Row(
-                children: [
-                  Column(
-                    children: topic.noteTree!.map(renderRow).toList(),
-                  ),
-                ],
-              ));
+          return GestureDetector(
+              onTap: () {
+                editingNoteId = null;
+              },
+              child: Scaffold(
+                  appBar: AppBar(title: Text(topic.name), actions: [
+                    IconButton(
+                      onPressed: () {
+                        topicService.remove(topic);
+                        Get.back();
+                      },
+                      icon: const Icon(Icons.delete_forever),
+                    ),
+                  ]),
+                  body: Row(
+                    children: [
+                      Column(
+                        children: topic.noteTree!.map(renderRow).toList(),
+                      ),
+                    ],
+                  )));
         });
   }
 }

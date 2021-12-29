@@ -12,6 +12,8 @@ class NoteService {
 
   late final Box<Note> _noteBox = store.box<Note>();
 
+  late final Box<Topic> _topicBox = store.box<Topic>();
+
   Note addTopicNote(Topic topic, String content, int sort) {
     var note = Note(
         content: content,
@@ -20,6 +22,16 @@ class NoteService {
         sort: sort);
     _noteBox.put(note);
     return note;
+  }
+
+  Note addTopicNoteByTopicId(
+      {required int topicId, required String content, required int sort}) {
+    var topic = _topicBox.get(topicId);
+    if (topic == null) {
+      throw Error();
+    }
+
+    return addTopicNote(topic, content, sort);
   }
 
   Stream<List<Note>> getNotesXByTopicId(int topicId) {
@@ -32,5 +44,22 @@ class NoteService {
   int updateNote(Note note) {
     assert(note.id != 0);
     return _noteBox.put(note);
+  }
+
+  Note? getNoteById(int id) {
+    return _noteBox.get(id);
+  }
+
+  bool updateContent(int id, String newContent) {
+    Note? note = getNoteById(id);
+
+    if (note == null) {
+      throw Error();
+    } else {
+      note
+        ..content = newContent
+        ..updated = DateTime.now();
+    }
+    return _noteBox.put(note, mode: PutMode.update) != 0;
   }
 }

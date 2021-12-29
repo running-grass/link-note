@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_mobx/flutter_mobx.dart';
 import 'package:get/get.dart';
 import 'package:models/models.dart';
+import 'package:notes/store/topic.dart';
 
 enum NoteStatus { normal, selected, editing }
 
@@ -16,6 +18,8 @@ class TopicDetail extends StatefulWidget {
 
 // 主题的状态监听，不做渲染
 class _TopicState extends State<TopicDetail> {
+  late final TopicStore store;
+
   final TopicService topicService = Get.find<TopicService>();
   final NoteService noteService = Get.find<NoteService>();
   late final Stream<Topic> topicStream;
@@ -29,6 +33,7 @@ class _TopicState extends State<TopicDetail> {
     super.initState();
 
     topicStream = topicService.loadTopicAndFillX(widget.topicId);
+    store = TopicStore(widget.topicId);
   }
 
   Widget renderRow(Note note) {
@@ -84,52 +89,52 @@ class _TopicState extends State<TopicDetail> {
 
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder<Topic>(
-        stream: topicStream,
-        builder: (_, snapshot) {
-          if (snapshot.hasError) {
-            return const Text("数据加载错误");
-          }
-          if (!snapshot.hasData) {
-            return const Text("加载中");
-          }
+    //  if (snapshot.hasError) {
+    //         return const Text("数据加载错误");
+    //       }
+    //       if (!snapshot.hasData) {
+    //         return const Text("加载中");
+    //       }
 
-          var topic = snapshot.data;
-          if (topic == null) {
-            return const Text("数据加载错误2");
-          }
+    //       var topic = snapshot.data;
+    //       if (topic == null) {
+    //         return const Text("数据加载错误2");
+    //       }
 
-          assert(topic.noteTree != null, "此处noteTree应该被填充");
+    //       assert(topic.noteTree != null, "此处noteTree应该被填充");
 
-          // 如果是空的需要调整
-          if (!hadInitNote && topic.notes.isEmpty) {
-            noteService.addTopicNote(topic, "", 100);
-            hadInitNote = true;
-          } else if (hadInitNote && topic.notes.isEmpty) {
-            throw Error();
-          }
+    //       // 如果是空的需要调整
+    //       if (!hadInitNote && topic.notes.isEmpty) {
+    //         noteService.addTopicNote(topic, "", 100);
+    //         hadInitNote = true;
+    //       } else if (hadInitNote && topic.notes.isEmpty) {
+    //         throw Error();
+    //       }
 
-          return GestureDetector(
-              onTap: () {
-                editingNoteId = null;
-              },
-              child: Scaffold(
-                  appBar: AppBar(title: Text(topic.name), actions: [
-                    IconButton(
-                      onPressed: () {
-                        topicService.remove(topic);
-                        Get.back();
-                      },
-                      icon: const Icon(Icons.delete_forever),
-                    ),
-                  ]),
-                  body: Row(
-                    children: [
-                      Column(
-                        children: topic.noteTree!.map(renderRow).toList(),
-                      ),
-                    ],
-                  )));
-        });
+    return GestureDetector(
+        onTap: () {
+          editingNoteId = null;
+        },
+        child: Scaffold(
+            appBar: AppBar(
+                title: Observer(builder: (_) => Text(store.topicName)),
+                actions: [
+                  IconButton(
+                    onPressed: () {
+                      // topicService.remove(topic);
+                      Get.back();
+                    },
+                    icon: const Icon(Icons.delete_forever),
+                  ),
+                ]),
+            body: Row(
+              children: [
+                Observer(
+                    builder: (_) => Column(
+                          children: store.children.map(renderRow).toList(),
+                        )),
+              ],
+            )));
+    // });
   }
 }

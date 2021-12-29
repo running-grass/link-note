@@ -67,6 +67,7 @@ class TopicService {
         getTopicX(topicId), qx, (Topic topic, List<Note> notes) {
       topic.noteTree = notes;
       topic.noteTree?.sort((a, b) => a.sort.compareTo(b.sort));
+
       return topic;
     });
   }
@@ -90,5 +91,22 @@ class TopicService {
   bool remove(Topic topic) {
     assert(topic.id != 0);
     return _topicBox.remove(topic.id);
+  }
+
+  bool updateName(id, name) {
+    if (getTopicByName(name) != null) {
+      throw Error();
+    }
+
+    Topic? topic = getTopic(id);
+
+    if (topic == null) {
+      throw Error();
+    } else {
+      topic
+        ..name = name
+        ..updated = DateTime.now();
+    }
+    return _topicBox.put(topic, mode: PutMode.update) != 0;
   }
 }

@@ -15,35 +15,6 @@ mixin _$TopicStore on _TopicStore, Store {
   int get id =>
       (_$idComputed ??= Computed<int>(() => super.id, name: '_TopicStore.id'))
           .value;
-  Computed<String>? _$topicNameComputed;
-
-  @override
-  String get topicName =>
-      (_$topicNameComputed ??= Computed<String>(() => super.topicName,
-              name: '_TopicStore.topicName'))
-          .value;
-  Computed<ObservableList<NoteStore>>? _$childrenComputed;
-
-  @override
-  ObservableList<NoteStore> get children => (_$childrenComputed ??=
-          Computed<ObservableList<NoteStore>>(() => super.children,
-              name: '_TopicStore.children'))
-      .value;
-
-  final _$_topicAtom = Atom(name: '_TopicStore._topic');
-
-  @override
-  Topic get _topic {
-    _$_topicAtom.reportRead();
-    return super._topic;
-  }
-
-  @override
-  set _topic(Topic value) {
-    _$_topicAtom.reportWrite(value, super._topic, () {
-      super._topic = value;
-    });
-  }
 
   final _$_editingNoteIdAtom = Atom(name: '_TopicStore._editingNoteId');
 
@@ -62,6 +33,36 @@ mixin _$TopicStore on _TopicStore, Store {
     });
   }
 
+  final _$topicNameAtom = Atom(name: '_TopicStore.topicName');
+
+  @override
+  String get topicName {
+    _$topicNameAtom.reportRead();
+    return super.topicName;
+  }
+
+  @override
+  set topicName(String value) {
+    _$topicNameAtom.reportWrite(value, super.topicName, () {
+      super.topicName = value;
+    });
+  }
+
+  final _$childrenAtom = Atom(name: '_TopicStore.children');
+
+  @override
+  ObservableList<NoteStore> get children {
+    _$childrenAtom.reportRead();
+    return super.children;
+  }
+
+  @override
+  set children(ObservableList<NoteStore> value) {
+    _$childrenAtom.reportWrite(value, super.children, () {
+      super.children = value;
+    });
+  }
+
   final _$_TopicStoreActionController = ActionController(name: '_TopicStore');
 
   @override
@@ -70,6 +71,17 @@ mixin _$TopicStore on _TopicStore, Store {
         name: '_TopicStore.loadTopic');
     try {
       return super.loadTopic();
+    } finally {
+      _$_TopicStoreActionController.endAction(_$actionInfo);
+    }
+  }
+
+  @override
+  dynamic refresh() {
+    final _$actionInfo =
+        _$_TopicStoreActionController.startAction(name: '_TopicStore.refresh');
+    try {
+      return super.refresh();
     } finally {
       _$_TopicStoreActionController.endAction(_$actionInfo);
     }
@@ -111,9 +123,9 @@ mixin _$TopicStore on _TopicStore, Store {
   @override
   String toString() {
     return '''
-id: ${id},
 topicName: ${topicName},
-children: ${children}
+children: ${children},
+id: ${id}
     ''';
   }
 }

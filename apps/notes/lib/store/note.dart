@@ -117,6 +117,7 @@ abstract class _NoteStore with Store {
     _updateContent$.add(newContent);
   }
 
+  @action
   addNextNote(String newContent) {
     var newSort = getNextAvailableNewSort();
     var note = _noteService.addTopicNoteByTopicId(
@@ -128,6 +129,32 @@ abstract class _NoteStore with Store {
         toStore(
             note: note, topicStore: topicStore, parentNoteStore: parentNote));
     topicStore.setEditingNoteId(note.id);
+  }
+
+  @action
+  toChild() {
+    // 更改parentid
+    if (prevNote == null) {
+      return;
+    }
+
+    // 更新数据库
+    var newSort = 100;
+    if (prevNote!.children.isNotEmpty) {
+      newSort = prevNote!.children.last.sort + 100;
+    }
+    _noteService.updateParentId(id, prevNote!.id, newSort);
+
+    topicStore.refresh();
+    // 插入到前节点的子节点中
+    // prevNote!.children.add(this as NoteStore);
+
+    // 手动从sibling中移除
+    // siblings.removeAt(inParentIndex);
+
+    // 更改状态
+    // parentNote = prevNote;
+    // sort = newSort;
   }
 
   dispose() {

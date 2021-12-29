@@ -13,9 +13,6 @@ abstract class _TopicStore with Store {
   final int _topicId;
   final TopicService topicService = TopicService();
 
-  @observable
-  late Topic _topic = topicService.getTopic(_topicId)!;
-
   @readonly
   int? _editingNoteId;
 
@@ -26,31 +23,37 @@ abstract class _TopicStore with Store {
   @computed
   int get id => _topicId;
 
-  @computed
-  String get topicName => _topic.name;
+  @observable
+  String topicName = "";
 
-  @computed
-  ObservableList<NoteStore> get children {
-    return ObservableList.of(_topic.notes.map((n) => NoteStore(
-        id: n.id,
-        content: n.content,
-        sort: n.sort,
-        children: n.children,
-        topicStore: this as TopicStore,
-        parentNote: null)));
-  }
+  @observable
+  ObservableList<NoteStore> children = ObservableList.of([]);
 
   @action
   loadTopic() {
-    _topic = topicService.getTopic(_topicId)!;
+    var _topic = topicService.getTopic(_topicId)!;
+    topicName = _topic.name;
+    children = ObservableList.of(_topic.notes
+        .where((element) => !element.parent.hasValue)
+        .map((n) => NoteStore(
+            id: n.id,
+            content: n.content,
+            sort: n.sort,
+            children: n.children,
+            topicStore: this as TopicStore,
+            parentNote: null)));
+  }
+
+  @action
+  refresh() {
+    loadTopic();
   }
 
   @action
   updateName(String newName) {
-    _topic.name = newName;
-    if (topicService.updateName(_topicId, newName)) {
-      loadTopic();
-    }
+    topicName = newName;
+
+    topicService.updateName(_topicId, newName);
   }
 
   @action

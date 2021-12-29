@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:models/objectbox.g.dart';
 
 import '../note.dart';
@@ -60,6 +62,24 @@ class NoteService {
         ..content = newContent
         ..updated = DateTime.now();
     }
+    return _noteBox.put(note, mode: PutMode.update) != 0;
+  }
+
+  bool updateParentId(int id, int? pid, int sort) {
+    Note? note = getNoteById(id);
+
+    if (note == null) {
+      throw Error();
+    }
+
+    if (pid != null) {
+      note.parent.targetId = pid;
+    }
+
+    note
+      ..sort = sort
+      ..updated = DateTime.now();
+
     return _noteBox.put(note, mode: PutMode.update) != 0;
   }
 }

@@ -73,7 +73,12 @@ class NoteItem extends StatelessWidget {
               if (event.runtimeType == KeyDownEvent) {
                 if (event.physicalKey == PhysicalKeyboardKey.enter) {
                   store.addNextNote("");
+                } else if (event.physicalKey == PhysicalKeyboardKey.tab) {
+                  store.toChild();
                 }
+                // if ( == ) {
+                // store.addNextNote("");
+                // }
               }
             },
             child: Observer(

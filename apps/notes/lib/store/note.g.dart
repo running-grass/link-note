@@ -118,6 +118,28 @@ mixin _$NoteStore on _NoteStore, Store {
   }
 
   @override
+  dynamic addNextNote(String newContent) {
+    final _$actionInfo = _$_NoteStoreActionController.startAction(
+        name: '_NoteStore.addNextNote');
+    try {
+      return super.addNextNote(newContent);
+    } finally {
+      _$_NoteStoreActionController.endAction(_$actionInfo);
+    }
+  }
+
+  @override
+  dynamic toChild() {
+    final _$actionInfo =
+        _$_NoteStoreActionController.startAction(name: '_NoteStore.toChild');
+    try {
+      return super.toChild();
+    } finally {
+      _$_NoteStoreActionController.endAction(_$actionInfo);
+    }
+  }
+
+  @override
   String toString() {
     return '''
 sort: ${sort},

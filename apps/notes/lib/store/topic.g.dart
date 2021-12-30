@@ -9,11 +9,12 @@ part of 'topic.dart';
 // ignore_for_file: non_constant_identifier_names, unnecessary_brace_in_string_interps, unnecessary_lambdas, prefer_expression_function_bodies, lines_longer_than_80_chars, avoid_as, avoid_annotating_with_dynamic
 
 mixin _$TopicStore on _TopicStore, Store {
-  Computed<int>? _$idComputed;
+  Computed<List<int>>? _$linerNoteIdsComputed;
 
   @override
-  int get id =>
-      (_$idComputed ??= Computed<int>(() => super.id, name: '_TopicStore.id'))
+  List<int> get linerNoteIds =>
+      (_$linerNoteIdsComputed ??= Computed<List<int>>(() => super.linerNoteIds,
+              name: '_TopicStore.linerNoteIds'))
           .value;
 
   final _$_editingNoteIdAtom = Atom(name: '_TopicStore._editingNoteId');
@@ -33,33 +34,37 @@ mixin _$TopicStore on _TopicStore, Store {
     });
   }
 
-  final _$topicNameAtom = Atom(name: '_TopicStore.topicName');
+  final _$_topicNameAtom = Atom(name: '_TopicStore._topicName');
 
-  @override
   String get topicName {
-    _$topicNameAtom.reportRead();
-    return super.topicName;
+    _$_topicNameAtom.reportRead();
+    return super._topicName;
   }
 
   @override
-  set topicName(String value) {
-    _$topicNameAtom.reportWrite(value, super.topicName, () {
-      super.topicName = value;
+  String get _topicName => topicName;
+
+  @override
+  set _topicName(String value) {
+    _$_topicNameAtom.reportWrite(value, super._topicName, () {
+      super._topicName = value;
     });
   }
 
-  final _$childrenAtom = Atom(name: '_TopicStore.children');
+  final _$_childrenAtom = Atom(name: '_TopicStore._children');
 
-  @override
   ObservableList<NoteStore> get children {
-    _$childrenAtom.reportRead();
-    return super.children;
+    _$_childrenAtom.reportRead();
+    return super._children;
   }
 
   @override
-  set children(ObservableList<NoteStore> value) {
-    _$childrenAtom.reportWrite(value, super.children, () {
-      super.children = value;
+  ObservableList<NoteStore> get _children => children;
+
+  @override
+  set _children(ObservableList<NoteStore> value) {
+    _$_childrenAtom.reportWrite(value, super._children, () {
+      super._children = value;
     });
   }
 
@@ -121,11 +126,31 @@ mixin _$TopicStore on _TopicStore, Store {
   }
 
   @override
+  dynamic moveFoucsNext(int noteId) {
+    final _$actionInfo = _$_TopicStoreActionController.startAction(
+        name: '_TopicStore.moveFoucsNext');
+    try {
+      return super.moveFoucsNext(noteId);
+    } finally {
+      _$_TopicStoreActionController.endAction(_$actionInfo);
+    }
+  }
+
+  @override
+  dynamic moveFoucsPrev(int noteId) {
+    final _$actionInfo = _$_TopicStoreActionController.startAction(
+        name: '_TopicStore.moveFoucsPrev');
+    try {
+      return super.moveFoucsPrev(noteId);
+    } finally {
+      _$_TopicStoreActionController.endAction(_$actionInfo);
+    }
+  }
+
+  @override
   String toString() {
     return '''
-topicName: ${topicName},
-children: ${children},
-id: ${id}
+linerNoteIds: ${linerNoteIds}
     ''';
   }
 }

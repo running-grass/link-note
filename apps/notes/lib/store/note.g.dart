@@ -158,6 +158,28 @@ mixin _$NoteStore on _NoteStore, Store {
   }
 
   @override
+  dynamic moveFoucsNext() {
+    final _$actionInfo = _$_NoteStoreActionController.startAction(
+        name: '_NoteStore.moveFoucsNext');
+    try {
+      return super.moveFoucsNext();
+    } finally {
+      _$_NoteStoreActionController.endAction(_$actionInfo);
+    }
+  }
+
+  @override
+  dynamic moveFoucsPrev() {
+    final _$actionInfo = _$_NoteStoreActionController.startAction(
+        name: '_NoteStore.moveFoucsPrev');
+    try {
+      return super.moveFoucsPrev();
+    } finally {
+      _$_NoteStoreActionController.endAction(_$actionInfo);
+    }
+  }
+
+  @override
   String toString() {
     return '''
 sort: ${sort},

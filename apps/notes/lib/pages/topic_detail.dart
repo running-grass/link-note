@@ -2,72 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_mobx/flutter_mobx.dart';
 import 'package:get/get.dart';
-import 'package:notes/store/note.dart';
-import 'package:notes/store/topic.dart';
-
-class NewNextNoteIntent extends Intent {
-  const NewNextNoteIntent();
-}
-
-class NewChildNoteIntent extends Intent {
-  const NewChildNoteIntent();
-}
-
-class NewNextNoteAction extends Action<NewNextNoteIntent> {
-  NewNextNoteAction(this.noteStore);
-
-  final NoteStore noteStore;
-
-  @override
-  Object? invoke(covariant NewNextNoteIntent intent) {
-    noteStore.addNextNote("");
-    print("next note");
-  }
-}
-
-class NewChildNoteAction extends Action<NewChildNoteIntent> {
-  NewChildNoteAction(this.noteStore);
-
-  final NoteStore noteStore;
-
-  @override
-  Object? invoke(covariant NewChildNoteIntent intent) {
-    noteStore.addChildNote("");
-    print("child note");
-  }
-}
-
-class IndentNoteIntent extends Intent {
-  const IndentNoteIntent();
-}
-
-class UnIndentNoteIntent extends Intent {
-  const UnIndentNoteIntent();
-}
-
-class IndentNoteAction extends Action<IndentNoteIntent> {
-  IndentNoteAction(this.noteStore);
-
-  final NoteStore noteStore;
-
-  @override
-  Object? invoke(covariant IndentNoteIntent intent) {
-    noteStore.toChild();
-    print("indent");
-  }
-}
-
-class UnIndentNoteAction extends Action<UnIndentNoteIntent> {
-  UnIndentNoteAction(this.noteStore);
-
-  final NoteStore noteStore;
-
-  @override
-  Object? invoke(covariant UnIndentNoteIntent intent) {
-    noteStore.toParent();
-    print("unindent");
-  }
-}
+import '../store/note.dart';
+import '../store/topic.dart';
+import '../action/note_action.dart';
 
 class TopicDetail extends StatelessWidget {
   final int topicId;
@@ -104,6 +41,32 @@ class TopicDetail extends StatelessWidget {
               LogicalKeySet(LogicalKeyboardKey.tab): const IndentNoteIntent(),
               LogicalKeySet(LogicalKeyboardKey.shift, LogicalKeyboardKey.tab):
                   const UnIndentNoteIntent(),
+              LogicalKeySet(LogicalKeyboardKey.arrowUp):
+                  const MoveFocusPrevIntent(),
+              LogicalKeySet(
+                      LogicalKeyboardKey.control, LogicalKeyboardKey.keyP):
+                  const MoveFocusPrevIntent(),
+              LogicalKeySet(LogicalKeyboardKey.arrowDown):
+                  const MoveFocusNextIntent(),
+              LogicalKeySet(
+                      LogicalKeyboardKey.control, LogicalKeyboardKey.keyN):
+                  const MoveFocusNextIntent(),
+              LogicalKeySet(LogicalKeyboardKey.arrowRight):
+                  const MoveCurserForewardIntent(),
+              LogicalKeySet(
+                      LogicalKeyboardKey.control, LogicalKeyboardKey.keyF):
+                  const MoveCurserForewardIntent(),
+              LogicalKeySet(LogicalKeyboardKey.arrowLeft):
+                  const MoveCurserBackwardIntent(),
+              LogicalKeySet(
+                      LogicalKeyboardKey.control, LogicalKeyboardKey.keyB):
+                  const MoveCurserBackwardIntent(),
+              LogicalKeySet(
+                      LogicalKeyboardKey.control, LogicalKeyboardKey.keyA):
+                  const MoveCurserStartIntent(),
+              LogicalKeySet(
+                      LogicalKeyboardKey.control, LogicalKeyboardKey.keyE):
+                  const MoveCurserEndIntent(),
             },
             child: Observer(
                 builder: (_) => ListView(
@@ -137,6 +100,15 @@ class NoteItem extends StatelessWidget {
               NewChildNoteIntent: NewChildNoteAction(store),
               IndentNoteIntent: IndentNoteAction(store),
               UnIndentNoteIntent: UnIndentNoteAction(store),
+              MoveFocusPrevIntent: MoveFocusPrevAction(store),
+              MoveFocusNextIntent: MoveFocusNextAction(store),
+              MoveCurserForewardIntent:
+                  MoveCurserForewardAction(store.editingController),
+              MoveCurserBackwardIntent:
+                  MoveCurserBackwardAction(store.editingController),
+              MoveCurserStartIntent:
+                  MoveCurserStartAction(store.editingController),
+              MoveCurserEndIntent: MoveCurserEndAction(store.editingController),
             },
             child: Observer(
                 builder: (_) => Container(
@@ -161,8 +133,8 @@ class NoteItem extends StatelessWidget {
                               Expanded(
                                   flex: 1,
                                   child: store.status == NoteStatus.editing
-                                      ? TextFormField(
-                                          initialValue: store.content,
+                                      ? TextField(
+                                          controller: store.editingController,
                                           onChanged: (val) {
                                             store.updateContent(val);
                                           },

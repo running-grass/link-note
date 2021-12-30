@@ -90,8 +90,7 @@ class TopicService {
   }
 
   bool remove(Topic topic) {
-    assert(topic.id != 0);
-    return _topicBox.remove(topic.id);
+    return removeById(topic.id);
   }
 
   bool updateName(id, name) {
@@ -109,5 +108,10 @@ class TopicService {
         ..updated = DateTime.now();
     }
     return _topicBox.put(topic, mode: PutMode.update) != 0;
+  }
+
+  bool removeById(int id) {
+    assert(id > 0);
+    return _topicBox.remove(id);
   }
 }

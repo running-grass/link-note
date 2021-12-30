@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/material.dart';
 import 'package:mobx/mobx.dart';
 import 'package:models/models.dart';
 import 'package:notes/store/topic.dart';
@@ -27,6 +28,8 @@ NoteStore toStore(
 // The store-class
 abstract class _NoteStore with Store {
   final NoteService _noteService = NoteService();
+
+  late final TextEditingController editingController = TextEditingController();
 
   final TopicStore topicStore;
   NoteStore? parentNote;
@@ -102,6 +105,8 @@ abstract class _NoteStore with Store {
     sort = note.sort;
     children = ObservableList.of(note.children.map((n) => toStore(
         note: n, topicStore: topicStore, parentNoteStore: this as NoteStore)));
+
+    editingController.text = content;
   }
 
   int? _getNextNewSort() {
@@ -206,7 +211,13 @@ abstract class _NoteStore with Store {
     }
   }
 
-  dispose() {
-    _updateContent$.close();
+  @action
+  moveFoucsNext() {
+    topicStore.moveFoucsNext(id);
+  }
+
+  @action
+  moveFoucsPrev() {
+    topicStore.moveFoucsPrev(id);
   }
 }

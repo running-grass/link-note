@@ -1,0 +1,14 @@
+@startuml 包依赖图
+package "UI层" {
+  component "页面"
+  component "业务组件"
+  component "意图和Action"
+  component "领域对象及操作"
+}
+
+package "models" {
+  component "存储对象"
+  component "存储相关service"
+}
+
+@enduml

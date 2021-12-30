@@ -5,24 +5,76 @@ import 'package:get/get.dart';
 import 'package:notes/store/note.dart';
 import 'package:notes/store/topic.dart';
 
-class TopicDetail extends StatefulWidget {
-  final int topicId;
-  const TopicDetail({Key? key, required this.topicId}) : super(key: key);
+class NewNextNoteIntent extends Intent {
+  const NewNextNoteIntent();
+}
+
+class NewChildNoteIntent extends Intent {
+  const NewChildNoteIntent();
+}
+
+class NewNextNoteAction extends Action<NewNextNoteIntent> {
+  NewNextNoteAction(this.noteStore);
+
+  final NoteStore noteStore;
+
   @override
-  State<StatefulWidget> createState() {
-    return _TopicState();
+  Object? invoke(covariant NewNextNoteIntent intent) {
+    noteStore.addNextNote("");
+    print("next note");
   }
 }
 
-// 主题的状态监听，不做渲染
-class _TopicState extends State<TopicDetail> {
-  late final TopicStore store;
+class NewChildNoteAction extends Action<NewChildNoteIntent> {
+  NewChildNoteAction(this.noteStore);
+
+  final NoteStore noteStore;
 
   @override
-  void initState() {
-    super.initState();
+  Object? invoke(covariant NewChildNoteIntent intent) {
+    noteStore.addChildNote("");
+    print("child note");
+  }
+}
 
-    store = TopicStore(widget.topicId);
+class IndentNoteIntent extends Intent {
+  const IndentNoteIntent();
+}
+
+class UnIndentNoteIntent extends Intent {
+  const UnIndentNoteIntent();
+}
+
+class IndentNoteAction extends Action<IndentNoteIntent> {
+  IndentNoteAction(this.noteStore);
+
+  final NoteStore noteStore;
+
+  @override
+  Object? invoke(covariant IndentNoteIntent intent) {
+    noteStore.toChild();
+    print("indent");
+  }
+}
+
+class UnIndentNoteAction extends Action<UnIndentNoteIntent> {
+  UnIndentNoteAction(this.noteStore);
+
+  final NoteStore noteStore;
+
+  @override
+  Object? invoke(covariant UnIndentNoteIntent intent) {
+    noteStore.toParent();
+    print("unindent");
+  }
+}
+
+class TopicDetail extends StatelessWidget {
+  final int topicId;
+  late final TopicStore store;
+
+  TopicDetail({Key? key, required this.topicId}) : super(key: key) {
+    store = TopicStore(topicId);
   }
 
   @override
@@ -43,12 +95,23 @@ class _TopicState extends State<TopicDetail> {
                   icon: const Icon(Icons.delete_forever),
                 ),
               ]),
-          body: Observer(
-              builder: (_) => ListView(
-                    children: store.children
-                        .map((noteStore) => NoteItem(noteStore))
-                        .toList(),
-                  )),
+          body: Shortcuts(
+            shortcuts: <LogicalKeySet, Intent>{
+              LogicalKeySet(LogicalKeyboardKey.enter):
+                  const NewNextNoteIntent(),
+              LogicalKeySet(LogicalKeyboardKey.meta, LogicalKeyboardKey.enter):
+                  const NewChildNoteIntent(),
+              LogicalKeySet(LogicalKeyboardKey.tab): const IndentNoteIntent(),
+              LogicalKeySet(LogicalKeyboardKey.shift, LogicalKeyboardKey.tab):
+                  const UnIndentNoteIntent(),
+            },
+            child: Observer(
+                builder: (_) => ListView(
+                      children: store.children
+                          .map((noteStore) => NoteItem(noteStore))
+                          .toList(),
+                    )),
+          ),
         ));
     // });
   }
@@ -63,63 +126,63 @@ class NoteItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    print('NoteItem build ${store.id}');
     return GestureDetector(
         onTap: () {
           store.topicStore.setEditingNoteId(store.id);
         },
-        child: KeyboardListener(
-            focusNode: FocusNode(skipTraversal: true),
-            onKeyEvent: (event) {
-              if (event.runtimeType == KeyDownEvent) {
-                if (event.physicalKey == PhysicalKeyboardKey.enter) {
-                  store.addNextNote("");
-                } else if (event.physicalKey == PhysicalKeyboardKey.tab) {
-                  store.toChild();
-                }
-                // if ( == ) {
-                // store.addNextNote("");
-                // }
-              }
+        child: Actions(
+            actions: <Type, Action<Intent>>{
+              NewNextNoteIntent: NewNextNoteAction(store),
+              NewChildNoteIntent: NewChildNoteAction(store),
+              IndentNoteIntent: IndentNoteAction(store),
+              UnIndentNoteIntent: UnIndentNoteAction(store),
             },
             child: Observer(
                 builder: (_) => Container(
-                    color: Colors.amber,
-                    padding: const EdgeInsets.all(10),
+                    color: Colors.grey[50],
+
+                    // padding: const EdgeInsets.all(10),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Row(
-                          children: [
-                            const Icon(
-                              Icons.circle_outlined,
-                              size: 16,
-                            ),
-                            const SizedBox(
-                              width: 10,
-                            ),
-                            Expanded(
-                                flex: 1,
-                                child: store.status == NoteStatus.editing
-                                    ? TextFormField(
-                                        initialValue: store.content,
-                                        onChanged: (val) {
-                                          store.updateContent(val);
-                                        },
-                                        autofocus: true,
-                                      )
-                                    : Text(
-                                        store.content,
-                                      )),
-                          ],
+                        Container(
+                          color: Colors.grey[150],
+                          padding: const EdgeInsets.only(top: 5, bottom: 5),
+                          child: Row(
+                            children: [
+                              const Icon(
+                                Icons.circle,
+                                size: 10,
+                              ),
+                              const SizedBox(
+                                width: 6,
+                              ),
+                              Expanded(
+                                  flex: 1,
+                                  child: store.status == NoteStatus.editing
+                                      ? TextFormField(
+                                          initialValue: store.content,
+                                          onChanged: (val) {
+                                            store.updateContent(val);
+                                          },
+                                          autofocus: true,
+                                        )
+                                      : Text(
+                                          store.content,
+                                        )),
+                            ],
+                          ),
                         ),
                         Container(
-                          padding: const EdgeInsets.only(left: 80),
-                          child: Column(
-                            children: store.children
-                                .map((noteStore) => NoteItem(noteStore))
-                                .toList(),
-                          ),
-                        )
+                            padding: const EdgeInsets.only(left: 10),
+                            child: Observer(
+                              builder: (_) => Column(
+                                children: store.children
+                                    .map((noteStore) => NoteItem(noteStore))
+                                    .toList(),
+                              ),
+                            ))
                       ],
                     )))));
   }

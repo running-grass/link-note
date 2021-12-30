@@ -59,21 +59,6 @@ mixin _$NoteStore on _NoteStore, Store {
     });
   }
 
-  final _$idAtom = Atom(name: '_NoteStore.id');
-
-  @override
-  int get id {
-    _$idAtom.reportRead();
-    return super.id;
-  }
-
-  @override
-  set id(int value) {
-    _$idAtom.reportWrite(value, super.id, () {
-      super.id = value;
-    });
-  }
-
   final _$contentAtom = Atom(name: '_NoteStore.content');
 
   @override
@@ -107,6 +92,17 @@ mixin _$NoteStore on _NoteStore, Store {
   final _$_NoteStoreActionController = ActionController(name: '_NoteStore');
 
   @override
+  dynamic refresh() {
+    final _$actionInfo =
+        _$_NoteStoreActionController.startAction(name: '_NoteStore.refresh');
+    try {
+      return super.refresh();
+    } finally {
+      _$_NoteStoreActionController.endAction(_$actionInfo);
+    }
+  }
+
+  @override
   dynamic updateContent(String newContent) {
     final _$actionInfo = _$_NoteStoreActionController.startAction(
         name: '_NoteStore.updateContent');
@@ -129,6 +125,17 @@ mixin _$NoteStore on _NoteStore, Store {
   }
 
   @override
+  dynamic addChildNote(String newContent) {
+    final _$actionInfo = _$_NoteStoreActionController.startAction(
+        name: '_NoteStore.addChildNote');
+    try {
+      return super.addChildNote(newContent);
+    } finally {
+      _$_NoteStoreActionController.endAction(_$actionInfo);
+    }
+  }
+
+  @override
   dynamic toChild() {
     final _$actionInfo =
         _$_NoteStoreActionController.startAction(name: '_NoteStore.toChild');
@@ -140,10 +147,20 @@ mixin _$NoteStore on _NoteStore, Store {
   }
 
   @override
+  dynamic toParent() {
+    final _$actionInfo =
+        _$_NoteStoreActionController.startAction(name: '_NoteStore.toParent');
+    try {
+      return super.toParent();
+    } finally {
+      _$_NoteStoreActionController.endAction(_$actionInfo);
+    }
+  }
+
+  @override
   String toString() {
     return '''
 sort: ${sort},
-id: ${id},
 content: ${content},
 children: ${children},
 siblings: ${siblings},

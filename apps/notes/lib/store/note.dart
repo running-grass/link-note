@@ -39,8 +39,8 @@ abstract class _NoteStore with Store {
   @observable
   int sort;
 
-  @observable
-  int id;
+  final int id;
+
   @observable
   String content;
 
@@ -83,12 +83,25 @@ abstract class _NoteStore with Store {
       required this.topicStore,
       required this.parentNote,
       required List<Note> children}) {
-    this.children = ObservableList.of(children.map((n) => toStore(
-        note: n, topicStore: topicStore, parentNoteStore: this as NoteStore)));
+    // this.children =
+    refresh();
 
     _updateContent$.stream.listen((newContent) {
       _noteService.updateContent(id, newContent);
     });
+  }
+
+  @action
+  refresh() {
+    var note = _noteService.getNoteById(id);
+    assert(note != null);
+    if (note == null) {
+      throw Error();
+    }
+    content = note.content;
+    sort = note.sort;
+    children = ObservableList.of(note.children.map((n) => toStore(
+        note: n, topicStore: topicStore, parentNoteStore: this as NoteStore)));
   }
 
   int? _getNextNewSort() {
@@ -121,14 +134,32 @@ abstract class _NoteStore with Store {
   addNextNote(String newContent) {
     var newSort = getNextAvailableNewSort();
     var note = _noteService.addTopicNoteByTopicId(
-        topicId: topicStore.id, content: newContent, sort: newSort);
+        topicId: topicStore.id,
+        content: newContent,
+        parentId: parentNote?.id,
+        sort: newSort);
 
-    // 手动插入父级列表
-    siblings.insert(
-        inParentIndex + 1,
-        toStore(
-            note: note, topicStore: topicStore, parentNoteStore: parentNote));
     topicStore.setEditingNoteId(note.id);
+    if (parentNote != null) {
+      parentNote!.refresh();
+    } else {
+      topicStore.refresh();
+    }
+  }
+
+  @action
+  addChildNote(String newContent) {
+    var newSort = children.isEmpty ? 100 : children.last.sort + 100;
+
+    var note = _noteService.addTopicNoteByTopicId(
+        topicId: topicStore.id,
+        content: newContent,
+        parentId: id,
+        sort: newSort);
+
+    topicStore.setEditingNoteId(note.id);
+
+    refresh();
   }
 
   @action
@@ -145,16 +176,34 @@ abstract class _NoteStore with Store {
     }
     _noteService.updateParentId(id, prevNote!.id, newSort);
 
-    topicStore.refresh();
-    // 插入到前节点的子节点中
-    // prevNote!.children.add(this as NoteStore);
+    prevNote!.refresh();
 
-    // 手动从sibling中移除
-    // siblings.removeAt(inParentIndex);
+    if (parentNote != null) {
+      parentNote!.refresh();
+    } else {
+      topicStore.refresh();
+    }
+  }
 
-    // 更改状态
-    // parentNote = prevNote;
-    // sort = newSort;
+  @action
+  toParent() {
+    // 更改parentid
+    if (parentNote == null) {
+      return;
+    }
+
+    // 更新数据库
+    var newSort = parentNote!.getNextAvailableNewSort();
+
+    _noteService.updateParentId(id, parentNote!.parentNote?.id, newSort);
+
+    parentNote!.refresh();
+
+    if (parentNote!.parentNote != null) {
+      parentNote!.parentNote!.refresh();
+    } else {
+      topicStore.refresh();
+    }
   }
 
   dispose() {

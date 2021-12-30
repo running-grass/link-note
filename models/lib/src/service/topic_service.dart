@@ -40,7 +40,8 @@ class TopicService {
   // 为新的主题增加一个空的note，无视失败
   _addEmptyNoteToNewTopic(Topic topic) async {
     assert(topic.id != 0);
-    _noteService.addTopicNote(topic, "", 100);
+    _noteService.addTopicNote(
+        topic: topic, content: "", sort: 100, parentId: null);
   }
 
   Topic? getTopic(id) {

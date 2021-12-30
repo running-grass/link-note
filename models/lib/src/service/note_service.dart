@@ -16,24 +16,38 @@ class NoteService {
 
   late final Box<Topic> _topicBox = store.box<Topic>();
 
-  Note addTopicNote(Topic topic, String content, int sort) {
+  Note addTopicNote(
+      {required Topic topic,
+      required String content,
+      required int sort,
+      required int? parentId}) {
     var note = Note(
         content: content,
         dbHostType: HostType.topic.index,
         topicHost: topic,
         sort: sort);
+    note.parent.targetId = parentId;
     _noteBox.put(note);
     return note;
   }
 
+  List<Note> getNotesByParentId(int parentId) {
+    assert(parentId != 0);
+    return _noteBox.query(Note_.parent.equals(parentId)).build().find();
+  }
+
   Note addTopicNoteByTopicId(
-      {required int topicId, required String content, required int sort}) {
+      {required int topicId,
+      required String content,
+      required int sort,
+      required int? parentId}) {
     var topic = _topicBox.get(topicId);
     if (topic == null) {
       throw Error();
     }
 
-    return addTopicNote(topic, content, sort);
+    return addTopicNote(
+        topic: topic, content: content, sort: sort, parentId: parentId);
   }
 
   Stream<List<Note>> getNotesXByTopicId(int topicId) {
@@ -72,9 +86,8 @@ class NoteService {
       throw Error();
     }
 
-    if (pid != null) {
-      note.parent.targetId = pid;
-    }
+    // 如果pid为空，那么就是顶层的
+    note.parent.targetId = pid;
 
     note
       ..sort = sort

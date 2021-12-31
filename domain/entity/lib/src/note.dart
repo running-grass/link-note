@@ -4,7 +4,6 @@ import 'package:mobx/mobx.dart';
 import 'package:model/model.dart';
 import 'topic.dart';
 
-// Include generated file
 part 'note.g.dart';
 
 enum NoteStatus { normal, selected, editing }

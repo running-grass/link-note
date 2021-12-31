@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:notes/page_routes.dart';
+import 'page_routes.dart';
 import 'package:model/model.dart';
 import 'package:get/get.dart';
 

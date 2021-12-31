@@ -33,4 +33,9 @@ class GoalService {
       return qg.find();
     });
   }
+
+  Goal? getGoal(int id) {
+    assert(id > 0);
+    return _goalBox.get(id);
+  }
 }

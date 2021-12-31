@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:model/model.dart';
-import 'package:notes/pages/topic_detail.dart';
+import 'topic_detail.dart';
 
 class TopicList extends StatefulWidget {
   const TopicList({Key? key}) : super(key: key);

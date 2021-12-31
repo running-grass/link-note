@@ -1,4 +1,4 @@
-import 'package:models/objectbox.g.dart';
+import '../objectbox.g.dart';
 
 late Store store;
 

@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:mobx/mobx.dart';
-import 'package:models/models.dart';
-import 'package:notes/store/topic.dart';
+import 'package:model/model.dart';
+import 'topic.dart';
 
 // Include generated file
 part 'note.g.dart';

@@ -1,9 +1,8 @@
+import 'package:entity/entity.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_mobx/flutter_mobx.dart';
 import 'package:get/get.dart';
-import '../store/note.dart';
-import '../store/topic.dart';
 import '../action/note_action.dart';
 
 class TopicDetail extends StatelessWidget {

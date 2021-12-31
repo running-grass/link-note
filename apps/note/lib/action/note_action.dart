@@ -1,5 +1,5 @@
 import 'package:flutter/widgets.dart';
-import 'package:notes/store/note.dart';
+import 'package:entity/entity.dart';
 
 // 下一个同级新行
 class NewNextNoteIntent extends Intent {

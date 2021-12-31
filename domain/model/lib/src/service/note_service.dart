@@ -1,6 +1,6 @@
 import 'dart:math';
 
-import 'package:models/objectbox.g.dart';
+import '../../objectbox.g.dart';
 
 import '../note.dart';
 import '../store.dart';

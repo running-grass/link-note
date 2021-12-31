@@ -1,6 +1,6 @@
 import 'package:mobx/mobx.dart';
-import 'package:models/models.dart';
-import 'package:notes/store/note.dart';
+import 'package:model/model.dart';
+import 'note.dart';
 
 // Include generated file
 part 'topic.g.dart';

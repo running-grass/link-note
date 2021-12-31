@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:models/models.dart';
+import 'package:model/model.dart';
 import 'package:notes/pages/topic_detail.dart';
 
 class TopicList extends StatefulWidget {

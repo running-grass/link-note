@@ -2,6 +2,6 @@ name: link-note
 
 packages:
   - apps/**
-  - widgets/**
+  - domain/**
   - models/**
   - libs/**

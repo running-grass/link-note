@@ -9,6 +9,7 @@ import 'package:objectbox/internal.dart'; // generated code can access "internal
 import 'package:objectbox/objectbox.dart';
 import 'package:objectbox_flutter_libs/objectbox_flutter_libs.dart';
 
+import 'src/goal.dart';
 import 'src/note.dart';
 import 'src/topic.dart';
 
@@ -102,7 +103,56 @@ final _entities = <ModelEntity>[
       relations: <ModelRelation>[],
       backlinks: <ModelBacklink>[
         ModelBacklink(name: 'children', srcEntity: 'Note', srcField: 'parent')
-      ])
+      ]),
+  ModelEntity(
+      id: const IdUid(4, 6279088158038580312),
+      name: 'Goal',
+      lastPropertyId: const IdUid(8, 7559280393711033499),
+      flags: 0,
+      properties: <ModelProperty>[
+        ModelProperty(
+            id: const IdUid(1, 2655690714467115204),
+            name: 'id',
+            type: 6,
+            flags: 1),
+        ModelProperty(
+            id: const IdUid(2, 8544378177973114733),
+            name: 'name',
+            type: 9,
+            flags: 0),
+        ModelProperty(
+            id: const IdUid(3, 8609800875843601841),
+            name: 'accumCount',
+            type: 6,
+            flags: 0),
+        ModelProperty(
+            id: const IdUid(4, 2954948342407652797),
+            name: 'accumSum',
+            type: 6,
+            flags: 0),
+        ModelProperty(
+            id: const IdUid(5, 6541865502026055770),
+            name: 'accumSumUnit',
+            type: 9,
+            flags: 0),
+        ModelProperty(
+            id: const IdUid(6, 126162639963888071),
+            name: 'accumTime',
+            type: 6,
+            flags: 0),
+        ModelProperty(
+            id: const IdUid(7, 3200271384048938505),
+            name: 'created',
+            type: 10,
+            flags: 0),
+        ModelProperty(
+            id: const IdUid(8, 7559280393711033499),
+            name: 'updated',
+            type: 10,
+            flags: 0)
+      ],
+      relations: <ModelRelation>[],
+      backlinks: <ModelBacklink>[])
 ];
 
 /// Open an ObjectBox store with the model declared in this file.
@@ -125,7 +175,7 @@ Future<Store> openStore(
 ModelDefinition getObjectBoxModel() {
   final model = ModelInfo(
       entities: _entities,
-      lastEntityId: const IdUid(3, 8840987132589955310),
+      lastEntityId: const IdUid(4, 6279088158038580312),
       lastIndexId: const IdUid(5, 4678217749439454243),
       lastRelationId: const IdUid(0, 0),
       lastSequenceId: const IdUid(0, 0),
@@ -245,6 +295,54 @@ ModelDefinition getObjectBoxModel() {
                   6, object.id, (Note srcObject) => srcObject.parent),
               store.box<Note>());
           return object;
+        }),
+    Goal: EntityDefinition<Goal>(
+        model: _entities[2],
+        toOneRelations: (Goal object) => [],
+        toManyRelations: (Goal object) => {},
+        getId: (Goal object) => object.id,
+        setId: (Goal object, int id) {
+          object.id = id;
+        },
+        objectToFB: (Goal object, fb.Builder fbb) {
+          final nameOffset = fbb.writeString(object.name);
+          final accumSumUnitOffset = object.accumSumUnit == null
+              ? null
+              : fbb.writeString(object.accumSumUnit!);
+          fbb.startTable(9);
+          fbb.addInt64(0, object.id);
+          fbb.addOffset(1, nameOffset);
+          fbb.addInt64(2, object.accumCount);
+          fbb.addInt64(3, object.accumSum);
+          fbb.addOffset(4, accumSumUnitOffset);
+          fbb.addInt64(5, object.accumTime);
+          fbb.addInt64(6, object.created.millisecondsSinceEpoch);
+          fbb.addInt64(7, object.updated.millisecondsSinceEpoch);
+          fbb.finish(fbb.endTable());
+          return object.id;
+        },
+        objectFromFB: (Store store, ByteData fbData) {
+          final buffer = fb.BufferContext(fbData);
+          final rootOffset = buffer.derefObject(0);
+
+          final object = Goal(
+              name:
+                  const fb.StringReader().vTableGet(buffer, rootOffset, 6, ''),
+              accumCount: const fb.Int64Reader()
+                  .vTableGetNullable(buffer, rootOffset, 8),
+              accumSum: const fb.Int64Reader()
+                  .vTableGetNullable(buffer, rootOffset, 10),
+              accumSumUnit: const fb.StringReader()
+                  .vTableGetNullable(buffer, rootOffset, 12),
+              accumTime: const fb.Int64Reader()
+                  .vTableGetNullable(buffer, rootOffset, 14),
+              created: DateTime.fromMillisecondsSinceEpoch(
+                  const fb.Int64Reader().vTableGet(buffer, rootOffset, 16, 0)),
+              updated: DateTime.fromMillisecondsSinceEpoch(
+                  const fb.Int64Reader().vTableGet(buffer, rootOffset, 18, 0)))
+            ..id = const fb.Int64Reader().vTableGet(buffer, rootOffset, 4, 0);
+
+          return object;
         })
   };
 
@@ -296,4 +394,35 @@ class Note_ {
   /// see [Note.dbHostType]
   static final dbHostType =
       QueryIntegerProperty<Note>(_entities[1].properties[7]);
+}
+
+/// [Goal] entity fields to define ObjectBox queries.
+class Goal_ {
+  /// see [Goal.id]
+  static final id = QueryIntegerProperty<Goal>(_entities[2].properties[0]);
+
+  /// see [Goal.name]
+  static final name = QueryStringProperty<Goal>(_entities[2].properties[1]);
+
+  /// see [Goal.accumCount]
+  static final accumCount =
+      QueryIntegerProperty<Goal>(_entities[2].properties[2]);
+
+  /// see [Goal.accumSum]
+  static final accumSum =
+      QueryIntegerProperty<Goal>(_entities[2].properties[3]);
+
+  /// see [Goal.accumSumUnit]
+  static final accumSumUnit =
+      QueryStringProperty<Goal>(_entities[2].properties[4]);
+
+  /// see [Goal.accumTime]
+  static final accumTime =
+      QueryIntegerProperty<Goal>(_entities[2].properties[5]);
+
+  /// see [Goal.created]
+  static final created = QueryIntegerProperty<Goal>(_entities[2].properties[6]);
+
+  /// see [Goal.updated]
+  static final updated = QueryIntegerProperty<Goal>(_entities[2].properties[7]);
 }

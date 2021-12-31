@@ -1,11 +1,11 @@
 import 'dart:async';
 
-import 'package:models/objectbox.g.dart';
-import 'package:models/src/service/note_service.dart';
-import 'package:models/src/topic.dart';
 import 'package:rxdart/rxdart.dart';
+import '../../objectbox.g.dart';
 import '../note.dart';
 import '../store.dart';
+import '../topic.dart';
+import 'note_service.dart';
 
 class TopicService {
   // 单例处理

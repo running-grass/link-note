@@ -162,6 +162,13 @@ packages:
       url: "https://mirrors.tuna.tsinghua.edu.cn/dart-pub/"
     source: hosted
     version: "2.2.1"
+  entity:
+    dependency: "direct main"
+    description:
+      path: "../../domain/entity"
+      relative: true
+    source: path
+    version: "0.0.0"
   fake_async:
     dependency: transitive
     description:
@@ -326,10 +333,10 @@ packages:
       url: "https://mirrors.tuna.tsinghua.edu.cn/dart-pub/"
     source: hosted
     version: "2.0.5+2"
-  models:
-    dependency: "direct main"
+  model:
+    dependency: transitive
     description:
-      path: "../../models"
+      path: "../../domain/model"
       relative: true
     source: path
     version: "0.0.0"

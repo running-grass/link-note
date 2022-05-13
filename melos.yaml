@@ -1,7 +1,0 @@
-name: link-note
-
-packages:
-  - apps/**
-  - domain/**
-  - models/**
-  - libs/**

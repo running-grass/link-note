@@ -1,15 +1,28 @@
-type Topic {
+type TopicDto {
   id: Int!
   title: String!
-  parent: [Node]
+  parent: [NodeDto]
 }
 
-type Node {
+type NodeDto {
   id: Int!
   createDate: String!
   updateDate: String!
 }
 
+enum NodeDtoSort {
+  createDate
+  updateDate
+}
+
+enum Order {
+  DESC
+  ASC
+}
+
 type Query {
-  topic(id: Int!): Topic
+  topic(id: Int!): TopicDto
+  topics(sort: NodeDtoSort = updateDate, 
+        order: Order = DESC,
+        limit: Int = 10): [TopicDto]
 }

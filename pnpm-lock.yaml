@@ -86,6 +86,8 @@ importers:
     specifiers:
       '@apollo/client': ^3.6.2
       '@babel/core': '>=7.0.0-0 <8.0.0'
+      '@babel/plugin-proposal-class-properties': ^7.16.7
+      '@babel/plugin-proposal-decorators': ^7.17.9
       '@babel/plugin-syntax-flow': ^7.14.5
       '@babel/plugin-transform-react-jsx': ^7.17.3
       '@graphql-codegen/cli': 2.6.2
@@ -102,6 +104,7 @@ importers:
       '@types/react-dom': ^18.0.4
       graphql: ^16.5.0
       graphql-tag: ^2.12.6
+      mobx: ^6.5.0
       react: ^18.1.0
       react-dom: ^18.1.0
       react-scripts: 5.0.1
@@ -122,12 +125,15 @@ importers:
       '@types/react-dom': 18.0.4
       graphql: 16.5.0
       graphql-tag: 2.12.6_graphql@16.5.0
+      mobx: 6.5.0
       react: 18.1.0
       react-dom: 18.1.0_react@18.1.0
       react-scripts: 5.0.1_yo44apyfppz34s3hgzapanbtsa
       typescript: 4.6.4
       web-vitals: 2.1.4
     devDependencies:
+      '@babel/plugin-proposal-class-properties': 7.16.7_@babel+core@7.17.10
+      '@babel/plugin-proposal-decorators': 7.17.9_@babel+core@7.17.10
       '@graphql-codegen/cli': 2.6.2_z7j6jxnwmfmmvohlou426sviiy
       '@graphql-codegen/typescript': 2.4.11_graphql@16.5.0
       '@graphql-codegen/typescript-operations': 2.4.0_graphql@16.5.0
@@ -682,7 +688,6 @@ packages:
       charcodes: 0.2.0
     transitivePeerDependencies:
       - supports-color
-    dev: false
 
   /@babel/plugin-proposal-dynamic-import/7.16.7_@babel+core@7.17.10:
     resolution: {integrity: sha512-I8SW9Ho3/8DRSdmDdH3gORdyUuYnk1m4cMxUAdu5oy4n3OfN8flDEH+d60iG7dUfi0KkYwSvoalHzzdRzpWHTg==}
@@ -867,7 +872,6 @@ packages:
     dependencies:
       '@babel/core': 7.17.10
       '@babel/helper-plugin-utils': 7.16.7
-    dev: false
 
   /@babel/plugin-syntax-dynamic-import/7.8.3_@babel+core@7.17.10:
     resolution: {integrity: sha512-5gdGbFon+PszYzqs83S3E5mpi7/y/8M9eC90MRTZfduQOYW76ig6SOSPNe41IG5LoP3FGBn2N0RjVDSQiS94kQ==}
@@ -5147,7 +5151,6 @@ packages:
   /charcodes/0.2.0:
     resolution: {integrity: sha512-Y4kiDb+AM4Ecy58YkuZrrSRJBDQdQ2L+NyS1vHHFtNtUjgutcZfx3yp1dAONI/oPaPmyGfCLx5CxL+zauIMyKQ==}
     engines: {node: '>=6'}
-    dev: false
 
   /chardet/0.7.0:
     resolution: {integrity: sha512-mT8iDcrh03qDGRRmoA2hmBJnxpllMR+0/0qlzjqZES6NdiWDcZkCNAk4rPFZ9Q85r27unkiNNg8ZOiwZXBHwcA==}
@@ -9767,6 +9770,10 @@ packages:
     resolution: {integrity: sha512-vVqVZQyf3WLx2Shd0qJ9xuvqgAyKPLAiqITEtqW0oIUjzo3PePDd6fW9iFz30ef7Ysp/oiWqbhszeGWW2T6Gzw==}
     engines: {node: '>=10'}
     hasBin: true
+
+  /mobx/6.5.0:
+    resolution: {integrity: sha512-pHZ/cySF00FVENDWIDzJyoObFahK6Eg4d0papqm6d7yMkxWTZ/S/csqJX1A3PsYy4t5k3z2QnlwuCfMW5lSEwA==}
+    dev: false
 
   /ms/2.0.0:
     resolution: {integrity: sha1-VgiurfwAvmwpAd9fmGF4jeDVl8g=}

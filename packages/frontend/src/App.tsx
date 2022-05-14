@@ -1,12 +1,12 @@
 import React from 'react';
 import logo from './logo.svg';
 import './App.css';
-import { useTopicQuery } from './generated/graphql';
+import { useFindTopicQuery, useFindTopicsQuery } from './generated/graphql';
 
 
 function App() {
-  const { data, error, loading } = useTopicQuery();
-
+  const { data, error, loading } = useFindTopicQuery();
+  const { data: list } = useFindTopicsQuery();
   return (
     <div className="App">
       <header className="App-header">
@@ -17,6 +17,11 @@ function App() {
         <ul>
           topic.title = { data?.topic?.title }
         </ul>
+        {
+          list?.topics?.map(item => (
+            <li key={item?.id}>{item?.title}</li>
+          ))
+        }
 
         <a
           className="App-link"

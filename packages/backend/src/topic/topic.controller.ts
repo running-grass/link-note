@@ -1,4 +1,4 @@
-import { Controller, Get, Post } from '@nestjs/common';
+import { Controller, Get, Param, Post } from '@nestjs/common';
 import { Topic } from '../entity/topic.entity';
 import { TopicService } from './topic.service';
 
@@ -11,8 +11,8 @@ export class TopicController {
     return this.topicService.findAll();
   }
 
-  @Post('new')
-  async newOne() {
-      return this.topicService.newOne();
+  @Post('new/:title')
+  async newOne(@Param('title') title : string) {
+      return this.topicService.newOne(title);
   }
 }

@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Topic } from '../entity/topic.entity';
-
+import { NodeDtoSort, Order } from '../graphql';
 @Injectable()
 export class TopicService {
   constructor(
@@ -10,13 +10,18 @@ export class TopicService {
     private topicRepository: Repository<Topic>
   ) {}
 
-  findAll(): Promise<Topic[]> {
-    return this.topicRepository.find();
+  findAll(sort: NodeDtoSort = NodeDtoSort.createDate, order: Order = Order.DESC, limit: number = 100): Promise<Topic[]> {
+    // return this.topicRepository.find();
+    return this.topicRepository
+              .createQueryBuilder('topic')
+                .orderBy('topic.' + sort, order)
+                .limit(limit)
+                .getMany();
   }
 
-  newOne(): Promise<Topic> {
+  newOne(title: string): Promise<Topic> {
       const t = new Topic();
-      t.title = "abcdef"
+      t.title = title
       return this.topicRepository.save(t);
   }
   

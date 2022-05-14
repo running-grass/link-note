@@ -1,8 +1,17 @@
 import { gql } from '@apollo/client';
 
 export const QUERY_LAUNCH_LIST = gql`
-  query Topic {
+  query findTopic{
     topic(id: 1) {
+      id
+      title
+    }
+  }
+`;
+
+export const QUERY_TOPIC_LIST = gql`
+  query findTopics{
+    topics {
       id
       title
     }

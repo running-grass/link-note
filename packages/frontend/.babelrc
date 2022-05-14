@@ -1,0 +1,7 @@
+{
+    "plugins": [
+        ["@babel/plugin-proposal-decorators", { "legacy": true }],
+        ["@babel/plugin-proposal-class-properties", { "loose": false }]
+        // 与MobX 4/5不同的是, "loose" 必须为 false!    ^
+    ]
+}

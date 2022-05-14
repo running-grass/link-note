@@ -1,0 +1,15 @@
+type Topic {
+  id: Int!
+  title: String!
+  parent: [Node]
+}
+
+type Node {
+  id: Int!
+  createDate: String!
+  updateDate: String!
+}
+
+type Query {
+  topic(id: Int!): Topic
+}

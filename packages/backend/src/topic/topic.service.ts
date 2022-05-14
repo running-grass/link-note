@@ -19,6 +19,10 @@ export class TopicService {
       t.title = "abcdef"
       return this.topicRepository.save(t);
   }
+  
+  findOneById(id: number) {
+    return this.topicRepository.findOneBy({id: id});
+  }
 
 //   findOne(id: string): Promise<Topic> {
 //     return this.topicRepository.findOne(id);

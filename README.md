@@ -7,6 +7,8 @@
 - typeorm
 - GraphQL
 - rxjs
+- Apollo
+- sqlite
 
 
 ## 相关文档

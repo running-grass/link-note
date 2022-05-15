@@ -1,4 +1,4 @@
-import { Args, Parent, Query, ResolveField, Resolver } from "@nestjs/graphql";
+import { Args, Mutation, Parent, Query, ResolveField, Resolver } from "@nestjs/graphql";
 import { Topic } from "../entity/topic.entity";
 import { NodeDtoSort, Order } from "../graphql";
 import { TopicService } from "./topic.service";
@@ -24,5 +24,10 @@ export class TopicResolver {
   @ResolveField()
   async parent(@Parent() topic: Topic) {
     return this.topicService.findAll();
+  }
+
+  @Mutation()
+  async createTopic(@Args('title') title: string) {
+    return this.topicService.newOne(title);
   }
 }

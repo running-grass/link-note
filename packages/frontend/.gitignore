@@ -24,4 +24,4 @@ yarn-error.log*
 
 
 # 自动生成
-src/generated
+# src/generated

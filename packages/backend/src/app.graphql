@@ -26,3 +26,7 @@ type Query {
         order: Order = DESC,
         limit: Int = 10): [TopicDto]
 }
+
+type Mutation {
+  createTopic(title: String!): TopicDto
+}

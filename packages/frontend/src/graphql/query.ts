@@ -17,3 +17,12 @@ export const QUERY_TOPIC_LIST = gql`
     }
   }
 `;
+
+export const MUTATION_CREATE_TOPIC = gql`
+  mutation createTopic($title: String!){
+    createTopic(title: $title) {
+      id
+      title
+    }
+  }
+`

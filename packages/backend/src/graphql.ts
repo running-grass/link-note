@@ -35,4 +35,8 @@ export abstract class IQuery {
     abstract topics(sort?: Nullable<NodeDtoSort>, order?: Nullable<Order>, limit?: Nullable<number>): Nullable<Nullable<TopicDto>[]> | Promise<Nullable<Nullable<TopicDto>[]>>;
 }
 
+export abstract class IMutation {
+    abstract createTopic(title: string): Nullable<TopicDto> | Promise<Nullable<TopicDto>>;
+}
+
 type Nullable<T> = T | null;

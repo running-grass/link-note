@@ -1,37 +1,39 @@
-import React from 'react';
-import logo from './logo.svg';
+import React, { useEffect, useState } from 'react';
 import './App.css';
-import { useFindTopicQuery, useFindTopicsQuery } from './generated/graphql';
+import { useFindTopicsQuery, useCreateTopicMutation, useFindTopicsLazyQuery } from './generated/graphql';
 
+import { List,Input } from 'antd'
 
 function App() {
-  const { data, error, loading } = useFindTopicQuery();
-  const { data: list } = useFindTopicsQuery();
+  // const { data, error, loading } = useFindTopicQuery();
+  const [findTopics, { data }] = useFindTopicsLazyQuery({
+    pollInterval: 500,
+  });
+  const [createTopicMutation] = useCreateTopicMutation();
+
+  // const [version, setVersion] = useState(0);
+
+  const createTopic = async (ev: React.FormEvent<HTMLInputElement>) => {
+    const target = ev.target as HTMLInputElement;
+    
+    await createTopicMutation({ variables: { title: target.value}});
+    // console.log(a)
+    await findTopics(); 
+    // setVersion(version + 1);
+  }
+
+  useEffect(() => {
+    findTopics();  
+  },[])
+  
   return (
     <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload. learn react
-        </p>
-        <ul>
-          topic.title = { data?.topic?.title }
-        </ul>
-        {
-          list?.topics?.map(item => (
-            <li key={item?.id}>{item?.title}</li>
-          ))
-        }
-
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+      <Input placeholder="创建新主题" onPressEnter={createTopic}/>
+      <List
+        bordered
+        dataSource={data?.topics ?? []}
+        renderItem={item => (<List.Item>{item?.title}</List.Item>)}
+      />
     </div>
   );
 }

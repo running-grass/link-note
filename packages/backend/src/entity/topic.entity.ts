@@ -1,4 +1,4 @@
-import { ChildEntity, Column, Entity, Index, PrimaryGeneratedColumn } from "typeorm";
+import { ChildEntity, Column, Index } from "typeorm";
 import { Node } from "./node.entity";
 
 @ChildEntity()

@@ -6,7 +6,7 @@ import { TopicModule } from './topic/topic.module';
 import { GraphQLModule } from '@nestjs/graphql';
 import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
 import { ApolloServerPluginLandingPageLocalDefault } from 'apollo-server-core';
-
+import  { join } from 'path';
 @Module({
   imports: [
     TypeOrmModule.forRoot({
@@ -17,14 +17,16 @@ import { ApolloServerPluginLandingPageLocalDefault } from 'apollo-server-core';
       logging: true,
       migrations: [],
       subscribers: [],
-      entities: ["dist/src/entity/*.js"]
+      entities: ["./**/entity/*.js"]
     }),
     GraphQLModule.forRoot<ApolloDriverConfig>({
       driver: ApolloDriver,
-      typePaths: ['./**/*.graphql'],
+      debug: true,
+      // typePaths: ['./**/*.graphql'],
       playground: false,
       plugins: [ApolloServerPluginLandingPageLocalDefault()],
       
+      autoSchemaFile: join(process.cwd(), 'generated/schema.gql'),
     }),
     TopicModule,
   ],

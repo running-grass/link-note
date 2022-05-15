@@ -17,19 +17,12 @@ export type Scalars = {
 
 export type Mutation = {
   __typename?: 'Mutation';
-  createTopic?: Maybe<TopicDto>;
+  createTopic: TopicDto;
 };
 
 
 export type MutationCreateTopicArgs = {
   title: Scalars['String'];
-};
-
-export type NodeDto = {
-  __typename?: 'NodeDto';
-  createDate: Scalars['String'];
-  id: Scalars['Int'];
-  updateDate: Scalars['String'];
 };
 
 export enum NodeDtoSort {
@@ -44,45 +37,50 @@ export enum Order {
 
 export type Query = {
   __typename?: 'Query';
-  topic?: Maybe<TopicDto>;
-  topics?: Maybe<Array<Maybe<TopicDto>>>;
+  topic: TopicDto;
+  /** 查询主题列表 */
+  topics: Array<TopicDto>;
 };
 
 
 export type QueryTopicArgs = {
-  id: Scalars['Int'];
+  id: Scalars['Float'];
 };
 
 
 export type QueryTopicsArgs = {
   limit?: InputMaybe<Scalars['Int']>;
   order?: InputMaybe<Order>;
+  search?: InputMaybe<Scalars['String']>;
   sort?: InputMaybe<NodeDtoSort>;
 };
 
+/** 主题的DTO */
 export type TopicDto = {
   __typename?: 'TopicDto';
   id: Scalars['Int'];
-  parent?: Maybe<Array<Maybe<NodeDto>>>;
   title: Scalars['String'];
 };
 
 export type FindTopicQueryVariables = Exact<{ [key: string]: never; }>;
 
 
-export type FindTopicQuery = { __typename?: 'Query', topic?: { __typename?: 'TopicDto', id: number, title: string } | null };
+export type FindTopicQuery = { __typename?: 'Query', topic: { __typename?: 'TopicDto', id: number, title: string } };
 
-export type FindTopicsQueryVariables = Exact<{ [key: string]: never; }>;
+export type FindTopicsQueryVariables = Exact<{
+  search?: InputMaybe<Scalars['String']>;
+  limit?: InputMaybe<Scalars['Int']>;
+}>;
 
 
-export type FindTopicsQuery = { __typename?: 'Query', topics?: Array<{ __typename?: 'TopicDto', id: number, title: string } | null> | null };
+export type FindTopicsQuery = { __typename?: 'Query', topics: Array<{ __typename?: 'TopicDto', id: number, title: string }> };
 
 export type CreateTopicMutationVariables = Exact<{
   title: Scalars['String'];
 }>;
 
 
-export type CreateTopicMutation = { __typename?: 'Mutation', createTopic?: { __typename?: 'TopicDto', id: number, title: string } | null };
+export type CreateTopicMutation = { __typename?: 'Mutation', createTopic: { __typename?: 'TopicDto', id: number, title: string } };
 
 
 export const FindTopicDocument = gql`
@@ -121,8 +119,8 @@ export type FindTopicQueryHookResult = ReturnType<typeof useFindTopicQuery>;
 export type FindTopicLazyQueryHookResult = ReturnType<typeof useFindTopicLazyQuery>;
 export type FindTopicQueryResult = Apollo.QueryResult<FindTopicQuery, FindTopicQueryVariables>;
 export const FindTopicsDocument = gql`
-    query findTopics {
-  topics {
+    query findTopics($search: String, $limit: Int) {
+  topics(search: $search, limit: $limit) {
     id
     title
   }
@@ -141,6 +139,8 @@ export const FindTopicsDocument = gql`
  * @example
  * const { data, loading, error } = useFindTopicsQuery({
  *   variables: {
+ *      search: // value for 'search'
+ *      limit: // value for 'limit'
  *   },
  * });
  */

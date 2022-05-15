@@ -10,8 +10,8 @@ export const QUERY_LAUNCH_LIST = gql`
 `;
 
 export const QUERY_TOPIC_LIST = gql`
-  query findTopics{
-    topics {
+  query findTopics($search: String, $limit: Int){
+    topics (search: $search, limit: $limit) {
       id
       title
     }

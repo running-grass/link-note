@@ -1,38 +1,74 @@
-import React, { useEffect, useState } from 'react';
-import './App.css';
-import { useFindTopicsQuery, useCreateTopicMutation, useFindTopicsLazyQuery } from './generated/graphql';
+import React, { useEffect, useState } from "react";
+import "./App.css";
+import {
+  useFindTopicsQuery,
+  useCreateTopicMutation,
+  useFindTopicsLazyQuery,
+} from "./generated/graphql";
 
-import { List,Input } from 'antd'
+import { List, Input, AutoComplete } from "antd";
 
+const Option = AutoComplete.Option;
 function App() {
-  // const { data, error, loading } = useFindTopicQuery();
-  const [findTopics, { data }] = useFindTopicsLazyQuery({
-    pollInterval: 500,
-  });
+  const { data, refetch } = useFindTopicsQuery();
   const [createTopicMutation] = useCreateTopicMutation();
 
-  // const [version, setVersion] = useState(0);
+  const [_, { data: optionData, loading: searchLoading, refetch: searchTopics }] =
+    useFindTopicsLazyQuery();
 
-  const createTopic = async (ev: React.FormEvent<HTMLInputElement>) => {
-    const target = ev.target as HTMLInputElement;
-    
-    await createTopicMutation({ variables: { title: target.value}});
-    // console.log(a)
-    await findTopics(); 
-    // setVersion(version + 1);
-  }
+  const [prevKeyword, setKeyword] = useState<string>("");
 
-  useEffect(() => {
-    findTopics();  
-  },[])
-  
+  const onSearch = (keyword: string) => {
+    setKeyword(keyword);
+    searchTopics({
+       search: keyword ,
+    });
+  };
+
+  const onSelect = async (value:any, obj: { key: string, value: string}) => {
+    if (obj.key === 'new') {
+      // 创建新主题
+      await createTopicMutation({ variables: { title: obj.value} });
+      await refetch();
+    } else {
+      console.log(value);
+    }
+  };
+
+  const hasEq = optionData?.topics.some((it) => it.title === prevKeyword);
   return (
     <div className="App">
-      <Input placeholder="创建新主题" onPressEnter={createTopic}/>
+      <AutoComplete
+        placeholder="搜索或创建新主题"
+        style={{ width: "100%" }}
+        onSelect={onSelect}
+        onSearch={onSearch}
+        onDropdownVisibleChange={open => open ? onSearch(prevKeyword): null}
+      >
+        {hasEq ? (
+          <Option key={"kw" + prevKeyword} value={prevKeyword}>
+            {prevKeyword}
+          </Option>
+        ) : prevKeyword ? (
+          <Option key="new" value={prevKeyword}>
+            【创建】{prevKeyword}
+          </Option>
+        ) : // <div>{prevKeyword} 创建一个？</div>
+        null}
+        {optionData?.topics
+          ?.filter((item) => item.title !== prevKeyword)
+          .map((item) => (
+            <Option key={item?.id} value={item?.title}>
+              {item?.title}
+            </Option>
+          ))}
+      </AutoComplete>
+      <br />
+      <br />
       <List
         bordered
         dataSource={data?.topics ?? []}
-        renderItem={item => (<List.Item>{item?.title}</List.Item>)}
+        renderItem={(item) => <List.Item>{item?.title}</List.Item>}
       />
     </div>
   );

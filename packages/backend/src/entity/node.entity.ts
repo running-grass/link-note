@@ -8,12 +8,15 @@ export class Node {
     id: number;
 
     @CreateDateColumn()
+    @Index()
     createDate: Date;
 
     @UpdateDateColumn()
+    @Index()
     updateDate: Date;
 
-    @DeleteDateColumn()
+    @DeleteDateColumn()   
+    @Index()
     deletedDate: Date
 
     @VersionColumn()

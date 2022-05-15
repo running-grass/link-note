@@ -6,10 +6,10 @@ import { TopicService } from './topic.service';
 export class TopicController {
   constructor(private readonly topicService: TopicService) {}
 
-  @Get()
-  async getAll(): Promise<Topic[]> {
-    return this.topicService.findAll();
-  }
+  // @Get()
+  // async getAll(): Promise<Topic[]> {
+  //   // return this.topicService.findAll();
+  // }
 
   @Post('new/:title')
   async newOne(@Param('title') title : string) {

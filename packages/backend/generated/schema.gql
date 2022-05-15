@@ -1,0 +1,39 @@
+# ------------------------------------------------------
+# THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
+# ------------------------------------------------------
+
+"""主题的DTO"""
+type TopicDto {
+  id: Int!
+  title: String!
+}
+
+type Query {
+  topic(id: Float!): TopicDto!
+
+  """查询主题列表"""
+  topics(
+    sort: NodeDtoSort = createDate
+
+    """正序或者倒序"""
+    order: Order = DESC
+    limit: Int = 10
+
+    """搜索的关键字"""
+    search: String
+  ): [TopicDto!]!
+}
+
+enum NodeDtoSort {
+  createDate
+  updateDate
+}
+
+enum Order {
+  DESC
+  ASC
+}
+
+type Mutation {
+  createTopic(title: String!): TopicDto!
+}

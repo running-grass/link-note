@@ -1,32 +1,34 @@
 import { Args, Mutation, Parent, Query, ResolveField, Resolver } from "@nestjs/graphql";
+import { NodeDtoSort, Order, TopicDto } from "src/graphql/model";
 import { Topic } from "../entity/topic.entity";
-import { NodeDtoSort, Order } from "../graphql";
+import { TopicsArgs } from "./dto/topicsArgs";
+// import { NodeDtoSort, Order } from "../graphql";
 import { TopicService } from "./topic.service";
 
-@Resolver('TopicDto')
+@Resolver(of => TopicDto)
 export class TopicResolver {
   constructor(
     private topicService: TopicService,
   ) {}
 
-  @Query('topic')
+  @Query(returns => TopicDto)
   async topic(@Args('id') id: number) {
     return this.topicService.findOneById(id);
   }
   
-  @Query()
-  async topics(  @Args('sort') sort: NodeDtoSort = NodeDtoSort.createDate,
-                 @Args('order') order: Order = Order.DESC, 
-                 @Args('limit') limit: number = 20) {      
-    return this.topicService.findAll(sort, order, limit);
+  @Query(returns => [TopicDto!]!, {
+    description: "查询主题列表"
+  })
+  async topics(@Args() args: TopicsArgs) {      
+    return this.topicService.findAll(args.sort, args.order, args.limit, args.search);
   }
   
-  @ResolveField()
-  async parent(@Parent() topic: Topic) {
-    return this.topicService.findAll();
-  }
+  // @ResolveField()
+  // async parent(@Parent() topic: Topic) {
+  //   return this.topicService.findAll();
+  // }
 
-  @Mutation()
+  @Mutation(returns => TopicDto)
   async createTopic(@Args('title') title: string) {
     return this.topicService.newOne(title);
   }

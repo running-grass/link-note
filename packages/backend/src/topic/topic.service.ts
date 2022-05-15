@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { NodeDtoSort, Order } from 'src/graphql/model';
 import { Repository } from 'typeorm';
 import { Topic } from '../entity/topic.entity';
-import { NodeDtoSort, Order } from '../graphql';
 @Injectable()
 export class TopicService {
   constructor(
@@ -10,11 +10,19 @@ export class TopicService {
     private topicRepository: Repository<Topic>
   ) {}
 
-  findAll(sort: NodeDtoSort = NodeDtoSort.createDate, order: Order = Order.DESC, limit: number = 100): Promise<Topic[]> {
-    // return this.topicRepository.find();
-    return this.topicRepository
-              .createQueryBuilder('topic')
-                .orderBy('topic.' + sort, order)
+  findAll(sort: NodeDtoSort = NodeDtoSort.createDate
+        , order: Order = Order.DESC
+        , limit: number = 10
+        , search: string): Promise<Topic[]> {
+
+    let build = this.topicRepository   .createQueryBuilder('topic');
+
+    // 字符串匹配
+    if (search) {
+      build = build.where("topic.title like :keyword", { keyword: `%${search}%`});
+    }
+
+    return build.orderBy(`topic.${sort}`, order)
                 .limit(limit)
                 .getMany();
   }

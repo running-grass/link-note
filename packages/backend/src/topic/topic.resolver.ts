@@ -1,4 +1,4 @@
-import { Args, Mutation, Parent, Query, ResolveField, Resolver } from "@nestjs/graphql";
+import { Args, Int, Mutation, Parent, Query, ResolveField, Resolver } from "@nestjs/graphql";
 import { NodeDtoSort, Order, TopicDto } from "src/graphql/model";
 import { Topic } from "../entity/topic.entity";
 import { TopicsArgs } from "./dto/topicsArgs";
@@ -11,9 +11,16 @@ export class TopicResolver {
     private topicService: TopicService,
   ) {}
 
-  @Query(returns => TopicDto)
-  async topic(@Args('id') id: number) {
-    return this.topicService.findOneById(id);
+  @Query(returns => TopicDto, { nullable: true})
+  async topic(@Args('id', { type: () => Int, nullable: true}) id: number
+            , @Args('title', { nullable: true}) title: string ) {
+    if (id) {
+      return this.topicService.findOneById(id);
+    } else if (title) {
+      return this.topicService.findOneByTitle(title);
+    } else {
+      throw new Error('id 和 title 必须传一个');
+    }
   }
   
   @Query(returns => [TopicDto!]!, {

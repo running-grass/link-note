@@ -5,6 +5,7 @@ import { Repository } from 'typeorm';
 import { Topic } from '../entity/topic.entity';
 @Injectable()
 export class TopicService {
+
   constructor(
     @InjectRepository(Topic)
     private topicRepository: Repository<Topic>
@@ -37,11 +38,7 @@ export class TopicService {
     return this.topicRepository.findOneBy({id: id});
   }
 
-//   findOne(id: string): Promise<Topic> {
-//     return this.topicRepository.findOne(id);
-//   }
-
-//   async remove(id: string): Promise<void> {
-//     await this.topicRepository.delete(id);
-//   }
+  findOneByTitle(title: string) {
+    return this.topicRepository.findOneBy({title});
+  }
 }

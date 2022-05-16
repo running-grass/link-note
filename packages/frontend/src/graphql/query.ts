@@ -1,8 +1,8 @@
 import { gql } from '@apollo/client';
 
-export const QUERY_LAUNCH_LIST = gql`
-  query findTopic{
-    topic(id: 1) {
+export const QUERY_TOPIC = gql`
+  query findTopic($title: String, $id: Int){
+    topic(title: $title, id: $id) {
       id
       title
     }

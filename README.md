@@ -19,6 +19,9 @@ https://www.typescriptlang.org/docs/
 https://typescript.bootcss.com/
 https://typeorm.io/
 
+## 关于nix
+基于nix-shell中使用的node16是基于nix的unstable channel的
+
 ## 开发模式
 ```bash
 pnpm i

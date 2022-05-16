@@ -37,14 +37,15 @@ export enum Order {
 
 export type Query = {
   __typename?: 'Query';
-  topic: TopicDto;
+  topic?: Maybe<TopicDto>;
   /** 查询主题列表 */
   topics: Array<TopicDto>;
 };
 
 
 export type QueryTopicArgs = {
-  id: Scalars['Float'];
+  id?: InputMaybe<Scalars['Int']>;
+  title?: InputMaybe<Scalars['String']>;
 };
 
 
@@ -62,10 +63,13 @@ export type TopicDto = {
   title: Scalars['String'];
 };
 
-export type FindTopicQueryVariables = Exact<{ [key: string]: never; }>;
+export type FindTopicQueryVariables = Exact<{
+  title?: InputMaybe<Scalars['String']>;
+  id?: InputMaybe<Scalars['Int']>;
+}>;
 
 
-export type FindTopicQuery = { __typename?: 'Query', topic: { __typename?: 'TopicDto', id: number, title: string } };
+export type FindTopicQuery = { __typename?: 'Query', topic?: { __typename?: 'TopicDto', id: number, title: string } | null };
 
 export type FindTopicsQueryVariables = Exact<{
   search?: InputMaybe<Scalars['String']>;
@@ -84,8 +88,8 @@ export type CreateTopicMutation = { __typename?: 'Mutation', createTopic: { __ty
 
 
 export const FindTopicDocument = gql`
-    query findTopic {
-  topic(id: 1) {
+    query findTopic($title: String, $id: Int) {
+  topic(title: $title, id: $id) {
     id
     title
   }
@@ -104,6 +108,8 @@ export const FindTopicDocument = gql`
  * @example
  * const { data, loading, error } = useFindTopicQuery({
  *   variables: {
+ *      title: // value for 'title'
+ *      id: // value for 'id'
  *   },
  * });
  */

@@ -9,7 +9,7 @@ type TopicDto {
 }
 
 type Query {
-  topic(id: Float!): TopicDto!
+  topic(id: Int, title: String): TopicDto
 
   """查询主题列表"""
   topics(

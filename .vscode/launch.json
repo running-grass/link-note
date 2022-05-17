@@ -6,16 +6,15 @@
     "configurations": [
 
         {
-            "type": "node",
+            "type": "pwa-node",
             "request": "launch",
-            "name": "Launch via NPM",
+            "name": "启动后端",
             "runtimeExecutable": "npm",
             "runtimeArgs": [
                 "run",
                 "dev"
             ],
             "cwd": "${workspaceFolder}/packages/backend/",
-            "port": 9229,
             "skipFiles": [
                 "<node_internals>/**"
             ]

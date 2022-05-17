@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { NodeDtoSort, Order } from 'src/graphql/model';
 import { Repository } from 'typeorm';
 import { Topic } from '../entity/topic.entity';
+import { BaseSort, Order } from '../enum/common'
 @Injectable()
 export class TopicService {
 
@@ -11,7 +11,7 @@ export class TopicService {
     private topicRepository: Repository<Topic>
   ) {}
 
-  findAll(sort: NodeDtoSort = NodeDtoSort.createDate
+  findAll(sort: BaseSort = BaseSort.id
         , order: Order = Order.DESC
         , limit: number = 10
         , search: string): Promise<Topic[]> {

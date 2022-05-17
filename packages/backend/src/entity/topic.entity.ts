@@ -6,4 +6,8 @@ export class Topic extends Node{
     @Column()
     @Index({ unique: true })
     title: string;
+
+    @Column()
+    @Index()
+    isTag: boolean
 }

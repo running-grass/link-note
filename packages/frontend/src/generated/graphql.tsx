@@ -13,11 +13,48 @@ export type Scalars = {
   Boolean: boolean;
   Int: number;
   Float: number;
+  /** A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date-time format. */
+  DateTime: any;
 };
+
+/** 实体查询中的通用排序字段 */
+export enum BaseSort {
+  CreateAt = 'createAt',
+  Id = 'id',
+  UpdatedAt = 'updatedAt'
+}
+
+export type CardCreateInput = {
+  belongId: Scalars['Int'];
+  cardType?: InputMaybe<CardType>;
+  content?: InputMaybe<Scalars['String']>;
+  parentId?: InputMaybe<Scalars['Int']>;
+};
+
+export type CardDto = {
+  __typename?: 'CardDto';
+  cardType: CardType;
+  childrens: Array<CardDto>;
+  content: Scalars['String'];
+  createAt: Scalars['DateTime'];
+  id: Scalars['Int'];
+  updateAt: Scalars['DateTime'];
+};
+
+/** Card内容的类型 */
+export enum CardType {
+  Inline = 'INLINE'
+}
 
 export type Mutation = {
   __typename?: 'Mutation';
+  createNewCard: CardDto;
   createTopic: TopicDto;
+};
+
+
+export type MutationCreateNewCardArgs = {
+  cardCreateInput: CardCreateInput;
 };
 
 
@@ -25,11 +62,7 @@ export type MutationCreateTopicArgs = {
   title: Scalars['String'];
 };
 
-export enum NodeDtoSort {
-  CreateDate = 'createDate',
-  UpdateDate = 'updateDate'
-}
-
+/** 所有查询、排序通用的排序 */
 export enum Order {
   Asc = 'ASC',
   Desc = 'DESC'
@@ -53,15 +86,22 @@ export type QueryTopicsArgs = {
   limit?: InputMaybe<Scalars['Int']>;
   order?: InputMaybe<Order>;
   search?: InputMaybe<Scalars['String']>;
-  sort?: InputMaybe<NodeDtoSort>;
+  sort?: InputMaybe<BaseSort>;
 };
 
 /** 主题的DTO */
 export type TopicDto = {
   __typename?: 'TopicDto';
+  cards: Array<CardDto>;
+  createAt: Scalars['DateTime'];
   id: Scalars['Int'];
   title: Scalars['String'];
+  updateAt: Scalars['DateTime'];
 };
+
+export type CardDtoFieldsFragment = { __typename?: 'CardDto', id: number, content: string, cardType: CardType };
+
+export type CardDtoRecursiveFragment = { __typename?: 'CardDto', id: number, content: string, cardType: CardType, childrens: Array<{ __typename?: 'CardDto', id: number, content: string, cardType: CardType, childrens: Array<{ __typename?: 'CardDto', id: number, content: string, cardType: CardType, childrens: Array<{ __typename?: 'CardDto', id: number, content: string, cardType: CardType, childrens: Array<{ __typename?: 'CardDto', id: number, content: string, cardType: CardType, childrens: Array<{ __typename?: 'CardDto', id: number, content: string, cardType: CardType, childrens: Array<{ __typename?: 'CardDto', id: number, content: string, cardType: CardType, childrens: Array<{ __typename?: 'CardDto', id: number, content: string, cardType: CardType, childrens: Array<{ __typename?: 'CardDto', id: number, content: string, cardType: CardType, childrens: Array<{ __typename?: 'CardDto', id: number, content: string, cardType: CardType }> }> }> }> }> }> }> }> }> };
 
 export type FindTopicQueryVariables = Exact<{
   title?: InputMaybe<Scalars['String']>;
@@ -69,7 +109,7 @@ export type FindTopicQueryVariables = Exact<{
 }>;
 
 
-export type FindTopicQuery = { __typename?: 'Query', topic?: { __typename?: 'TopicDto', id: number, title: string } | null };
+export type FindTopicQuery = { __typename?: 'Query', topic?: { __typename?: 'TopicDto', id: number, title: string, cards: Array<{ __typename?: 'CardDto', id: number, content: string, cardType: CardType, childrens: Array<{ __typename?: 'CardDto', id: number, content: string, cardType: CardType, childrens: Array<{ __typename?: 'CardDto', id: number, content: string, cardType: CardType, childrens: Array<{ __typename?: 'CardDto', id: number, content: string, cardType: CardType, childrens: Array<{ __typename?: 'CardDto', id: number, content: string, cardType: CardType, childrens: Array<{ __typename?: 'CardDto', id: number, content: string, cardType: CardType, childrens: Array<{ __typename?: 'CardDto', id: number, content: string, cardType: CardType, childrens: Array<{ __typename?: 'CardDto', id: number, content: string, cardType: CardType, childrens: Array<{ __typename?: 'CardDto', id: number, content: string, cardType: CardType, childrens: Array<{ __typename?: 'CardDto', id: number, content: string, cardType: CardType }> }> }> }> }> }> }> }> }> }> } | null };
 
 export type FindTopicsQueryVariables = Exact<{
   search?: InputMaybe<Scalars['String']>;
@@ -86,15 +126,66 @@ export type CreateTopicMutationVariables = Exact<{
 
 export type CreateTopicMutation = { __typename?: 'Mutation', createTopic: { __typename?: 'TopicDto', id: number, title: string } };
 
+export type CreateNewCardMutationVariables = Exact<{
+  belongId: Scalars['Int'];
+  parentId?: InputMaybe<Scalars['Int']>;
+  content?: InputMaybe<Scalars['String']>;
+  cardType?: InputMaybe<CardType>;
+}>;
 
+
+export type CreateNewCardMutation = { __typename?: 'Mutation', createNewCard: { __typename?: 'CardDto', id: number, content: string } };
+
+export const CardDtoFieldsFragmentDoc = gql`
+    fragment CardDtoFields on CardDto {
+  id
+  content
+  cardType
+}
+    `;
+export const CardDtoRecursiveFragmentDoc = gql`
+    fragment CardDtoRecursive on CardDto {
+  ...CardDtoFields
+  childrens {
+    ...CardDtoFields
+    childrens {
+      ...CardDtoFields
+      childrens {
+        ...CardDtoFields
+        childrens {
+          ...CardDtoFields
+          childrens {
+            ...CardDtoFields
+            childrens {
+              ...CardDtoFields
+              childrens {
+                ...CardDtoFields
+                childrens {
+                  ...CardDtoFields
+                  childrens {
+                    ...CardDtoFields
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+    ${CardDtoFieldsFragmentDoc}`;
 export const FindTopicDocument = gql`
     query findTopic($title: String, $id: Int) {
   topic(title: $title, id: $id) {
     id
     title
+    cards {
+      ...CardDtoRecursive
+    }
   }
 }
-    `;
+    ${CardDtoRecursiveFragmentDoc}`;
 
 /**
  * __useFindTopicQuery__
@@ -195,3 +286,42 @@ export function useCreateTopicMutation(baseOptions?: Apollo.MutationHookOptions<
 export type CreateTopicMutationHookResult = ReturnType<typeof useCreateTopicMutation>;
 export type CreateTopicMutationResult = Apollo.MutationResult<CreateTopicMutation>;
 export type CreateTopicMutationOptions = Apollo.BaseMutationOptions<CreateTopicMutation, CreateTopicMutationVariables>;
+export const CreateNewCardDocument = gql`
+    mutation createNewCard($belongId: Int!, $parentId: Int, $content: String, $cardType: CardType) {
+  createNewCard(
+    cardCreateInput: {belongId: $belongId, parentId: $parentId, content: $content, cardType: $cardType}
+  ) {
+    id
+    content
+  }
+}
+    `;
+export type CreateNewCardMutationFn = Apollo.MutationFunction<CreateNewCardMutation, CreateNewCardMutationVariables>;
+
+/**
+ * __useCreateNewCardMutation__
+ *
+ * To run a mutation, you first call `useCreateNewCardMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useCreateNewCardMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [createNewCardMutation, { data, loading, error }] = useCreateNewCardMutation({
+ *   variables: {
+ *      belongId: // value for 'belongId'
+ *      parentId: // value for 'parentId'
+ *      content: // value for 'content'
+ *      cardType: // value for 'cardType'
+ *   },
+ * });
+ */
+export function useCreateNewCardMutation(baseOptions?: Apollo.MutationHookOptions<CreateNewCardMutation, CreateNewCardMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useMutation<CreateNewCardMutation, CreateNewCardMutationVariables>(CreateNewCardDocument, options);
+      }
+export type CreateNewCardMutationHookResult = ReturnType<typeof useCreateNewCardMutation>;
+export type CreateNewCardMutationResult = Apollo.MutationResult<CreateNewCardMutation>;
+export type CreateNewCardMutationOptions = Apollo.BaseMutationOptions<CreateNewCardMutation, CreateNewCardMutationVariables>;

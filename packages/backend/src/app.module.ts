@@ -3,10 +3,14 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { TopicModule } from './topic/topic.module';
+import { CardModule } from './card/card.module';
+
 import { GraphQLModule } from '@nestjs/graphql';
 import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
 import { ApolloServerPluginLandingPageLocalDefault } from 'apollo-server-core';
 import  { join } from 'path';
+
+
 @Module({
   imports: [
     TypeOrmModule.forRoot({
@@ -17,7 +21,9 @@ import  { join } from 'path';
       logging: true,
       migrations: [],
       subscribers: [],
-      entities: ["./**/entity/*.js"]
+      autoLoadEntities: true,
+
+      // entities: ["./**/entity/*.js"]
     }),
     GraphQLModule.forRoot<ApolloDriverConfig>({
       driver: ApolloDriver,
@@ -29,6 +35,7 @@ import  { join } from 'path';
       autoSchemaFile: join(process.cwd(), 'generated/schema.gql'),
     }),
     TopicModule,
+    CardModule,
   ],
   controllers: [AppController],
   providers: [AppService],

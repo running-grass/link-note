@@ -2,9 +2,31 @@
 # THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
 # ------------------------------------------------------
 
+type CardDto {
+  id: Int!
+  createAt: DateTime!
+  updateAt: DateTime!
+  content: String!
+  cardType: CardType!
+  childrens: [CardDto!]!
+}
+
+"""
+A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date-time format.
+"""
+scalar DateTime
+
+"""Card内容的类型"""
+enum CardType {
+  INLINE
+}
+
 """主题的DTO"""
 type TopicDto {
   id: Int!
+  createAt: DateTime!
+  updateAt: DateTime!
+  cards: [CardDto!]!
   title: String!
 }
 
@@ -13,7 +35,7 @@ type Query {
 
   """查询主题列表"""
   topics(
-    sort: NodeDtoSort = createDate
+    sort: BaseSort = createAt
 
     """正序或者倒序"""
     order: Order = DESC
@@ -24,11 +46,14 @@ type Query {
   ): [TopicDto!]!
 }
 
-enum NodeDtoSort {
-  createDate
-  updateDate
+"""实体查询中的通用排序字段"""
+enum BaseSort {
+  id
+  createAt
+  updatedAt
 }
 
+"""所有查询、排序通用的排序"""
 enum Order {
   DESC
   ASC
@@ -36,4 +61,12 @@ enum Order {
 
 type Mutation {
   createTopic(title: String!): TopicDto!
+  createNewCard(cardCreateInput: CardCreateInput!): CardDto!
+}
+
+input CardCreateInput {
+  belongId: Int!
+  parentId: Int
+  content: String
+  cardType: CardType
 }

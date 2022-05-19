@@ -9,3 +9,8 @@ generates:
       - 'typescript-react-apollo'
     config:
       withHooks: true
+  src/generated/apollo.ts:
+    plugins:
+      - 'typescript'
+      - 'typescript-operations'
+      - 'typescript-graphql-apollo'

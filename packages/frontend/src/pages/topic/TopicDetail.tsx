@@ -1,75 +1,84 @@
+import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { CardDto, CardType, useCreateNewCardMutation, useFindTopicQuery } from "../../generated/graphql";
-import './TopicDetail.css';
+import { CardStore } from "../../mobx/Card.store";
+import { TopicStore } from "../../mobx/Topic.store";
+import "./TopicDetail.css";
 
-// 新建类型便于类型检测
-interface MinCard<S> {
-    id: number
-    content: string
-    childrens: S[]
-}
+import { observer } from "mobx-react"; // Or "mobx-react".
 
-export const CardTree = <T extends MinCard<T>> ({ cards, parent, createNewCard}: { cards: T[], parent?: T, createNewCard: (a?: number) => void}) => {
-    if (!cards?.length) {
-        return null;
+export const CardBody = observer(({ card }: { card: CardStore }) => {
+
+  const onKeyUp = (ev: React.KeyboardEvent<HTMLInputElement>) => {
+    if (ev.code === "Enter") {
+      card.createNextCard();
     }
+  };
 
+  return (
+    <input
+      className="card-header"
+      defaultValue={card.content}
+      onKeyUp={onKeyUp}
+    />
+  )
+})
 
-    const onKeyUp = (ev: React.KeyboardEvent<HTMLInputElement>) => {
-        if (ev.code === "Enter") {
-            createNewCard(parent?.id);
-        }
-    }
-    return <section className="card-tree">
-        { cards.map(card => (
-            <section className="card-box" key={card.id}>
-                {/* <header className="card-header">{card.content}</header> */}
-                <input 
-                    className="card-header" 
-                    value={card.content}
-                    onKeyUp={onKeyUp}
-                    />
-                <CardTree cards={card.childrens} parent={card} createNewCard={createNewCard} />
-            </section>
-        ))}
+export const CardTree = observer(({
+  cards
+}: {
+  cards: CardStore[];
+  parent?: CardStore;
+}) => {
+  if (!cards?.length) {
+    return null;
+  }
+
+  return (
+    <section className="card-tree">
+      {cards.map((card) => (
+        <section className="card-box" key={card.id}>
+          {/* <header className="card-header">{card.content}</header> */}
+          <CardBody card={card} />
+          <CardTree cards={card.childrens} />
+        </section>
+      ))}
     </section>
-}
+  );
+})
 
+export const TopicDetail = observer(() => {
+  console.log('topic')
 
-export default function TopicDetail() {
   const { title } = useParams();
 
-  const { data, refetch } = useFindTopicQuery({
-    variables: {
-      title,
-    },
-  });
+  let [topicStore, setTopic] = useState<TopicStore | null>(null);
 
-  const [createCard] = useCreateNewCardMutation();
+  useEffect(() => {
+    if (title) {
+      TopicStore.fromTitle(title).then(setTopic);
+    }
+  }, [title]);
 
-  const topicId = data?.topic?.id;
+  useEffect(() => {
+    if (topicStore) {
+      if (!topicStore.cards.length) {
+        topicStore.createNewRootCard();
+      }
+    }
+  }, [topicStore]);
 
-  if (!topicId) {
-      return <h2>没有该主题【${title}】</h2>
+  if (!title) {
+    return null;
   }
 
-
-
-  const createNewCard = async  (parentId?: number) => {
-    await createCard({variables: {
-        belongId: topicId,
-        parentId,
-        content: '',
-        cardType: CardType.Inline,
-    }});
-    refetch();
+  if (!topicStore) {
+    return <h2>没有该主题【${title}】</h2>;
   }
-  // const a: CardDto = data?.topic?.cards[1].childrens[2];
+
   return (
     <div>
-      i am a topic: {data?.topic?.id} <br />
-      <CardTree cards={data?.topic?.cards ?? []} createNewCard={createNewCard}/>
-
+      i am a topic: {topicStore.title} <br />
+      <CardTree cards={topicStore.cards} />
     </div>
   );
-}
+});

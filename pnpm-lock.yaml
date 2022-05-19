@@ -98,6 +98,7 @@ importers:
       '@babel/plugin-transform-react-jsx': ^7.17.3
       '@graphql-codegen/cli': 2.6.2
       '@graphql-codegen/typescript': 2.4.11
+      '@graphql-codegen/typescript-graphql-apollo': ^1.1.1
       '@graphql-codegen/typescript-operations': 2.4.0
       '@graphql-codegen/typescript-react-apollo': 3.2.14
       '@testing-library/dom': ^8.13.0
@@ -114,6 +115,7 @@ importers:
       graphql-tag: ^2.12.6
       less: ^4.1.2
       mobx: ^6.5.0
+      mobx-react: ^7.4.0
       npm-run-all: ^4.1.5
       react: ^18.1.0
       react-dom: ^18.1.0
@@ -140,6 +142,7 @@ importers:
       graphql-tag: 2.12.6_graphql@16.5.0
       less: 4.1.2
       mobx: 6.5.0
+      mobx-react: 7.4.0_xxy2mkjogmxzsnsiyy6ct534gi
       react: 18.1.0
       react-dom: 18.1.0_react@18.1.0
       react-router-dom: 6.3.0_ef5jwxihqo6n7gxfmzogljlgcm
@@ -151,6 +154,7 @@ importers:
       '@babel/plugin-proposal-decorators': 7.17.9_@babel+core@7.17.10
       '@graphql-codegen/cli': 2.6.2_z7j6jxnwmfmmvohlou426sviiy
       '@graphql-codegen/typescript': 2.4.11_graphql@16.5.0
+      '@graphql-codegen/typescript-graphql-apollo': 1.1.1_ubrtutz2urcxyhwqr2zvlqjzha
       '@graphql-codegen/typescript-operations': 2.4.0_graphql@16.5.0
       '@graphql-codegen/typescript-react-apollo': 3.2.14_ubrtutz2urcxyhwqr2zvlqjzha
       npm-run-all: 4.1.5
@@ -1932,6 +1936,24 @@ packages:
       '@graphql-tools/utils': 8.6.10_graphql@16.5.0
       graphql: 16.5.0
       tslib: 2.3.1
+    dev: true
+
+  /@graphql-codegen/typescript-graphql-apollo/1.1.1_ubrtutz2urcxyhwqr2zvlqjzha:
+    resolution: {integrity: sha512-yp1P2M/g/snBpexxjZYjlBQLcChyVAS4WUqlbLaByCem/0tYgjlqUy3ciBw9mMm86O+66o43LKVApYkrQ+8w9w==}
+    peerDependencies:
+      graphql: ^0.8.0 || ^0.9.0 || ^0.10.0 || ^0.11.0 || ^0.12.0 || ^0.13.0 || ^14.0.0 || ^15.0.0 || ^16.0.0
+      graphql-tag: ^2.0.0
+    dependencies:
+      '@graphql-codegen/plugin-helpers': 2.4.2_graphql@16.5.0
+      '@graphql-codegen/visitor-plugin-common': 2.8.0_graphql@16.5.0
+      auto-bind: 4.0.0
+      change-case-all: 1.0.14
+      graphql: 16.5.0
+      graphql-tag: 2.12.6_graphql@16.5.0
+      tslib: 2.3.1
+    transitivePeerDependencies:
+      - encoding
+      - supports-color
     dev: true
 
   /@graphql-codegen/typescript-operations/2.4.0_graphql@16.5.0:
@@ -10028,6 +10050,43 @@ packages:
     resolution: {integrity: sha512-vVqVZQyf3WLx2Shd0qJ9xuvqgAyKPLAiqITEtqW0oIUjzo3PePDd6fW9iFz30ef7Ysp/oiWqbhszeGWW2T6Gzw==}
     engines: {node: '>=10'}
     hasBin: true
+
+  /mobx-react-lite/3.4.0_xxy2mkjogmxzsnsiyy6ct534gi:
+    resolution: {integrity: sha512-bRuZp3C0itgLKHu/VNxi66DN/XVkQG7xtoBVWxpvC5FhAqbOCP21+nPhULjnzEqd7xBMybp6KwytdUpZKEgpIQ==}
+    peerDependencies:
+      mobx: ^6.1.0
+      react: ^16.8.0 || ^17 || ^18
+      react-dom: '*'
+      react-native: '*'
+    peerDependenciesMeta:
+      react-dom:
+        optional: true
+      react-native:
+        optional: true
+    dependencies:
+      mobx: 6.5.0
+      react: 18.1.0
+      react-dom: 18.1.0_react@18.1.0
+    dev: false
+
+  /mobx-react/7.4.0_xxy2mkjogmxzsnsiyy6ct534gi:
+    resolution: {integrity: sha512-gbUwaKZK09SiAleTMxNMKs1MYKTpoIEWJLTLRIR/xnALuuHET8wkL8j1nbc1/6cDkOWVyKz/ReftILx0Pdh2PQ==}
+    peerDependencies:
+      mobx: ^6.1.0
+      react: ^16.8.0 || ^17 || ^18
+      react-dom: '*'
+      react-native: '*'
+    peerDependenciesMeta:
+      react-dom:
+        optional: true
+      react-native:
+        optional: true
+    dependencies:
+      mobx: 6.5.0
+      mobx-react-lite: 3.4.0_xxy2mkjogmxzsnsiyy6ct534gi
+      react: 18.1.0
+      react-dom: 18.1.0_react@18.1.0
+    dev: false
 
   /mobx/6.5.0:
     resolution: {integrity: sha512-pHZ/cySF00FVENDWIDzJyoObFahK6Eg4d0papqm6d7yMkxWTZ/S/csqJX1A3PsYy4t5k3z2QnlwuCfMW5lSEwA==}

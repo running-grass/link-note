@@ -48,7 +48,6 @@ export type CardInputDto = {
   childrens: Array<CardInputDto>;
   content: Scalars['String'];
   id: Scalars['Int'];
-  leftId?: InputMaybe<Scalars['Int']>;
 };
 
 /** Card内容的类型 */

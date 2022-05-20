@@ -86,4 +86,8 @@ export class CardService {
     return this.cardRepository.save(cards)
   }
 
+  async deleCard(cardId: number) {
+    return this.cardRepository.softDelete(cardId)
+  }
+
 }

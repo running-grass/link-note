@@ -66,6 +66,9 @@ type Mutation {
 
   """传入一个有序的CardDTO树，更新数据库中的leftId和parentId"""
   updateCards(cards: [CardInputDto!]!): Int!
+
+  """删除指定的card"""
+  deleteCard(cardId: Int!): Int!
 }
 
 input CardCreateInput {

@@ -70,7 +70,10 @@ export const CardBody = observer(({ card }: { card: CardStore }) => {
       [KEYMAP.NAV_RIGHT]: () => {
         console.log(card.id + "right");
       },
-      [KEYMAP.NEW_NEXT]: () => {
+      [KEYMAP.NEW_NEXT]: (ev, hv) => {
+        const target = ev.currentTarget as HTMLInputElement
+
+        // target.
         card.createNextCard();
       },
       [KEYMAP.MOVE_UP]: () => {

@@ -58,6 +58,8 @@ export type Mutation = {
   __typename?: 'Mutation';
   createNewCard: CardDto;
   createTopic: TopicDto;
+  /** 删除指定的card */
+  deleteCard: Scalars['Int'];
   /** 传入一个有序的CardDTO树，更新数据库中的leftId和parentId */
   updateCards: Scalars['Int'];
 };
@@ -70,6 +72,11 @@ export type MutationCreateNewCardArgs = {
 
 export type MutationCreateTopicArgs = {
   title: Scalars['String'];
+};
+
+
+export type MutationDeleteCardArgs = {
+  cardId: Scalars['Int'];
 };
 
 
@@ -159,6 +166,13 @@ export type UpdateCardsMutationVariables = Exact<{
 
 export type UpdateCardsMutation = { __typename?: 'Mutation', updateCards: number };
 
+export type DeleteCardMutationVariables = Exact<{
+  cardId: Scalars['Int'];
+}>;
+
+
+export type DeleteCardMutation = { __typename?: 'Mutation', deleteCard: number };
+
 export const CardDtoFieldsFragmentDoc = gql`
     fragment CardDtoFields on CardDto {
   id
@@ -242,6 +256,11 @@ export const UpdateCardsDocument = gql`
   updateCards(cards: $cards)
 }
     `;
+export const DeleteCardDocument = gql`
+    mutation deleteCard($cardId: Int!) {
+  deleteCard(cardId: $cardId)
+}
+    `;
 export const getSdk = (client: ApolloClient<any>) => ({
       findTopicQuery(options: Partial<QueryOptions<FindTopicQueryVariables, FindTopicQuery>>) {
           return client.query<FindTopicQuery, FindTopicQueryVariables>({...options, query: FindTopicDocument})
@@ -257,6 +276,9 @@ createNewCardMutation(options: Partial<MutationOptions<CreateNewCardMutation, Cr
       },
 updateCardsMutation(options: Partial<MutationOptions<UpdateCardsMutation, UpdateCardsMutationVariables>>) {
           return client.mutate<UpdateCardsMutation, UpdateCardsMutationVariables>({...options, mutation: UpdateCardsDocument})
+      },
+deleteCardMutation(options: Partial<MutationOptions<DeleteCardMutation, DeleteCardMutationVariables>>) {
+          return client.mutate<DeleteCardMutation, DeleteCardMutationVariables>({...options, mutation: DeleteCardDocument})
       }
     });
     export type SdkType = ReturnType<typeof getSdk>

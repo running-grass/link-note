@@ -1,4 +1,4 @@
-import { Args, Int, Mutation, Parent, Query, ResolveField, Resolver } from "@nestjs/graphql";
+import { Args, Int, Mutation, Parent, ResolveField, Resolver } from "@nestjs/graphql";
 import { Card } from "src/entity/card.entity";
 import { CardType } from "src/enum/common";
 import { TopicDto, CardDto } from "src/graphql/model";
@@ -74,5 +74,11 @@ export class CardResolver {
     return cards.length;
   }
 
-
+  @Mutation(returns => Int, {
+    description: '删除指定的card'
+  })
+  async deleteCard(@Args('cardId',{ type: () => Int}) cardId: number) {
+    await this.cardService.deleCard(cardId)
+    return 1
+  }
 }

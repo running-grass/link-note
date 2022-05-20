@@ -95,3 +95,11 @@ export const MUTATION_UPDATE_CARDS = gql`
     updateCards(cards: $cards)
   }
 `
+
+
+
+export const MUTATION_DELETE_CARD = gql`
+  mutation deleteCard($cardId: Int!) {
+    deleteCard(cardId: $cardId)
+  }
+`

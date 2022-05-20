@@ -153,6 +153,17 @@ export class CardStore {
         this.parent = prev
     }
 
+
+    @action
+    delete(): void {
+        this.removeSelfFormParent()
+        sdk.deleteCardMutation({
+            variables: {
+                cardId: this.id
+            }
+        })
+    }
+
     private getPrevCard(): CardStore | null {
         const [homes, idx] = this.getHomesAndIdx()
         return homes[idx - 1]

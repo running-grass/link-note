@@ -1,5 +1,5 @@
 import { CardType } from "src/enum/common";
-import { Column, Entity, Index, ManyToOne, Tree, TreeChildren, TreeParent } from "typeorm";
+import { Column, Entity, Index, ManyToOne, OneToOne, Tree, TreeChildren, TreeLevelColumn, TreeParent } from "typeorm";
 import { Base } from "./base.entity";
 import { Node } from './node.entity';
 import { Topic } from "./topic.entity";
@@ -9,16 +9,19 @@ import { Topic } from "./topic.entity";
 export class Card  extends Base{
     @ManyToOne(() => Topic, node => node.cards)
     @Index()
-    belong: Topic
+    belong!: Topic
 
     @Column()
-    content: string
+    content!: string
 
     @Column()
-    cardType: CardType
+    cardType!: CardType
 
     @TreeParent()
     parent: Card
+
+    @Column({nullable: true})
+    leftId?: number
 
     @TreeChildren()
     childrens: Card[]

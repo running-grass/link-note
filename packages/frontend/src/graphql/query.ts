@@ -5,6 +5,7 @@ const CardDtoFields = gql`
     id
     content
     cardType
+    leftId
   }
 `
 
@@ -74,14 +75,23 @@ export const MUTATION_CREATE_TOPIC = gql`
 `
 
 export const MUTATION_CREATE_CARD = gql`
-  mutation createNewCard($belongId: Int!, $parentId: Int, $content: String, $cardType: CardType) {
+  mutation createNewCard($belongId: Int!, $parentId: Int, $content: String, $cardType: CardType, $leftId: Int) {
     createNewCard(cardCreateInput: { 
         belongId: $belongId
         , parentId: $parentId
+        , leftId: $leftId
         , content: $content
         , cardType: $cardType}) {
       id
       content
+      cardType
     }
+  }
+`
+
+
+export const MUTATION_UPDATE_CARDS = gql`
+  mutation updateCards($cards: [CardInputDto!]!) {
+    updateCards(cards: $cards)
   }
 `

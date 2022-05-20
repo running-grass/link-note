@@ -6,10 +6,10 @@
     "configurations": [
 
         {
-            "type": "pwa-node",
+            "type": "node",
             "request": "launch",
             "name": "启动后端",
-            "runtimeExecutable": "npm",
+            "runtimeExecutable": "pnpm",
             "runtimeArgs": [
                 "run",
                 "dev"
@@ -18,6 +18,39 @@
             "skipFiles": [
                 "<node_internals>/**"
             ]
-        }
+        },
+
+
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "启动前端",
+            "runtimeExecutable": "pnpm",
+            "runtimeArgs": [
+                "run",
+                "dev"
+            ],
+            "cwd": "${workspaceFolder}/packages/frontend/",
+            "skipFiles": [
+                "<node_internals>/**"
+            ]
+        },
+
+
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "启动前端codegen",
+            "runtimeExecutable": "pnpm",
+            "runtimeArgs": [
+                "run",
+                "watch:codegen"
+            ],
+            "cwd": "${workspaceFolder}/packages/frontend/",
+            "skipFiles": [
+                "<node_internals>/**"
+            ]
+        },
+        
     ]
 }

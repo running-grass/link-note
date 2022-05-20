@@ -7,6 +7,7 @@ type CardDto {
   createAt: DateTime!
   updateAt: DateTime!
   content: String!
+  leftId: Int
   cardType: CardType!
   childrens: [CardDto!]!
 }
@@ -62,11 +63,22 @@ enum Order {
 type Mutation {
   createTopic(title: String!): TopicDto!
   createNewCard(cardCreateInput: CardCreateInput!): CardDto!
+
+  """传入一个有序的CardDTO树，更新数据库中的leftId和parentId"""
+  updateCards(cards: [CardInputDto!]!): Int!
 }
 
 input CardCreateInput {
   belongId: Int!
   parentId: Int
+  leftId: Int
   content: String
   cardType: CardType
+}
+
+input CardInputDto {
+  id: Int!
+  content: String!
+  cardType: CardType!
+  childrens: [CardInputDto!]!
 }

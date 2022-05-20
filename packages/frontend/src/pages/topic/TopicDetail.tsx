@@ -8,16 +8,21 @@ import { observer } from "mobx-react"; // Or "mobx-react".
 
 export const CardBody = observer(({ card }: { card: CardStore }) => {
 
-  const onKeyUp = (ev: React.KeyboardEvent<HTMLInputElement>) => {
+  const onKeyUp = async (ev: React.KeyboardEvent<HTMLInputElement>) => {
     if (ev.code === "Enter") {
-      card.createNextCard();
+      await card.createNextCard();
     }
   };
+
+  const onContentChange = (ev: React.ChangeEvent<HTMLInputElement>) => {
+    card.changeContent(ev.currentTarget.value)
+  }
 
   return (
     <input
       className="card-header"
       defaultValue={card.content}
+      onChange={onContentChange}
       onKeyUp={onKeyUp}
     />
   )

@@ -27,6 +27,7 @@ export type CardCreateInput = {
   belongId: Scalars['Int'];
   cardType?: InputMaybe<CardType>;
   content?: InputMaybe<Scalars['String']>;
+  leftId?: InputMaybe<Scalars['Int']>;
   parentId?: InputMaybe<Scalars['Int']>;
 };
 
@@ -37,7 +38,16 @@ export type CardDto = {
   content: Scalars['String'];
   createAt: Scalars['DateTime'];
   id: Scalars['Int'];
+  leftId?: Maybe<Scalars['Int']>;
   updateAt: Scalars['DateTime'];
+};
+
+export type CardInputDto = {
+  cardType: CardType;
+  childrens: Array<CardInputDto>;
+  content: Scalars['String'];
+  id: Scalars['Int'];
+  leftId?: InputMaybe<Scalars['Int']>;
 };
 
 /** Card内容的类型 */
@@ -49,6 +59,8 @@ export type Mutation = {
   __typename?: 'Mutation';
   createNewCard: CardDto;
   createTopic: TopicDto;
+  /** 传入一个有序的CardDTO树，更新数据库中的leftId和parentId */
+  updateCards: Scalars['Int'];
 };
 
 
@@ -59,6 +71,11 @@ export type MutationCreateNewCardArgs = {
 
 export type MutationCreateTopicArgs = {
   title: Scalars['String'];
+};
+
+
+export type MutationUpdateCardsArgs = {
+  cards: Array<CardInputDto>;
 };
 
 /** 所有查询、排序通用的排序 */
@@ -98,9 +115,9 @@ export type TopicDto = {
   updateAt: Scalars['DateTime'];
 };
 
-export type CardDtoFieldsFragment = { __typename?: 'CardDto', id: number, content: string, cardType: CardType };
+export type CardDtoFieldsFragment = { __typename?: 'CardDto', id: number, content: string, cardType: CardType, leftId?: number | null };
 
-export type CardDtoRecursiveFragment = { __typename?: 'CardDto', id: number, content: string, cardType: CardType, childrens: Array<{ __typename?: 'CardDto', id: number, content: string, cardType: CardType, childrens: Array<{ __typename?: 'CardDto', id: number, content: string, cardType: CardType, childrens: Array<{ __typename?: 'CardDto', id: number, content: string, cardType: CardType, childrens: Array<{ __typename?: 'CardDto', id: number, content: string, cardType: CardType, childrens: Array<{ __typename?: 'CardDto', id: number, content: string, cardType: CardType, childrens: Array<{ __typename?: 'CardDto', id: number, content: string, cardType: CardType, childrens: Array<{ __typename?: 'CardDto', id: number, content: string, cardType: CardType, childrens: Array<{ __typename?: 'CardDto', id: number, content: string, cardType: CardType, childrens: Array<{ __typename?: 'CardDto', id: number, content: string, cardType: CardType }> }> }> }> }> }> }> }> }> };
+export type CardDtoRecursiveFragment = { __typename?: 'CardDto', id: number, content: string, cardType: CardType, leftId?: number | null, childrens: Array<{ __typename?: 'CardDto', id: number, content: string, cardType: CardType, leftId?: number | null, childrens: Array<{ __typename?: 'CardDto', id: number, content: string, cardType: CardType, leftId?: number | null, childrens: Array<{ __typename?: 'CardDto', id: number, content: string, cardType: CardType, leftId?: number | null, childrens: Array<{ __typename?: 'CardDto', id: number, content: string, cardType: CardType, leftId?: number | null, childrens: Array<{ __typename?: 'CardDto', id: number, content: string, cardType: CardType, leftId?: number | null, childrens: Array<{ __typename?: 'CardDto', id: number, content: string, cardType: CardType, leftId?: number | null, childrens: Array<{ __typename?: 'CardDto', id: number, content: string, cardType: CardType, leftId?: number | null, childrens: Array<{ __typename?: 'CardDto', id: number, content: string, cardType: CardType, leftId?: number | null, childrens: Array<{ __typename?: 'CardDto', id: number, content: string, cardType: CardType, leftId?: number | null }> }> }> }> }> }> }> }> }> };
 
 export type FindTopicQueryVariables = Exact<{
   title?: InputMaybe<Scalars['String']>;
@@ -108,7 +125,7 @@ export type FindTopicQueryVariables = Exact<{
 }>;
 
 
-export type FindTopicQuery = { __typename?: 'Query', topic?: { __typename?: 'TopicDto', id: number, title: string, cards: Array<{ __typename?: 'CardDto', id: number, content: string, cardType: CardType, childrens: Array<{ __typename?: 'CardDto', id: number, content: string, cardType: CardType, childrens: Array<{ __typename?: 'CardDto', id: number, content: string, cardType: CardType, childrens: Array<{ __typename?: 'CardDto', id: number, content: string, cardType: CardType, childrens: Array<{ __typename?: 'CardDto', id: number, content: string, cardType: CardType, childrens: Array<{ __typename?: 'CardDto', id: number, content: string, cardType: CardType, childrens: Array<{ __typename?: 'CardDto', id: number, content: string, cardType: CardType, childrens: Array<{ __typename?: 'CardDto', id: number, content: string, cardType: CardType, childrens: Array<{ __typename?: 'CardDto', id: number, content: string, cardType: CardType, childrens: Array<{ __typename?: 'CardDto', id: number, content: string, cardType: CardType }> }> }> }> }> }> }> }> }> }> } | null };
+export type FindTopicQuery = { __typename?: 'Query', topic?: { __typename?: 'TopicDto', id: number, title: string, cards: Array<{ __typename?: 'CardDto', id: number, content: string, cardType: CardType, leftId?: number | null, childrens: Array<{ __typename?: 'CardDto', id: number, content: string, cardType: CardType, leftId?: number | null, childrens: Array<{ __typename?: 'CardDto', id: number, content: string, cardType: CardType, leftId?: number | null, childrens: Array<{ __typename?: 'CardDto', id: number, content: string, cardType: CardType, leftId?: number | null, childrens: Array<{ __typename?: 'CardDto', id: number, content: string, cardType: CardType, leftId?: number | null, childrens: Array<{ __typename?: 'CardDto', id: number, content: string, cardType: CardType, leftId?: number | null, childrens: Array<{ __typename?: 'CardDto', id: number, content: string, cardType: CardType, leftId?: number | null, childrens: Array<{ __typename?: 'CardDto', id: number, content: string, cardType: CardType, leftId?: number | null, childrens: Array<{ __typename?: 'CardDto', id: number, content: string, cardType: CardType, leftId?: number | null, childrens: Array<{ __typename?: 'CardDto', id: number, content: string, cardType: CardType, leftId?: number | null }> }> }> }> }> }> }> }> }> }> } | null };
 
 export type FindTopicsQueryVariables = Exact<{
   search?: InputMaybe<Scalars['String']>;
@@ -130,16 +147,25 @@ export type CreateNewCardMutationVariables = Exact<{
   parentId?: InputMaybe<Scalars['Int']>;
   content?: InputMaybe<Scalars['String']>;
   cardType?: InputMaybe<CardType>;
+  leftId?: InputMaybe<Scalars['Int']>;
 }>;
 
 
-export type CreateNewCardMutation = { __typename?: 'Mutation', createNewCard: { __typename?: 'CardDto', id: number, content: string } };
+export type CreateNewCardMutation = { __typename?: 'Mutation', createNewCard: { __typename?: 'CardDto', id: number, content: string, cardType: CardType } };
+
+export type UpdateCardsMutationVariables = Exact<{
+  cards: Array<CardInputDto> | CardInputDto;
+}>;
+
+
+export type UpdateCardsMutation = { __typename?: 'Mutation', updateCards: number };
 
 export const CardDtoFieldsFragmentDoc = gql`
     fragment CardDtoFields on CardDto {
   id
   content
   cardType
+  leftId
 }
     `;
 export const CardDtoRecursiveFragmentDoc = gql`
@@ -202,13 +228,19 @@ export const CreateTopicDocument = gql`
 }
     `;
 export const CreateNewCardDocument = gql`
-    mutation createNewCard($belongId: Int!, $parentId: Int, $content: String, $cardType: CardType) {
+    mutation createNewCard($belongId: Int!, $parentId: Int, $content: String, $cardType: CardType, $leftId: Int) {
   createNewCard(
-    cardCreateInput: {belongId: $belongId, parentId: $parentId, content: $content, cardType: $cardType}
+    cardCreateInput: {belongId: $belongId, parentId: $parentId, leftId: $leftId, content: $content, cardType: $cardType}
   ) {
     id
     content
+    cardType
   }
+}
+    `;
+export const UpdateCardsDocument = gql`
+    mutation updateCards($cards: [CardInputDto!]!) {
+  updateCards(cards: $cards)
 }
     `;
 export const getSdk = (client: ApolloClient<any>) => ({
@@ -223,6 +255,9 @@ createTopicMutation(options: Partial<MutationOptions<CreateTopicMutation, Create
       },
 createNewCardMutation(options: Partial<MutationOptions<CreateNewCardMutation, CreateNewCardMutationVariables>>) {
           return client.mutate<CreateNewCardMutation, CreateNewCardMutationVariables>({...options, mutation: CreateNewCardDocument})
+      },
+updateCardsMutation(options: Partial<MutationOptions<UpdateCardsMutation, UpdateCardsMutationVariables>>) {
+          return client.mutate<UpdateCardsMutation, UpdateCardsMutationVariables>({...options, mutation: UpdateCardsDocument})
       }
     });
     export type SdkType = ReturnType<typeof getSdk>

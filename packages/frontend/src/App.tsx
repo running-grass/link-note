@@ -44,7 +44,7 @@ export default function App() {
     navigate('/topic/'+obj.value);
   };
 
-  const hasEq = data?.topics.some((it) => it.title === prevKeyword);
+  const existed = data?.topics.some((it) => it.title === prevKeyword);
   
   return (
     <div className="App">
@@ -55,11 +55,11 @@ export default function App() {
         style={{ width: "100%" }}
         onSelect={onSelect}
         onSearch={onSearch}
-        onDropdownVisibleChange={(open) =>
-          open ? onSearch(prevKeyword) : null
-        }
+        // onDropdownVisibleChange={(open) =>
+        //   open ? onSearch(prevKeyword) : null
+        // }
       >
-        {hasEq ? (
+        {existed ? (
           <Option key={"kw" + prevKeyword} value={prevKeyword}>
             {prevKeyword}
           </Option>
@@ -68,6 +68,7 @@ export default function App() {
             【创建】{prevKeyword}
           </Option>
         ) : null}
+        
         {data?.topics
           ?.filter((item) => item.title !== prevKeyword)
           .map((item) => (

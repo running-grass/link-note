@@ -16,6 +16,9 @@ export class CardDto {
     @Field()
     content: string;
 
+    @Field(() => Int, { nullable: true })
+    leftId?: number
+
     @Field(() => CardType)
     cardType: CardType;
 
@@ -37,7 +40,7 @@ export abstract class NodeDto {
     updateAt: Date;
 
     @Field(() => [CardDto])
-    cards: [CardDto]
+    cards!: [CardDto]
 }
 
 @ObjectType({ description: '主题的DTO' })

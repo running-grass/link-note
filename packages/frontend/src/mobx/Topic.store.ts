@@ -3,6 +3,7 @@ import { CardStore, MinCard } from "./Card.store"
 
 import { sdk } from '../apollo';
 import { CardType } from '../generated/graphql';
+import { CardInputDto } from "../generated/apollo";
 
 interface MinTopic {
     id: number
@@ -28,7 +29,7 @@ export class TopicStore {
 
     @action
     private initState(_topic: MinTopic) {
-        this.id  = _topic.id
+        this.id = _topic.id
         this.title = _topic.title
         this.cards = _topic.cards.map(card => new CardStore(card, this))
     }
@@ -40,11 +41,20 @@ export class TopicStore {
 
     @action
     async refresh() {
-        const { data: { topic } } = await sdk.findTopicQuery({variables: { id: this.id }});
+        const { data: { topic } } = await sdk.findTopicQuery({ variables: { id: this.id } });
         if (!topic) {
             throw new Error('未能更新Topic')
         }
         this.initState(topic);
+    }
+
+    @action
+    async updateCardsToServer() {
+        await sdk.updateCardsMutation({
+            variables: {
+                cards: this.getInputDtos(this.cards)
+            }
+        })
     }
 
 
@@ -62,10 +72,22 @@ export class TopicStore {
         await this.refresh();
     }
 
+    private getInputDtos(cards: CardStore[]): CardInputDto[] {
+        if (!cards.length) return []
+
+        return cards.map(card => ({
+            id: card.id,
+            cardType: card.cardType,
+            content: card.content,
+            childrens: card.childrens.length ? this.getInputDtos(card.childrens) : []
+        }))
+    }
+
     static async fromTitle(title: string): Promise<TopicStore | null> {
-        const { data: { topic } } = await sdk.findTopicQuery({variables: { title }});
+        const { data: { topic } } = await sdk.findTopicQuery({ variables: { title } });
 
         if (!topic) {
+
             return null;
         }
 

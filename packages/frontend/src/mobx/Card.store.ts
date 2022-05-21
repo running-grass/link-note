@@ -2,6 +2,7 @@ import { makeObservable, observable, action, computed } from "mobx"
 import { TopicStore } from "./Topic.store"
 import { sdk } from '../apollo'
 import { CardType } from "../generated/graphql"
+import { swapItem } from "../utils/array"
 
 export interface MinCard {
     id: number
@@ -9,18 +10,6 @@ export interface MinCard {
     childrens?: MinCard[]
     cardType: CardType
     [propName: string]: unknown
-}
-
-// 交换数组中的两个元素
-const swapItem = (arr: any[], first: number, second: number): void => {
-    if (!arr.length || first === second || first < 0 || second < 0 || first >= arr.length || second >= arr.length) {
-        // 越界不处理
-        return
-    }
-
-    const temp = arr[first]
-    arr[first] = arr[second]
-    arr[second] = temp
 }
 
 export class CardStore {
@@ -42,12 +31,12 @@ export class CardStore {
         this.parent = parent
         this.belong = belong
         this.cardType = _card.cardType
+
     }
 
 
     @computed
     get level() {
-        console.log("Computing...")
         let parent = this.parent
         let level = 1
         while (parent) {
@@ -58,16 +47,26 @@ export class CardStore {
     }
 
     @action
-    async createNextCard(content: string = '', cardType?: CardType) {
-        if (!cardType) {
-            cardType = this.cardType;
-        }
+    async createNextCard(posStart: number, posEnd: number) {
+        const content = this.content
+
+
+        const min = Math.min(posStart, posEnd)
+        const max = Math.max(posStart, posEnd)
+
+        this.changeContent(content.slice(0, min))
+        // this.content = 
+
+        const nextContent = content.slice(max)
+
+        const cardType = this.cardType;
+        // }
         const { data } = await sdk.createNewCardMutation({
             variables: {
                 belongId: this.belong.id,
                 parentId: this.parent?.id,
                 leftId: this.id,
-                content,
+                content: nextContent,
                 cardType,
             }
         })
@@ -95,13 +94,20 @@ export class CardStore {
         const newCard = new CardStore({ ...data.createNewCard, childrens: [] }, this.belong, this.parent)
 
         homes.splice(currIdx + 1, 0, newCard)
+
+        this.belong.needFocus = {
+            card: newCard,
+            pos: 0
+        }
+
+        return newCard
     }
 
     // 更新content
     @action
     changeContent(content: string) {
         this.content = content;
-        this.belong.updateCardsToServer()
+        // this.belong.updateCardsToServer()
     }
 
     @action
@@ -137,6 +143,25 @@ export class CardStore {
     }
 
 
+    @action
+    navToPlantUp(): void {
+        const prev = this.getPlantPrevCard()
+        if (!prev) return
+
+        this.belong.needFocus = {
+            card: prev
+        }
+    }
+
+    @action
+    navToPlantDown(): void {
+        const next = this.getPlantNextCard()
+        if (!next) return
+
+        this.belong.needFocus = {
+            card: next
+        }
+    }
 
     @action
     moveLevelDown(): void {
@@ -162,6 +187,77 @@ export class CardStore {
                 cardId: this.id
             }
         })
+    }
+
+    @action
+    async deleteAt(pos: number): Promise<number | null> {
+        if (pos === 0) {
+            this.backToPlantUp()
+            return null
+        } else {
+            const arr = this.content.split('')
+            arr.splice(pos - 1, 1)
+            this.changeContent(arr.join(''))
+            return pos - 1
+        }
+    }
+
+    @action
+    backToPlantUp(): void {
+        const [, idx] = this.getHomesAndIdx()
+        if (this.level === 1 && idx === 0) {
+            return
+        }
+
+        let to: CardStore
+        if (idx === 0) {
+            to = this.parent!
+        } else {
+            to = this.getPlantPrevCard()!
+        }
+
+        for (const c of this.childrens) {
+            c.parent = to
+        }
+        to.childrens = to.childrens.concat(this.childrens)
+        this.removeSelfFormParent()
+
+        // 计算光标位置
+        const toContent = to.content
+        const cnt = toContent.length
+        to.changeContent(toContent + this.content)
+        this.belong.needFocus = {
+            card: to,
+            pos: cnt
+        }
+    }
+
+    private getPlantPrevCard(): CardStore | null {
+        const plantCards = this.getRootPlantCardList()
+        const idx = plantCards.findIndex(c => c === this)
+        if (idx === -1) {
+            throw new Error('idx不应当为-1')
+        }
+
+        if (idx === 0) {
+            return null
+        }
+
+        return plantCards[idx - 1]
+    }
+
+    private getPlantNextCard(): CardStore | null {
+        const plantCards = this.getRootPlantCardList()
+        const idx = plantCards.findIndex(c => c === this)
+        if (idx === -1) {
+            throw new Error('idx不应当为-1')
+        }
+
+        if (idx === plantCards.length - 1) {
+            return null
+        }
+
+        return plantCards[idx + 1]
     }
 
     private getPrevCard(): CardStore | null {
@@ -239,10 +335,51 @@ export class CardStore {
         return [homes, currIdx]
     }
 
+
     private removeSelfFormParent(): void {
         const [homes, idx] = this.getHomesAndIdx()
 
         homes.splice(idx, 1)
     }
+
+    getSubPlantCardList(): CardStore[] {
+        let arr: CardStore[] = []
+
+        for (const card of this.childrens) {
+            arr = arr.concat([card], card.getSubPlantCardList())
+        }
+
+        return arr
+    }
+
+    getSiblingPlantCardList(): CardStore[] {
+        let arr: CardStore[] = []
+
+        let siblings: CardStore[]
+        if (this.parent) {
+            siblings = this.parent.childrens
+        } else {
+            siblings = this.belong.cards
+        }
+
+        for (const card of siblings) {
+            arr = arr.concat([card], card.getSubPlantCardList())
+        }
+
+        return arr
+    }
+
+    getRootPlantCardList(): CardStore[] {
+        let arr: CardStore[] = []
+
+        let siblings = this.belong.cards
+
+        for (const card of siblings) {
+            arr = arr.concat([card], card.getSubPlantCardList())
+        }
+
+        return arr
+    }
+
 
 }

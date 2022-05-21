@@ -9,9 +9,16 @@ interface MinTopic {
     id: number
     title: string
     cards: MinCard[]
+
     [propName: string]: any
 }
 
+interface NeedFocusInfo {
+    
+        card: CardStore
+        pos?: number
+    
+}
 export class TopicStore {
     id!: number;
 
@@ -20,6 +27,9 @@ export class TopicStore {
 
     @observable
     cards!: CardStore[];
+
+    @observable
+    needFocus?: NeedFocusInfo
 
 
     constructor(_topic: MinTopic) {
@@ -37,6 +47,16 @@ export class TopicStore {
     @action
     changeTitle() {
         this.title = "i changeed"
+    }
+
+    @action
+    clearNeedFocus() {
+        this.needFocus = undefined
+    }
+
+    @action
+    setNeedFocus(need: NeedFocusInfo) {
+        this.needFocus = need
     }
 
     @action

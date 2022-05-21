@@ -1,16 +1,17 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { NodeDtoSort, Order } from 'src/graphql/model';
 import { Repository } from 'typeorm';
 import { Topic } from '../entity/topic.entity';
+import { BaseSort, Order } from '../enum/common'
 @Injectable()
 export class TopicService {
+
   constructor(
     @InjectRepository(Topic)
     private topicRepository: Repository<Topic>
   ) {}
 
-  findAll(sort: NodeDtoSort = NodeDtoSort.createDate
+  findAll(sort: BaseSort = BaseSort.id
         , order: Order = Order.DESC
         , limit: number = 10
         , search: string): Promise<Topic[]> {
@@ -37,11 +38,7 @@ export class TopicService {
     return this.topicRepository.findOneBy({id: id});
   }
 
-//   findOne(id: string): Promise<Topic> {
-//     return this.topicRepository.findOne(id);
-//   }
-
-//   async remove(id: string): Promise<void> {
-//     await this.topicRepository.delete(id);
-//   }
+  findOneByTitle(title: string) {
+    return this.topicRepository.findOneBy({title});
+  }
 }

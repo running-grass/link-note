@@ -1,14 +1,12 @@
-import { ArgsType, Field, Int, registerEnumType } from '@nestjs/graphql';
-import { NodeDtoSort, Order } from 'src/graphql/model';
-
-
-registerEnumType(NodeDtoSort, { name: "NodeDtoSort" });
-registerEnumType(Order, { name: "Order" });
+import { ArgsType, Field, Int } from '@nestjs/graphql';
+import { BaseSort, Order } from 'src/enum/common';
 
 @ArgsType()
 export class TopicsArgs {
-    @Field(type => NodeDtoSort, { nullable: true })
-    sort?: NodeDtoSort = NodeDtoSort.createDate;
+    @Field(type => BaseSort, {
+        nullable: true 
+    })
+    sort?: BaseSort = BaseSort.createAt;
 
     @Field(type => Order, {
         description: "正序或者倒序",

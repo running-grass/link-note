@@ -1,0 +1,17 @@
+import { SdkType, getSdk } from "./generated/apollo";
+
+import { ApolloClient, InMemoryCache } from "@apollo/client";
+
+
+export const client = new ApolloClient({
+  uri: "http://localhost:4000/graphql",
+  cache: new InMemoryCache(),
+  defaultOptions: {
+    watchQuery: {
+      fetchPolicy: 'network-only',
+    }
+  }
+});
+
+
+export const sdk: SdkType = getSdk(client);

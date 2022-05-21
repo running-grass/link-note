@@ -1,28 +1,15 @@
-import { Column, CreateDateColumn, DeleteDateColumn, Entity, Index, JoinTable, ManyToMany, PrimaryGeneratedColumn, TableInheritance, UpdateDateColumn, VersionColumn } from "typeorm";
+import { Entity, JoinTable, ManyToMany, OneToMany, TableInheritance } from "typeorm";
+import { Base } from "./base.entity";
+import { Card } from "./card.entity";
 import { Topic } from "./topic.entity";
-
 @Entity()
 @TableInheritance({ column: { type: "varchar", name: "type" } })
-export class Node {
-    @PrimaryGeneratedColumn()
-    id: number;
-
-    @CreateDateColumn()
-    @Index()
-    createDate: Date;
-
-    @UpdateDateColumn()
-    @Index()
-    updateDate: Date;
-
-    @DeleteDateColumn()   
-    @Index()
-    deletedDate: Date
-
-    @VersionColumn()
-    version: number
-
-    @ManyToMany(() => Topic)
+export class Node extends Base {
+    @ManyToMany(() => Node)
     @JoinTable()
-    topics: Topic[]
+    tags: Node[]
+
+    @OneToMany(() => Card, (card) => card.belong, {
+    })
+    cards: Card[]
 }

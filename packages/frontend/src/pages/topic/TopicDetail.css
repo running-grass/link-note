@@ -1,0 +1,35 @@
+h2 {
+    padding-left: 20px;
+}
+
+.card-tree {
+    padding-left: 20px;
+}
+
+.card-header {
+    min-height: 22px;
+    outline: none;
+    border: none;
+    width: 100%;
+
+    position: relative;
+}
+
+.card-header:focus{
+    background: #eeeeee;
+}
+/* 
+.card-tree::before {
+    content: " 2333";
+    width: 3px;
+    height: 3px;
+    border-radius: 50%;
+
+    display: inline-block;
+
+    background-color: #dddddd;
+
+    position: absolute;
+    left: -10px;
+    top: 3px;
+} */

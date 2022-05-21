@@ -1,0 +1,56 @@
+@startuml 
+abstract Node {
+    int id
+    date createDate
+    date updateDate
+    int version
+    [Topic] tags
+}
+
+
+class Topic {
+    string title
+}
+
+abstract File {
+
+}
+
+class Image {
+
+}
+
+class Audio {
+
+}
+
+class Video {
+
+}
+
+class Folder {
+    Folder parent
+    string folderName
+}
+
+
+Node <|-- Topic
+Node <|-- Folder
+Node <|-- File
+
+File <|-- Image
+File <|-- Audio
+File <|-- Video
+
+
+class Card {
+    int id
+    string content
+    Card parent
+    Node host
+}
+
+Card "0..n" --> "1" Node
+
+
+@enduml

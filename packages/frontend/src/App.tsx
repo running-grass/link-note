@@ -1,51 +1,65 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import "./App.css";
-import {
-  useFindTopicsQuery,
-  useCreateTopicMutation,
-  useFindTopicsLazyQuery,
-} from "./generated/graphql";
+import { Link, Route, Routes, useNavigate } from "react-router-dom";
 
-import { List, Input, AutoComplete } from "antd";
+import { Topiclist } from './pages/topiclist/Topiclist';
+import { TopicDetail } from './pages/topic/TopicDetail';
+import { AutoComplete } from "antd";
+import { useCreateTopicMutation, useFindTopicsLazyQuery } from "./generated/graphql";
+
 
 const Option = AutoComplete.Option;
-function App() {
-  const { data, refetch } = useFindTopicsQuery();
+
+
+export default function App() {
   const [createTopicMutation] = useCreateTopicMutation();
 
-  const [_, { data: optionData, loading: searchLoading, refetch: searchTopics }] =
+  const [searchTopics, { data }] =
     useFindTopicsLazyQuery();
 
+  // 最后一次search的keyword
   const [prevKeyword, setKeyword] = useState<string>("");
+
+  let navigate = useNavigate();
+
 
   const onSearch = (keyword: string) => {
     setKeyword(keyword);
     searchTopics({
-       search: keyword ,
+      variables: {
+        search: keyword,
+      }
     });
   };
 
-  const onSelect = async (value:any, obj: { key: string, value: string}) => {
-    if (obj.key === 'new') {
+  const onSelect = async (value: any, obj: { key: string; value: string }) => {
+
+    setKeyword(obj.value);
+
+    if (obj.key === "new") {
       // 创建新主题
-      await createTopicMutation({ variables: { title: obj.value} });
-      await refetch();
-    } else {
-      console.log(value);
+      await createTopicMutation({ variables: { title: obj.value } });
     }
+
+    navigate('/topic/'+obj.value);
   };
 
-  const hasEq = optionData?.topics.some((it) => it.title === prevKeyword);
+  const existed = data?.topics.some((it) => it.title === prevKeyword);
+  
   return (
     <div className="App">
+      {/* <h1>Welcome to Link Note!</h1> */}
+
       <AutoComplete
         placeholder="搜索或创建新主题"
         style={{ width: "100%" }}
         onSelect={onSelect}
         onSearch={onSearch}
-        onDropdownVisibleChange={open => open ? onSearch(prevKeyword): null}
+        // onDropdownVisibleChange={(open) =>
+        //   open ? onSearch(prevKeyword) : null
+        // }
       >
-        {hasEq ? (
+        {existed ? (
           <Option key={"kw" + prevKeyword} value={prevKeyword}>
             {prevKeyword}
           </Option>
@@ -53,25 +67,23 @@ function App() {
           <Option key="new" value={prevKeyword}>
             【创建】{prevKeyword}
           </Option>
-        ) : // <div>{prevKeyword} 创建一个？</div>
-        null}
-        {optionData?.topics
+        ) : null}
+        
+        {data?.topics
           ?.filter((item) => item.title !== prevKeyword)
           .map((item) => (
             <Option key={item?.id} value={item?.title}>
-              {item?.title}
+              <Link to={`/topic/${item?.title}`}> {item?.title}</Link>
             </Option>
           ))}
       </AutoComplete>
       <br />
       <br />
-      <List
-        bordered
-        dataSource={data?.topics ?? []}
-        renderItem={(item) => <List.Item>{item?.title}</List.Item>}
-      />
+      
+      <Routes>
+        <Route path="/" element={<Topiclist />} />
+        <Route path="topic/:title" element={<TopicDetail />} />
+      </Routes>
     </div>
   );
 }
-
-export default App;

@@ -1,6 +1,5 @@
 {
     "recommendations": [
-        "nwolverson.ide-purescript",
-        "nwolverson.language-purescript"
+        "jebbs.plantuml"
     ]
 }

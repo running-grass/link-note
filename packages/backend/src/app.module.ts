@@ -10,6 +10,7 @@ import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
 import { ApolloServerPluginLandingPageLocalDefault } from 'apollo-server-core';
 import  { join } from 'path';
 import { ServeStaticModule } from '@nestjs/serve-static';
+import { ConfigModule } from '@nestjs/config';
 
 @Module({
   imports: [
@@ -35,6 +36,9 @@ import { ServeStaticModule } from '@nestjs/serve-static';
     }),
     ServeStaticModule.forRoot({
       rootPath: join(__dirname, 'frontend-root'),
+    }),
+    ConfigModule.forRoot({
+      isGlobal: true
     }),
     TopicModule,
     CardModule,

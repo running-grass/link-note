@@ -9,7 +9,7 @@ import { GraphQLModule } from '@nestjs/graphql';
 import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
 import { ApolloServerPluginLandingPageLocalDefault } from 'apollo-server-core';
 import  { join } from 'path';
-
+import { ServeStaticModule } from '@nestjs/serve-static';
 
 @Module({
   imports: [
@@ -22,17 +22,19 @@ import  { join } from 'path';
       migrations: [],
       subscribers: [],
       autoLoadEntities: true,
-
-      // entities: ["./**/entity/*.js"]
     }),
     GraphQLModule.forRoot<ApolloDriverConfig>({
       driver: ApolloDriver,
       debug: true,
-      // typePaths: ['./**/*.graphql'],
+      path: '/api/graphql',
       playground: false,
+      
       plugins: [ApolloServerPluginLandingPageLocalDefault()],
       
       autoSchemaFile: join(process.cwd(), 'generated/schema.gql'),
+    }),
+    ServeStaticModule.forRoot({
+      rootPath: join(__dirname, 'frontend-root'),
     }),
     TopicModule,
     CardModule,

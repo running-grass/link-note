@@ -28,7 +28,6 @@ export const TopicDetail = observer(() => {
     }
   }, [topicStore]);
 
-  自动保存
   useEffect(() => {
     const timer = setInterval(() => {
       topicStore?.updateCardsToServer();

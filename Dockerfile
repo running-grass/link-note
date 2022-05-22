@@ -7,7 +7,7 @@ ENV LINK_NOTE_VERSION 0.0.1
 
 COPY pnpm-lock.yaml /pnpm/
 WORKDIR /pnpm
-RUN pnpm fetch
+RUN pnpm fetch -P
 
 
 COPY . /build/

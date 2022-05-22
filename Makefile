@@ -34,16 +34,16 @@ build: build-backend build-frontend
 	cp ./pnpm-lock.yaml ${OUTPUT}/
 	cp ./.npmrc ${OUTPUT}/
 
-docker-build: build
+docker-build: 
 	docker build .
 
-docker-build-dev: build
+docker-build-dev: 
 	docker build -t ghcr.io/link-note/link-note:dev	 .
 docker-push-dev: docker-build-dev
 	docker push ghcr.io/link-note/link-note:dev
 	docker push leo1992/link-note:dev
 
-heroku-push: build
+heroku-push: 
 	heroku container:push web --app=link-note
 
 heroku-release: heroku-push

@@ -1,0 +1,10 @@
+*
+
+!packages
+!.npmrc
+!Makefile
+!packages.json
+!pnpm-lock.yaml
+!pnpm-workspace.yaml
+!tsconfig.build.json
+!tsconfig.json

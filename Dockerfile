@@ -5,17 +5,19 @@ RUN curl -f https://get.pnpm.io/v6.16.js | node - add --global pnpm
 
 ENV LINK_NOTE_VERSION 0.0.1
 
+COPY pnpm-lock.yaml /pnpm/
+WORKDIR /pnpm
+RUN pnpm fetch
+
+
+COPY . /build/
+WORKDIR /build
+RUN pnpm i --offline -r 
+RUN make build
+
+RUN cp -r /build/dist /link-note
 WORKDIR /link-note
 
-
-COPY ./dist/.npmrc /link-note/
-COPY ./dist/pnpm-lock.yaml /link-note/
-RUN pnpm fetch --prod
-
-COPY ./dist /link-note
-
-WORKDIR /link-note
-RUN pnpm install --prod
 
 CMD pnpm run start:prod
 

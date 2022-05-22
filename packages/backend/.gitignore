@@ -38,4 +38,3 @@ lerna-debug.log*
 *.db
 
 # 生成的文件
-# src/graphql.ts

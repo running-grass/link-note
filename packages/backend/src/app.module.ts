@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { TypeOrmModule } from '@nestjs/typeorm';
+import { TypeOrmModule, TypeOrmModuleOptions } from '@nestjs/typeorm';
 import { TopicModule } from './topic/topic.module';
 import { CardModule } from './card/card.module';
 
@@ -9,30 +9,56 @@ import { GraphQLModule } from '@nestjs/graphql';
 import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
 import { ApolloServerPluginLandingPageLocalDefault } from 'apollo-server-core';
 import  { join } from 'path';
+import { ServeStaticModule } from '@nestjs/serve-static';
+import { ConfigModule } from '@nestjs/config';
 
+import { configuration } from './configuration'
 
+const otherConfig = {
+  synchronize: process.env.NODE_ENV === 'development',
+  logging: process.env.NODE_ENV === 'development',
+  migrations: [],
+  subscribers: [],
+  autoLoadEntities: true,
+}
+
+let ormConfig
+switch (process.env.DB_TYPE) {
+  case 'sqlite':
+    ormConfig = {
+      type: 'sqlite',
+      database: process.env.DB_SQLITE_DATABASE,
+    }
+    break
+  case 'mysql':
+    ormConfig = {
+      type: 'mysql',
+      url: process.env.DB_MYSQL_URL
+    }
+    break
+  default:
+    throw new Error('您配置的DB_TYPE有误')
+}
 @Module({
   imports: [
     TypeOrmModule.forRoot({
-      type: 'sqlite',
-      database: './link-note.db',
-
-      synchronize: true,
-      logging: true,
-      migrations: [],
-      subscribers: [],
-      autoLoadEntities: true,
-
-      // entities: ["./**/entity/*.js"]
+      ...ormConfig,
+      ...otherConfig,
     }),
     GraphQLModule.forRoot<ApolloDriverConfig>({
       driver: ApolloDriver,
       debug: true,
-      // typePaths: ['./**/*.graphql'],
+      path: '/api/graphql',
       playground: false,
       plugins: [ApolloServerPluginLandingPageLocalDefault()],
-      
-      autoSchemaFile: join(process.cwd(), 'generated/schema.gql'),
+      autoSchemaFile: join(__dirname, 'generated/schema.gql'),
+    }),
+    ServeStaticModule.forRoot({
+      rootPath: join(__dirname, '..', 'frontend-root'),
+    }),
+    ConfigModule.forRoot({
+      load: [configuration],
+      isGlobal: true
     }),
     TopicModule,
     CardModule,

@@ -1,5 +1,13 @@
 {
     "recommendations": [
-        "jebbs.plantuml"
+        "jebbs.plantuml",
+        "nwolverson.ide-purescript",
+        "nwolverson.language-purescript",
+        "ms-azuretools.vscode-docker",
+        "p1c2u.docker-compose",
+        "ms-ceintl.vscode-language-pack-zh-hans",
+        "visualstudioexptteam.vscodeintellicode",
+        "graphql.vscode-graphql",
+        "christian-kohler.path-intellisense"
     ]
 }

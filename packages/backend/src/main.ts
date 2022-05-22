@@ -5,7 +5,9 @@ import './graphql/registerEnum';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  await app.listen(4000);
+  app.setGlobalPrefix('api')
+
+  await app.listen(process.env.PORT);
 }
 
 bootstrap();

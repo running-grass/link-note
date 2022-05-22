@@ -43,6 +43,12 @@ docker-push-dev: docker-build-dev
 	docker push ghcr.io/link-note/link-note:dev
 	docker push leo1992/link-note:dev
 
+heroku-push: build
+	heroku --app=link-note container:push web
+
+heroku-release: heroku-push
+	heroku --app=link-note container:release web
+
 # .PHONY: test
 # .PHONY: dev
 # .PHONY: watch

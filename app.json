@@ -1,0 +1,8 @@
+{
+    "name": "link note",
+    "description": "A notebook for anything",
+    "repository": "https://github.com/link-note/link-note",
+    "logo": "https://node-js-sample.herokuapp.com/node.png",
+    "keywords": ["node", "note", "static"],
+    "image": "leo1992/link-note"
+  }

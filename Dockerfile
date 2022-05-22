@@ -7,12 +7,12 @@ ENV LINK_NOTE_VERSION 0.0.1
 
 COPY pnpm-lock.yaml /pnpm/
 WORKDIR /pnpm
-RUN pnpm fetch --prod
+RUN pnpm fetch
 
 
 COPY . /build/
 WORKDIR /build
-RUN pnpm i --prod
+RUN pnpm i
 RUN make build
 
 RUN cp -r /build/dist /link-note

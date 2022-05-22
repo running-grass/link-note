@@ -16,7 +16,7 @@ OUTPUT = dist
 help:
 	echo "help me"
 install-deps:
-	pnpm install --prod
+	pnpm install
 
 build-backend: install-deps
 	cd ${BACKEND} && pnpm run build

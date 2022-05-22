@@ -48,6 +48,9 @@ pnpm run -r codegen   # pnpm run -r watch:codegen
 
 
 ## 生产环境不是
-
-暂无
-
+1. 安装node14+和pnpm
+2. 在项目根目录执行`make build`
+3. 拷贝dist目录至服务器
+4. 在服务器的dist中执行pnpm i -P 安装生产环境的依赖
+   可以更改.env文件配置数据库连接及端口
+5. 执行`pnpm run start:prod`

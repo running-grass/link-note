@@ -44,10 +44,10 @@ docker-push-dev: docker-build-dev
 	docker push leo1992/link-note:dev
 
 heroku-push: build
-	heroku --app=link-note container:push web
+	heroku container:push web --app=link-note
 
 heroku-release: heroku-push
-	heroku --app=link-note container:release web
+	heroku container:release web --app=link-note
 
 # .PHONY: test
 # .PHONY: dev

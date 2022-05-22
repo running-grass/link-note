@@ -1,3 +1,8 @@
+
+![Docker Image Size (latest by date)](https://img.shields.io/docker/image-size/leo1992/link-note?sort=date)
+
+![GitHub commit activity](https://img.shields.io/github/commit-activity/m/link-note/link-note)
+
 # 愿景
 致力于打造一个All In System的产品。已主题为圆心向外进行功能辐射。笔记卡片作为第一个圈。文件、文件夹、图片、音频、视频处在第二圈。pdf阅读、习惯打卡、任务管理、RSS订阅等处在第三圈。强调连接的重要性，把所有能连接的事物通过主题连接起来。打造第二大脑。
 

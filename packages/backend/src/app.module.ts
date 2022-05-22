@@ -15,7 +15,7 @@ import { ConfigModule } from '@nestjs/config';
 import { configuration } from './configuration'
 
 const otherConfig = {
-  synchronize: process.env.NODE_ENV === 'development',
+  synchronize: true, // TODO 0.1版本的时候关掉
   logging: process.env.NODE_ENV === 'development',
   migrations: [],
   subscribers: [],

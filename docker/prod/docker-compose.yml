@@ -1,0 +1,11 @@
+version: '3'
+services:
+  app:
+    image: ghcr.io/link-note/link-note
+    ports:
+      - 14000:4000
+    environment:
+      - DB_TYPE=sqlite
+      - DB_SQLITE_DAYABASE=/link-note/data/link-note.db
+    volumes:
+      - .local:/link-note/data

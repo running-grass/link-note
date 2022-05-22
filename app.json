@@ -2,5 +2,5 @@
     "name": "link note",
     "description": "A notebook for anything",
     "repository": "https://github.com/link-note/link-note",
-    "image": "link-note/web"
+    "stack": "container"
   }

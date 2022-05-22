@@ -39,3 +39,5 @@ lerna-debug.log*
 
 # 生成的文件
 # src/graphql.ts
+
+frontend-root

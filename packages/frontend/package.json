@@ -5,6 +5,7 @@
   "dependencies": {
     "@apollo/client": "^3.6.2",
     "antd": "^4.20.4",
+    "eslint-config-react-app": "6",
     "graphql": "^16.5.0",
     "graphql-tag": "^2.12.6",
     "hotkeys-js": "^3.9.3",

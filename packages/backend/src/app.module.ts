@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { TypeOrmModule } from '@nestjs/typeorm';
+import { TypeOrmModule, TypeOrmModuleOptions } from '@nestjs/typeorm';
 import { TopicModule } from './topic/topic.module';
 import { CardModule } from './card/card.module';
 
@@ -23,16 +23,15 @@ import { ConfigModule } from '@nestjs/config';
       migrations: [],
       subscribers: [],
       autoLoadEntities: true,
-    }),
+    }
+    ),
     GraphQLModule.forRoot<ApolloDriverConfig>({
       driver: ApolloDriver,
       debug: true,
       path: '/api/graphql',
       playground: false,
-      
       plugins: [ApolloServerPluginLandingPageLocalDefault()],
-      
-      autoSchemaFile: join(process.cwd(), 'generated/schema.gql'),
+      autoSchemaFile: join(__dirname, 'generated/schema.gql'),
     }),
     ServeStaticModule.forRoot({
       rootPath: join(__dirname, 'frontend-root'),

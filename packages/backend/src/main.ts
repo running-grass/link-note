@@ -7,8 +7,7 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.setGlobalPrefix('api')
 
-  await app.listen(process.env.APP_PORT);
-  
+  await app.listen(process.env.PORT);
 }
 
 bootstrap();

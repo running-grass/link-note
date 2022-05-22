@@ -4,7 +4,13 @@ mkShell {
   buildInputs = [
     # javascript
     nodejs-18_x
-    direnv
     nodePackages_latest.pnpm
+
+    direnv
+
+
+    # 部署docker使用
+    gh
+    heroku
   ];
 }

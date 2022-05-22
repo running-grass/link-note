@@ -12,7 +12,7 @@ RUN pnpm fetch
 
 COPY . /build/
 WORKDIR /build
-RUN pnpm i --offline -r 
+RUN pnpm i --offline -r -P
 RUN make build
 
 RUN cp -r /build/dist /link-note

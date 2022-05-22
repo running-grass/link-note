@@ -18,6 +18,7 @@ RUN make build
 RUN cp -r /build/dist /link-note
 WORKDIR /link-note
 
+RUN pnpm i
 
 CMD pnpm run start:prod
 

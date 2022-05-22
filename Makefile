@@ -9,7 +9,7 @@ BACKEND = packages/backend
 BACKEND_DIST = packages/backend/dist
 FRONTEND_DIST = packages/frontend/build
 
-BACKEND_DIST_FRONT_ROOT = frontend_root
+BACKEND_DIST_FRONT_ROOT = frontend-root
 
 OUTPUT = dist
 
@@ -32,7 +32,16 @@ build: build-backend build-frontend
 	cp ${BACKEND}/package.json ${OUTPUT}/
 	cp ${BACKEND}/.env ${OUTPUT}/
 	cp ./pnpm-lock.yaml ${OUTPUT}/
+	cp ./.npmrc ${OUTPUT}/
 
+docker-build: build
+	docker build .
+
+docker-build-dev: build
+	docker build -t ghcr.io/link-note/link-note:dev	 .
+docker-push-dev: docker-build-dev
+	docker push ghcr.io/link-note/link-note:dev
+	docker push leo1992/link-note:dev
 
 # .PHONY: test
 # .PHONY: dev

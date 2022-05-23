@@ -8,11 +8,7 @@
         {
             "type": "pwa-node",
             "request": "launch",
-<<<<<<< Updated upstream
             "name": "启动后端",
-=======
-            "name": "Launch via NPM",
->>>>>>> Stashed changes
             "runtimeExecutable": "pnpm",
             "runtimeArgs": [
                 "run",

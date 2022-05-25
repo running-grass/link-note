@@ -21,15 +21,15 @@ export class User {
     version: number
 
     // TODO 不能和email、phone的规则重叠
-    @Index()
+    @Index({ unique: true })
     @Column()
     username: string
 
-    @Column()
-    @Index()
+    @Column({ nullable: true})
+    @Index({ unique: true })
     email?: string
 
-    @Column()
-    @Index()
+    @Column({ nullable: true})
+    @Index({ unique: true})
     phone?: string
 }

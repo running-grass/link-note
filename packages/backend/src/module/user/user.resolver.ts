@@ -1,7 +1,8 @@
-import { Args, Int, Mutation, Parent, Query, ResolveField, Resolver } from "@nestjs/graphql";
+import { Resolver } from "@nestjs/graphql";
+import { UserDto } from "src/graphql/model";
 
 
-@Resolver()
+@Resolver(of => UserDto)
 export class UserResolver {
   constructor(
   ) {}

@@ -103,3 +103,13 @@ export const MUTATION_DELETE_CARD = gql`
     deleteCard(cardId: $cardId)
   }
 `
+
+export const MUTATION_REGISTER_USER = gql`
+  mutation registerUser($registerData: RegisterInput! ) 
+  {
+    registerUser(registerData: $registerData) {
+      id
+      username
+    }
+  }
+`

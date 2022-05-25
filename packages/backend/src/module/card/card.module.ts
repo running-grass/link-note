@@ -8,7 +8,6 @@ import { CardService } from './card.service';
 @Module({
   imports: [TypeOrmModule.forFeature([Card]), forwardRef(() => TopicModule)],
   providers: [CardService, CardResolver],
-  controllers: [],
   exports: [TypeOrmModule, CardService]
 })
 export class CardModule {}

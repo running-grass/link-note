@@ -61,6 +61,7 @@ export type Mutation = {
   createTopic: TopicDto;
   /** 删除指定的card */
   deleteCard: Scalars['Int'];
+  registerUser: UserDto;
   /** 传入一个有序的CardDTO树，更新数据库中的leftId和parentId */
   updateCards: Scalars['Int'];
 };
@@ -78,6 +79,11 @@ export type MutationCreateTopicArgs = {
 
 export type MutationDeleteCardArgs = {
   cardId: Scalars['Int'];
+};
+
+
+export type MutationRegisterUserArgs = {
+  registerData: RegisterInput;
 };
 
 
@@ -112,6 +118,13 @@ export type QueryTopicsArgs = {
   sort?: InputMaybe<BaseSort>;
 };
 
+export type RegisterInput = {
+  email: Scalars['String'];
+  password: Scalars['String'];
+  phone: Scalars['String'];
+  username: Scalars['String'];
+};
+
 /** 主题的DTO */
 export type TopicDto = {
   __typename?: 'TopicDto';
@@ -120,6 +133,15 @@ export type TopicDto = {
   id: Scalars['Int'];
   title: Scalars['String'];
   updateAt: Scalars['DateTime'];
+};
+
+/** 用户信息 */
+export type UserDto = {
+  __typename?: 'UserDto';
+  email?: Maybe<Scalars['String']>;
+  id: Scalars['Float'];
+  phone?: Maybe<Scalars['String']>;
+  username: Scalars['String'];
 };
 
 export type CardDtoFieldsFragment = { __typename?: 'CardDto', id: number, content: string, cardType: CardType, leftId?: number | null };
@@ -173,6 +195,13 @@ export type DeleteCardMutationVariables = Exact<{
 
 
 export type DeleteCardMutation = { __typename?: 'Mutation', deleteCard: number };
+
+export type RegisterUserMutationVariables = Exact<{
+  registerData: RegisterInput;
+}>;
+
+
+export type RegisterUserMutation = { __typename?: 'Mutation', registerUser: { __typename?: 'UserDto', id: number, username: string } };
 
 export const CardDtoFieldsFragmentDoc = gql`
     fragment CardDtoFields on CardDto {
@@ -428,3 +457,37 @@ export function useDeleteCardMutation(baseOptions?: Apollo.MutationHookOptions<D
 export type DeleteCardMutationHookResult = ReturnType<typeof useDeleteCardMutation>;
 export type DeleteCardMutationResult = Apollo.MutationResult<DeleteCardMutation>;
 export type DeleteCardMutationOptions = Apollo.BaseMutationOptions<DeleteCardMutation, DeleteCardMutationVariables>;
+export const RegisterUserDocument = gql`
+    mutation registerUser($registerData: RegisterInput!) {
+  registerUser(registerData: $registerData) {
+    id
+    username
+  }
+}
+    `;
+export type RegisterUserMutationFn = Apollo.MutationFunction<RegisterUserMutation, RegisterUserMutationVariables>;
+
+/**
+ * __useRegisterUserMutation__
+ *
+ * To run a mutation, you first call `useRegisterUserMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useRegisterUserMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [registerUserMutation, { data, loading, error }] = useRegisterUserMutation({
+ *   variables: {
+ *      registerData: // value for 'registerData'
+ *   },
+ * });
+ */
+export function useRegisterUserMutation(baseOptions?: Apollo.MutationHookOptions<RegisterUserMutation, RegisterUserMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useMutation<RegisterUserMutation, RegisterUserMutationVariables>(RegisterUserDocument, options);
+      }
+export type RegisterUserMutationHookResult = ReturnType<typeof useRegisterUserMutation>;
+export type RegisterUserMutationResult = Apollo.MutationResult<RegisterUserMutation>;
+export type RegisterUserMutationOptions = Apollo.BaseMutationOptions<RegisterUserMutation, RegisterUserMutationVariables>;

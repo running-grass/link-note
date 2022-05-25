@@ -1,4 +1,4 @@
-import { Column, CreateDateColumn, DeleteDateColumn, Entity, Index, JoinColumn, OneToOne, PrimaryColumn, PrimaryGeneratedColumn, UpdateDateColumn, VersionColumn } from "typeorm";
+import { Column, Entity, Index, JoinColumn, OneToOne, PrimaryGeneratedColumn, UpdateDateColumn, VersionColumn } from "typeorm";
 import { User } from "./user.entity";
 
 @Entity()
@@ -13,6 +13,7 @@ export class Auth {
     @JoinColumn({
         name: "uid"
     })
+    @Index({unique: true})
     user: User;
 
     @UpdateDateColumn()

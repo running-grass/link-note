@@ -1,6 +1,5 @@
-import { ArgsType, Field, InputType, Int } from '@nestjs/graphql';
-import { BaseSort, CardType, Order } from 'src/enum/common';
-import { CardDto } from 'src/graphql/model';
+import { Field, InputType, Int } from '@nestjs/graphql';
+import { CardType } from 'src/enum/common';
 
 @InputType()
 export class CardCreateInput {

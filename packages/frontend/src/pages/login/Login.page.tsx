@@ -17,12 +17,13 @@ export const LoginPage = () => {
         password: values.password,
       })
       if (status === 200 || status === 201) {
-        alert('登录成功')
+        localStorage.setItem('access_token', data.access_token)
+        // alert('登录成功')
       } else {
         alert(statusText)
       }
     } catch {
-      alert('登录失败')
+      console.error('登录失败')
     }
   }, [])
 

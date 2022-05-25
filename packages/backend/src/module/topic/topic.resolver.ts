@@ -8,6 +8,7 @@ import { UseGuards } from "@nestjs/common";
 import { GqlAuthGuard } from "../auth/gql.guard";
 
 @Resolver(of => TopicDto)
+@UseGuards(GqlAuthGuard)
 export class TopicResolver {
   constructor(
     private topicService: TopicService,
@@ -29,7 +30,6 @@ export class TopicResolver {
   @Query(returns => [TopicDto!]!, {
     description: "查询主题列表"
   })
-  @UseGuards(GqlAuthGuard)
   async topics(@Args() args: TopicsArgs) {      
     return await this.topicService.findAll(args.sort, args.order, args.limit, args.search);
   }

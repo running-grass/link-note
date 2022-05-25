@@ -1,26 +1,28 @@
 import { Form, Input, Button } from "antd";
 import { useCallback } from "react";
 import { useNavigate } from "react-router-dom";
+import axios  from 'axios'
+
+
 import { sdk } from "../../apollo";
-import { RegisterInput } from "../../generated/graphql";
+
 
 export const LoginPage = () => {
   let navigate = useNavigate();
 
   const onFinish = useCallback(async (values: any) => {
-    const inputData: RegisterInput = {
-      username: values.username,
-      password: values.password,
-      email: values.email,
-      phone: values.phone,
-    }
-    const {data} = await sdk.registerUserMutation({
-      variables: {
-        registerData: inputData
+    try {
+      const {data,status, statusText} = await axios.post("/api/auth/login", {
+        username: values.username,
+        password: values.password,
+      })
+      if (status === 200 || status === 201) {
+        alert('登录成功')
+      } else {
+        alert(statusText)
       }
-    });
-    if (data?.registerUser.id) {
-      alert('登录成功')
+    } catch {
+      alert('登录失败')
     }
   }, [])
 
@@ -53,5 +55,5 @@ export const LoginPage = () => {
         登录
       </Button>
     </Form.Item>
-  </Form> 
+  </Form>
 }

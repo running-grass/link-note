@@ -4,6 +4,8 @@ import { Topic } from "src/entity/topic.entity";
 import { CardDto, TopicDto } from "src/graphql/model";
 import { TopicsArgs } from "./dto/topicsArgs";
 import { TopicService } from "./topic.service";
+import { UseGuards } from "@nestjs/common";
+import { GqlAuthGuard } from "../auth/gql.guard";
 
 @Resolver(of => TopicDto)
 export class TopicResolver {
@@ -27,6 +29,7 @@ export class TopicResolver {
   @Query(returns => [TopicDto!]!, {
     description: "查询主题列表"
   })
+  @UseGuards(GqlAuthGuard)
   async topics(@Args() args: TopicsArgs) {      
     return await this.topicService.findAll(args.sort, args.order, args.limit, args.search);
   }

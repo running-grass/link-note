@@ -61,6 +61,7 @@ export type Mutation = {
   createTopic: TopicDto;
   /** 删除指定的card */
   deleteCard: Scalars['Int'];
+  login: UserDto;
   registerUser: UserDto;
   /** 传入一个有序的CardDTO树，更新数据库中的leftId和parentId */
   updateCards: Scalars['Int'];
@@ -79,6 +80,12 @@ export type MutationCreateTopicArgs = {
 
 export type MutationDeleteCardArgs = {
   cardId: Scalars['Int'];
+};
+
+
+export type MutationLoginArgs = {
+  password: Scalars['String'];
+  username: Scalars['String'];
 };
 
 
@@ -119,9 +126,9 @@ export type QueryTopicsArgs = {
 };
 
 export type RegisterInput = {
-  email: Scalars['String'];
+  email?: InputMaybe<Scalars['String']>;
   password: Scalars['String'];
-  phone: Scalars['String'];
+  phone?: InputMaybe<Scalars['String']>;
   username: Scalars['String'];
 };
 
@@ -202,6 +209,14 @@ export type RegisterUserMutationVariables = Exact<{
 
 
 export type RegisterUserMutation = { __typename?: 'Mutation', registerUser: { __typename?: 'UserDto', id: number, username: string } };
+
+export type LoginMutationVariables = Exact<{
+  username: Scalars['String'];
+  password: Scalars['String'];
+}>;
+
+
+export type LoginMutation = { __typename?: 'Mutation', login: { __typename?: 'UserDto', id: number, username: string } };
 
 export const CardDtoFieldsFragmentDoc = gql`
     fragment CardDtoFields on CardDto {
@@ -491,3 +506,38 @@ export function useRegisterUserMutation(baseOptions?: Apollo.MutationHookOptions
 export type RegisterUserMutationHookResult = ReturnType<typeof useRegisterUserMutation>;
 export type RegisterUserMutationResult = Apollo.MutationResult<RegisterUserMutation>;
 export type RegisterUserMutationOptions = Apollo.BaseMutationOptions<RegisterUserMutation, RegisterUserMutationVariables>;
+export const LoginDocument = gql`
+    mutation login($username: String!, $password: String!) {
+  login(username: $username, password: $password) {
+    id
+    username
+  }
+}
+    `;
+export type LoginMutationFn = Apollo.MutationFunction<LoginMutation, LoginMutationVariables>;
+
+/**
+ * __useLoginMutation__
+ *
+ * To run a mutation, you first call `useLoginMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useLoginMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [loginMutation, { data, loading, error }] = useLoginMutation({
+ *   variables: {
+ *      username: // value for 'username'
+ *      password: // value for 'password'
+ *   },
+ * });
+ */
+export function useLoginMutation(baseOptions?: Apollo.MutationHookOptions<LoginMutation, LoginMutationVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useMutation<LoginMutation, LoginMutationVariables>(LoginDocument, options);
+      }
+export type LoginMutationHookResult = ReturnType<typeof useLoginMutation>;
+export type LoginMutationResult = Apollo.MutationResult<LoginMutation>;
+export type LoginMutationOptions = Apollo.BaseMutationOptions<LoginMutation, LoginMutationVariables>;

@@ -1,9 +1,9 @@
 import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { TypeOrmModule, TypeOrmModuleOptions } from '@nestjs/typeorm';
-import { TopicModule } from './topic/topic.module';
-import { CardModule } from './card/card.module';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { TopicModule } from './module/topic/topic.module';
+import { CardModule } from './module/card/card.module';
 
 import { GraphQLModule } from '@nestjs/graphql';
 import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
@@ -13,6 +13,8 @@ import { ServeStaticModule } from '@nestjs/serve-static';
 import { ConfigModule } from '@nestjs/config';
 
 import { configuration } from './configuration'
+import { UserModule } from './module/user/user.module';
+import { AuthModule } from './module/auth/auth.module';
 
 const otherConfig = {
   synchronize: true, // TODO 0.1版本的时候关掉
@@ -62,6 +64,8 @@ switch (process.env.DB_TYPE) {
     }),
     TopicModule,
     CardModule,
+    UserModule,
+    AuthModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -1,11 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { EntityManager, TreeRepository } from 'typeorm';
-import { Topic } from '../entity/topic.entity';
-import { Card } from '../entity/card.entity';
+import { Topic } from '../../entity/topic.entity';
+import { Card } from '../../entity/card.entity';
 
 // import assert from 'node:assert';
 
-import { CardType } from '../enum/common'
+import { CardType } from '../../enum/common'
 @Injectable()
 export class CardService {
   private cardRepository: TreeRepository<Card>

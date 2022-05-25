@@ -55,10 +55,14 @@ export const TopicDetail = observer(() => {
       return;
     }
 
-    el.focus();
-    if (needFocus.pos !== undefined) {
-      el.setSelectionRange(needFocus.pos, needFocus.pos);
+    if ( el  instanceof HTMLInputElement) {
+
+      el.focus();
+      if (needFocus.pos !== undefined) {
+        el.setSelectionRange(needFocus.pos, needFocus.pos);
+      }
     }
+
   }, [topicStore?.needFocus]);
 
   if (!title) {

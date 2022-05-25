@@ -31,6 +31,8 @@ export class TopicStore {
     @observable
     needFocus?: NeedFocusInfo
 
+    @observable
+    currentEditingCard?: CardStore
 
     constructor(_topic: MinTopic) {
         makeObservable(this)
@@ -56,7 +58,14 @@ export class TopicStore {
 
     @action
     setNeedFocus(need: NeedFocusInfo) {
+        this.setCurrentCard(need.card)
         this.needFocus = need
+    }
+
+    @action 
+    setCurrentCard(card?: CardStore) {
+        console.log('set curr', card)
+        this.currentEditingCard = card
     }
 
     @action

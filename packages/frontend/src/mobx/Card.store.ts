@@ -31,9 +31,14 @@ export class CardStore {
         this.parent = parent
         this.belong = belong
         this.cardType = _card.cardType
-
     }
 
+    @computed
+    get isEditing() {
+        console.log('isEditing', this.belong.currentEditingCard === this)
+
+        return this.belong.currentEditingCard === this;
+    }
 
     @computed
     get level() {
@@ -95,10 +100,10 @@ export class CardStore {
 
         homes.splice(currIdx + 1, 0, newCard)
 
-        this.belong.needFocus = {
+        this.belong.setNeedFocus({
             card: newCard,
             pos: 0
-        }
+        })
 
         return newCard
     }
@@ -148,9 +153,9 @@ export class CardStore {
         const prev = this.getPlantPrevCard()
         if (!prev) return
 
-        this.belong.needFocus = {
+        this.belong.setNeedFocus({
             card: prev
-        }
+        })
     }
 
     @action
@@ -158,9 +163,9 @@ export class CardStore {
         const next = this.getPlantNextCard()
         if (!next) return
 
-        this.belong.needFocus = {
+        this.belong.setNeedFocus({
             card: next
-        }
+        })
     }
 
     @action
@@ -226,10 +231,10 @@ export class CardStore {
         const toContent = to.content
         const cnt = toContent.length
         to.changeContent(toContent + this.content)
-        this.belong.needFocus = {
+        this.belong.setNeedFocus({
             card: to,
             pos: cnt
-        }
+        })
     }
 
     private getPlantPrevCard(): CardStore | null {

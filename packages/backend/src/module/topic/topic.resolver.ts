@@ -1,5 +1,5 @@
 import { Args, Int, Mutation, Parent, Query, ResolveField, Resolver } from "@nestjs/graphql";
-import { CardService } from "src/card/card.service";
+import { CardService } from "src/module/card/card.service";
 import { Topic } from "src/entity/topic.entity";
 import { CardDto, TopicDto } from "src/graphql/model";
 import { TopicsArgs } from "./dto/topicsArgs";

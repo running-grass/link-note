@@ -48,3 +48,19 @@ export class TopicDto extends NodeDto{
     @Field()
     title: string;
 }
+
+
+@ObjectType({ description: "用户信息"})
+export class UserDto {
+    @Field()
+    id: number
+
+    @Field()
+    username: string
+
+    @Field({nullable: true})
+    email?: string
+
+    @Field({ nullable: true})
+    phone?: string
+}

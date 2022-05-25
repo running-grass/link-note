@@ -2,8 +2,8 @@ import { Args, Int, Mutation, Parent, ResolveField, Resolver } from "@nestjs/gra
 import { Card } from "src/entity/card.entity";
 import { CardType } from "src/enum/common";
 import { TopicDto, CardDto } from "src/graphql/model";
-import { NodeService } from "src/topic/node.service";
-import { TopicService } from "src/topic/topic.service";
+import { NodeService } from "src/module/topic/node.service";
+import { TopicService } from "src/module/topic/topic.service";
 import { CardService } from "./card.service";
 import { CardCreateInput, CardInputDto } from "./dto/cardCreateInput";
 

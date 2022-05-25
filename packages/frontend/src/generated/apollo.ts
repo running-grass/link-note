@@ -60,6 +60,7 @@ export type Mutation = {
   createTopic: TopicDto;
   /** 删除指定的card */
   deleteCard: Scalars['Int'];
+  registerUser: UserDto;
   /** 传入一个有序的CardDTO树，更新数据库中的leftId和parentId */
   updateCards: Scalars['Int'];
 };
@@ -77,6 +78,11 @@ export type MutationCreateTopicArgs = {
 
 export type MutationDeleteCardArgs = {
   cardId: Scalars['Int'];
+};
+
+
+export type MutationRegisterUserArgs = {
+  registerData: RegisterInput;
 };
 
 
@@ -111,6 +117,13 @@ export type QueryTopicsArgs = {
   sort?: InputMaybe<BaseSort>;
 };
 
+export type RegisterInput = {
+  email: Scalars['String'];
+  password: Scalars['String'];
+  phone: Scalars['String'];
+  username: Scalars['String'];
+};
+
 /** 主题的DTO */
 export type TopicDto = {
   __typename?: 'TopicDto';
@@ -119,6 +132,15 @@ export type TopicDto = {
   id: Scalars['Int'];
   title: Scalars['String'];
   updateAt: Scalars['DateTime'];
+};
+
+/** 用户信息 */
+export type UserDto = {
+  __typename?: 'UserDto';
+  email?: Maybe<Scalars['String']>;
+  id: Scalars['Float'];
+  phone?: Maybe<Scalars['String']>;
+  username: Scalars['String'];
 };
 
 export type CardDtoFieldsFragment = { __typename?: 'CardDto', id: number, content: string, cardType: CardType, leftId?: number | null };
@@ -172,6 +194,13 @@ export type DeleteCardMutationVariables = Exact<{
 
 
 export type DeleteCardMutation = { __typename?: 'Mutation', deleteCard: number };
+
+export type RegisterUserMutationVariables = Exact<{
+  registerData: RegisterInput;
+}>;
+
+
+export type RegisterUserMutation = { __typename?: 'Mutation', registerUser: { __typename?: 'UserDto', id: number, username: string } };
 
 export const CardDtoFieldsFragmentDoc = gql`
     fragment CardDtoFields on CardDto {
@@ -261,6 +290,14 @@ export const DeleteCardDocument = gql`
   deleteCard(cardId: $cardId)
 }
     `;
+export const RegisterUserDocument = gql`
+    mutation registerUser($registerData: RegisterInput!) {
+  registerUser(registerData: $registerData) {
+    id
+    username
+  }
+}
+    `;
 export const getSdk = (client: ApolloClient<any>) => ({
       findTopicQuery(options: Partial<QueryOptions<FindTopicQueryVariables, FindTopicQuery>>) {
           return client.query<FindTopicQuery, FindTopicQueryVariables>({...options, query: FindTopicDocument})
@@ -279,6 +316,9 @@ updateCardsMutation(options: Partial<MutationOptions<UpdateCardsMutation, Update
       },
 deleteCardMutation(options: Partial<MutationOptions<DeleteCardMutation, DeleteCardMutationVariables>>) {
           return client.mutate<DeleteCardMutation, DeleteCardMutationVariables>({...options, mutation: DeleteCardDocument})
+      },
+registerUserMutation(options: Partial<MutationOptions<RegisterUserMutation, RegisterUserMutationVariables>>) {
+          return client.mutate<RegisterUserMutation, RegisterUserMutationVariables>({...options, mutation: RegisterUserDocument})
       }
     });
     export type SdkType = ReturnType<typeof getSdk>

@@ -1,7 +1,6 @@
 import { Entity, JoinTable, ManyToMany, OneToMany, TableInheritance } from "typeorm";
 import { Base } from "./base.entity";
 import { Card } from "./card.entity";
-import { Topic } from "./topic.entity";
 @Entity()
 @TableInheritance({ column: { type: "varchar", name: "type" } })
 export class Node extends Base {

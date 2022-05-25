@@ -6,6 +6,8 @@ import { Topiclist } from './pages/topiclist/Topiclist';
 import { TopicDetail } from './pages/topic/TopicDetail';
 import { AutoComplete } from "antd";
 import { useCreateTopicMutation, useFindTopicsLazyQuery } from "./generated/graphql";
+import { RegisterPage } from "./pages/register/Register.page";
+import { LoginPage } from "./pages/login/Login.page";
 
 
 const Option = AutoComplete.Option;
@@ -82,7 +84,12 @@ export default function App() {
       
       <Routes>
         <Route path="/" element={<Topiclist />} />
-        <Route path="topic/:title" element={<TopicDetail />} />
+
+        <Route path="/topic/:title" element={<TopicDetail />} />
+
+        <Route path="/register" element={<RegisterPage />} />
+        <Route path="/login" element={<LoginPage />} />
+
       </Routes>
     </div>
   );

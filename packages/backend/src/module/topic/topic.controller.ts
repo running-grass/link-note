@@ -1,5 +1,5 @@
 import { Controller, Get, Param, Post } from '@nestjs/common';
-import { Topic } from '../entity/topic.entity';
+import { Topic } from '../../entity/topic.entity';
 import { TopicService } from './topic.service';
 
 @Controller('topic')

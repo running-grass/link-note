@@ -1,8 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Topic } from '../entity/topic.entity';
-import { BaseSort, Order } from '../enum/common'
+import { Topic } from '../../entity/topic.entity';
+import { BaseSort, Order } from '../../enum/common'
+
 @Injectable()
 export class TopicService {
 

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import "./App.css";
-import { Link, Outlet, Route, Routes, useNavigate } from "react-router-dom";
+import { Link, Outlet, Route, Routes, useLocation, useNavigate } from "react-router-dom";
 
 import { Topiclist } from './pages/topiclist/Topiclist.page';
 import { TopicDetailPage } from './pages/topic/TopicDetail.page';
@@ -8,9 +8,9 @@ import { AutoComplete, Menu } from "antd";
 import { useCreateTopicMutation, useFindTopicsLazyQuery } from "./generated/graphql";
 import { RegisterPage } from "./pages/register/Register.page";
 import { LoginPage } from "./pages/login/Login.page";
-import { useLocalStorage } from "react-use";
+import { useLocalStorage, useUpdateEffect } from "react-use";
 import { LSK_JWT_TOKEN } from "./cons";
-
+import { setPageView, } from "./gtag";
 
 const Option = AutoComplete.Option;
 
@@ -47,8 +47,8 @@ function LoginLayout() {
     if (!accessToken) {
       navigator("/login")
     }
-  }, [accessToken,navigator])
-  
+  }, [accessToken, navigator])
+
 
   if (!accessToken) return null
 
@@ -119,8 +119,9 @@ function TopicLayout() {
           {prevKeyword}
         </Option>
       ) : prevKeyword ? (
-        <Option key="new" value={prevKeyword}>
-          【创建】{prevKeyword}
+        <Option key="new" value={prevKeyword} label={prevKeyword}>
+          {prevKeyword}
+          <span className="text-gray-400 text-sm ml-4">创建</span>
         </Option>
       ) : null}
 
@@ -141,6 +142,12 @@ function TopicLayout() {
 }
 
 export default function App() {
+  let location = useLocation();
+
+  useUpdateEffect(() => {
+    // setPageView()
+  }, [location]);
+
 
   return (
     <div id="App">

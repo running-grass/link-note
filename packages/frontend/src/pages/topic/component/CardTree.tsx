@@ -122,10 +122,8 @@ export const CardBody = observer(({ card }: { card: CardStore }) => {
       card,
       pos: 10000
     });
-    console.log('set current')
   }, [card, card.belong])
 
-  console.log('card body', card.belong.currentEditingCard ,card.isEditing)
   return (
     card.isEditing ? <CardEditInput card={card} /> : <div
       id={`card-header-${card.id}`}

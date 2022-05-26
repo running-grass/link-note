@@ -64,7 +64,6 @@ export class TopicStore {
 
     @action 
     setCurrentCard(card?: CardStore) {
-        console.log('set curr', card)
         this.currentEditingCard = card
     }
 

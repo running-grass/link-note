@@ -6,10 +6,14 @@ import { TopicStore } from "../../mobx/Topic.store";
 import { CardTree } from "./component/CardTree";
 
 import "./TopicDetail.page.css";
+import { useTitle } from "react-use";
 
 export const TopicDetailPage = observer(() => {
 
   const { title } = useParams();
+
+  useTitle(title ?? "")
+
 
   let [topicStore, setTopic] = useState<TopicStore | null>(null);
 
@@ -38,8 +42,6 @@ export const TopicDetailPage = observer(() => {
 
   // 新节点变动的情况下
   useEffect(() => {
-    console.log("effect");
-
     if (!topicStore?.needFocus) {
       return;
     }

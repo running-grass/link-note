@@ -7,7 +7,7 @@ import {
   useFindTopicsQuery,
 } from "../../generated/graphql";
 
-function Topiclist() {
+function TopiclistPage() {
   const { data } = useFindTopicsQuery();
   return (
     <div className="App">
@@ -25,4 +25,4 @@ function Topiclist() {
   );
 }
 
-export { Topiclist };
+export { TopiclistPage as Topiclist };

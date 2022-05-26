@@ -4,8 +4,11 @@ import { Topic } from "src/entity/topic.entity";
 import { CardDto, TopicDto } from "src/graphql/model";
 import { TopicsArgs } from "./dto/topicsArgs";
 import { TopicService } from "./topic.service";
+import { UseGuards } from "@nestjs/common";
+import { GqlAuthGuard } from "../auth/gql.guard";
 
 @Resolver(of => TopicDto)
+@UseGuards(GqlAuthGuard)
 export class TopicResolver {
   constructor(
     private topicService: TopicService,

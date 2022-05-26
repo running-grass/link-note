@@ -60,6 +60,7 @@ export type Mutation = {
   createTopic: TopicDto;
   /** 删除指定的card */
   deleteCard: Scalars['Int'];
+  login: UserDto;
   registerUser: UserDto;
   /** 传入一个有序的CardDTO树，更新数据库中的leftId和parentId */
   updateCards: Scalars['Int'];
@@ -78,6 +79,12 @@ export type MutationCreateTopicArgs = {
 
 export type MutationDeleteCardArgs = {
   cardId: Scalars['Int'];
+};
+
+
+export type MutationLoginArgs = {
+  password: Scalars['String'];
+  username: Scalars['String'];
 };
 
 
@@ -118,9 +125,9 @@ export type QueryTopicsArgs = {
 };
 
 export type RegisterInput = {
-  email: Scalars['String'];
+  email?: InputMaybe<Scalars['String']>;
   password: Scalars['String'];
-  phone: Scalars['String'];
+  phone?: InputMaybe<Scalars['String']>;
   username: Scalars['String'];
 };
 
@@ -201,6 +208,14 @@ export type RegisterUserMutationVariables = Exact<{
 
 
 export type RegisterUserMutation = { __typename?: 'Mutation', registerUser: { __typename?: 'UserDto', id: number, username: string } };
+
+export type LoginMutationVariables = Exact<{
+  username: Scalars['String'];
+  password: Scalars['String'];
+}>;
+
+
+export type LoginMutation = { __typename?: 'Mutation', login: { __typename?: 'UserDto', id: number, username: string } };
 
 export const CardDtoFieldsFragmentDoc = gql`
     fragment CardDtoFields on CardDto {
@@ -298,6 +313,14 @@ export const RegisterUserDocument = gql`
   }
 }
     `;
+export const LoginDocument = gql`
+    mutation login($username: String!, $password: String!) {
+  login(username: $username, password: $password) {
+    id
+    username
+  }
+}
+    `;
 export const getSdk = (client: ApolloClient<any>) => ({
       findTopicQuery(options: Partial<QueryOptions<FindTopicQueryVariables, FindTopicQuery>>) {
           return client.query<FindTopicQuery, FindTopicQueryVariables>({...options, query: FindTopicDocument})
@@ -319,6 +342,9 @@ deleteCardMutation(options: Partial<MutationOptions<DeleteCardMutation, DeleteCa
       },
 registerUserMutation(options: Partial<MutationOptions<RegisterUserMutation, RegisterUserMutationVariables>>) {
           return client.mutate<RegisterUserMutation, RegisterUserMutationVariables>({...options, mutation: RegisterUserDocument})
+      },
+loginMutation(options: Partial<MutationOptions<LoginMutation, LoginMutationVariables>>) {
+          return client.mutate<LoginMutation, LoginMutationVariables>({...options, mutation: LoginDocument})
       }
     });
     export type SdkType = ReturnType<typeof getSdk>

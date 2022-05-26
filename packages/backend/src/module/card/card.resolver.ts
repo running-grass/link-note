@@ -1,12 +1,14 @@
+import { UseGuards } from "@nestjs/common";
 import { Args, Int, Mutation, Parent, ResolveField, Resolver } from "@nestjs/graphql";
 import { Card } from "src/entity/card.entity";
-import { CardType } from "src/enum/common";
-import { TopicDto, CardDto } from "src/graphql/model";
+import { CardDto } from "src/graphql/model";
 import { NodeService } from "src/module/topic/node.service";
 import { TopicService } from "src/module/topic/topic.service";
+import { GqlAuthGuard } from "../auth/gql.guard";
 import { CardService } from "./card.service";
 import { CardCreateInput, CardInputDto } from "./dto/cardCreateInput";
 
+@UseGuards(GqlAuthGuard)
 @Resolver(of => CardDto)
 export class CardResolver {
   constructor(

@@ -1,7 +1,7 @@
 import { Form, Input, Button } from "antd";
 import { useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import axios  from 'axios'
+import axios from 'axios'
 
 
 import { sdk } from "../../apollo";
@@ -12,16 +12,12 @@ export const LoginPage = () => {
 
   const onFinish = useCallback(async (values: any) => {
     try {
-      const {data,status, statusText} = await axios.post("/api/auth/login", {
+      const { data, status, statusText } = await axios.post("/api/auth/login", {
         username: values.username,
         password: values.password,
       })
-      if (status === 200 || status === 201) {
-        localStorage.setItem('access_token', data.access_token)
-        // alert('登录成功')
-      } else {
-        alert(statusText)
-      }
+      localStorage.setItem('access_token', data.access_token)
+      navigate('/')
     } catch {
       console.error('登录失败')
     }
@@ -32,12 +28,13 @@ export const LoginPage = () => {
     labelCol={{ span: 8 }}
     wrapperCol={{ span: 8 }}
     onFinish={onFinish}
+    style={{marginTop: 100, padding: 20}}
     autoComplete="off"
   >
     <Form.Item
       label="用户名"
       name="username"
-      rules={[{ required: true, message: 'Please input your username!' }]}
+      rules={[{ required: true, message: '请输入用户名' }]}
     >
       <Input />
     </Form.Item>
@@ -45,7 +42,7 @@ export const LoginPage = () => {
     <Form.Item
       label="密码"
       name="password"
-      rules={[{ required: true, message: 'Please input your password!' }]}
+      rules={[{ required: true, message: '请输入密码' }]}
     >
       <Input.Password />
     </Form.Item>
@@ -54,6 +51,9 @@ export const LoginPage = () => {
     <Form.Item wrapperCol={{ offset: 8, span: 16 }}>
       <Button type="primary" htmlType="submit">
         登录
+      </Button>
+      <Button type="text"  href="/register">
+        注册
       </Button>
     </Form.Item>
   </Form>

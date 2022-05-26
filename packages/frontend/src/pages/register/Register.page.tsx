@@ -28,6 +28,7 @@ export const RegisterPage = () => {
     name="basic"
     labelCol={{ span: 8 }}
     wrapperCol={{ span: 8 }}
+    style={{marginTop: 80, padding: 20}}
     onFinish={onFinish}
     autoComplete="off"
   >
@@ -64,6 +65,9 @@ export const RegisterPage = () => {
     <Form.Item wrapperCol={{ offset: 8, span: 16 }}>
       <Button type="primary" htmlType="submit">
         注册
+      </Button>
+      <Button type="text"  href="/login">
+        登录
       </Button>
     </Form.Item>
   </Form>

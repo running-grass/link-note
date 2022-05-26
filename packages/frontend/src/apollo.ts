@@ -15,7 +15,6 @@ const authLink = setContext((_, { headers }) => {
   if (token) {
     token = JSON.parse(token);
   }
-  console.log(token)
   // return the headers to the context so httpLink can read them
   return {
     headers: {

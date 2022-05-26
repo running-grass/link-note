@@ -1,10 +1,10 @@
-import React, { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import "./App.css";
 import { Link, Outlet, Route, Routes, useNavigate } from "react-router-dom";
 
-import { Topiclist } from './pages/topiclist/Topiclist';
-import { TopicDetail } from './pages/topic/TopicDetail';
-import { AutoComplete, Divider } from "antd";
+import { Topiclist } from './pages/topiclist/Topiclist.page';
+import { TopicDetailPage } from './pages/topic/TopicDetail.page';
+import { AutoComplete, Menu } from "antd";
 import { useCreateTopicMutation, useFindTopicsLazyQuery } from "./generated/graphql";
 import { RegisterPage } from "./pages/register/Register.page";
 import { LoginPage } from "./pages/login/Login.page";
@@ -14,13 +14,32 @@ import { LSK_JWT_TOKEN } from "./cons";
 
 const Option = AutoComplete.Option;
 
-
 function GlobalNav() {
-  return <div>我是导航条</div>
+  const navigator = useNavigate();
+
+  const onSelect = useCallback((info: any) => {
+    switch (info.key) {
+      case 'topic':
+        navigator('/topic')
+        break
+      default:
+        navigator('/')
+    }
+  }, [navigator])
+
+
+  // >=4.20.0 可用，推荐的写法 ✅
+  const items = [
+    { label: '主题', key: 'topic' }, // 菜单项务必填写 key
+    { label: '文件', key: 'file', disabled: true },
+    { label: '图片', key: 'image', disabled: true },
+  ];
+  return <Menu items={items} mode="horizontal" onSelect={onSelect} theme="light" />;
 }
 
 
 function LoginLayout() {
+
   const [accessToken] = useLocalStorage(LSK_JWT_TOKEN);
   const navigator = useNavigate();
 
@@ -28,15 +47,20 @@ function LoginLayout() {
     if (!accessToken) {
       navigator("/login")
     }
-  }, [accessToken])
+  }, [accessToken,navigator])
+  
+
+  if (!accessToken) return null
 
   return (
-    <div>
-      <GlobalNav />
-      <main>
+    <section className="flex flex-col flex-1">
+      <header>
+        <GlobalNav />
+      </header>
+      <div className="flex-1 mt-4">
         <Outlet />
-      </main>
-    </div>
+      </div>
+    </section>
   );
 }
 
@@ -116,10 +140,10 @@ function TopicLayout() {
   </div>
 }
 
-
 export default function App() {
+
   return (
-    <div className="App">
+    <div id="App">
       <Routes>
         <Route path="register" element={<RegisterPage />} />
         <Route path="login" element={<LoginPage />} />
@@ -127,7 +151,7 @@ export default function App() {
         <Route path="/" element={<LoginLayout />}>
           <Route path="topic" element={<TopicLayout />} >
             <Route index element={<Topiclist />} />
-            <Route path=":title" element={<TopicDetail />} />
+            <Route path=":title" element={<TopicDetailPage />} />
           </Route>
         </Route>
       </Routes>

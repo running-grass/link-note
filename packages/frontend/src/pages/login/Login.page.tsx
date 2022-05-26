@@ -2,21 +2,26 @@ import { Form, Input, Button } from "antd";
 import { useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from 'axios'
+import { useLocalStorage } from "react-use";
 
-
-import { sdk } from "../../apollo";
+import { LSK_JWT_TOKEN } from "../../cons";
+import { useDenyLogined } from "../../utils/hook";
 
 
 export const LoginPage = () => {
+  useDenyLogined()
   let navigate = useNavigate();
+  const [, setToken] = useLocalStorage(LSK_JWT_TOKEN);
 
   const onFinish = useCallback(async (values: any) => {
     try {
-      const { data, status, statusText } = await axios.post("/api/auth/login", {
+      const { data, } = await axios.post("/api/auth/login", {
         username: values.username,
         password: values.password,
       })
-      localStorage.setItem('access_token', data.access_token)
+
+      setToken(data.access_token);
+      // localStorage.setItem('access_token', data.access_token)
       navigate('/')
     } catch {
       console.error('登录失败')

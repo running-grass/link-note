@@ -3,8 +3,11 @@ import { useCallback } from "react"
 import { useNavigate } from "react-router-dom"
 import { sdk } from "../../apollo"
 import { RegisterInput } from '../../generated/graphql'
+import { useDenyLogined } from "../../utils/hook"
 
 export const RegisterPage = () => {
+  useDenyLogined()
+
   let navigate = useNavigate();
 
   const onFinish = useCallback(async (values: any) => {

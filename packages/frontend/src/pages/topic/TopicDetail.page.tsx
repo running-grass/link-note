@@ -5,10 +5,9 @@ import { observer } from "mobx-react"; // Or "mobx-react".
 import { TopicStore } from "../../mobx/Topic.store";
 import { CardTree } from "./component/CardTree";
 
-import "./TopicDetail.css";
+import "./TopicDetail.page.css";
 
-export const TopicDetail = observer(() => {
-  console.log("topic");
+export const TopicDetailPage = observer(() => {
 
   const { title } = useParams();
 
@@ -75,7 +74,7 @@ export const TopicDetail = observer(() => {
 
   return (
     <div>
-      <h2>{topicStore.title} </h2>
+      <h2 className="mb-4 text-4xl">{topicStore.title} </h2>
       <CardTree cards={topicStore.cards} />
     </div>
   );

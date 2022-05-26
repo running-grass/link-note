@@ -8,6 +8,7 @@
         "ms-ceintl.vscode-language-pack-zh-hans",
         "visualstudioexptteam.vscodeintellicode",
         "graphql.vscode-graphql",
-        "christian-kohler.path-intellisense"
+        "christian-kohler.path-intellisense",
+        "bradlc.vscode-tailwindcss"
     ]
 }

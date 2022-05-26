@@ -149,10 +149,9 @@ export const CardTree = observer(
     }
 
     return (
-      <section className="card-tree">
+      <section className="card-tree bg-gray-50">
         {cards.map((card) => (
           <section className="card-box" key={card.id}>
-            {/* <header className="card-header">{card.content}</header> */}
             <CardBody card={card} />
             <CardTree cards={card.childrens} />
           </section>

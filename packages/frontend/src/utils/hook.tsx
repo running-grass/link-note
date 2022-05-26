@@ -1,6 +1,9 @@
 import { KeyHandler } from "hotkeys-js";
-import { MutableRefObject } from "react";
+import { MutableRefObject, useEffect } from "react";
 import { Options, useHotkeys } from "react-hotkeys-hook";
+import { useNavigate } from "react-router-dom";
+import { useLocalStorage } from "react-use";
+import { LSK_JWT_TOKEN } from "../cons";
 
 export enum KEYMAP {
     NAV_PLANT_UP = "shift+up",
@@ -48,3 +51,14 @@ export  const useMultHotkeys = <T extends Element>(
     );
   };
   
+
+  export const useDenyLogined = () => {
+    const [accessToken] = useLocalStorage(LSK_JWT_TOKEN);
+    const navigator = useNavigate();
+  
+    useEffect(() => {
+      if (accessToken) {
+        navigator("/")
+      }
+    }, [accessToken])
+  }

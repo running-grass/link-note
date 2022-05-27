@@ -31,6 +31,7 @@ export type CardCreateInput = {
   parentId?: InputMaybe<Scalars['Int']>;
 };
 
+/** 笔记卡片 */
 export type CardDto = {
   __typename?: 'CardDto';
   cardType: CardType;
@@ -105,6 +106,7 @@ export enum Order {
 
 export type Query = {
   __typename?: 'Query';
+  currentUser: UserDto;
   topic?: Maybe<TopicDto>;
   /** 查询主题列表 */
   topics: Array<TopicDto>;
@@ -144,10 +146,25 @@ export type TopicDto = {
 /** 用户信息 */
 export type UserDto = {
   __typename?: 'UserDto';
+  /** 用户的电子邮箱 */
   email?: Maybe<Scalars['String']>;
   id: Scalars['Float'];
+  /** 用户的手机号，不带国际区号 */
   phone?: Maybe<Scalars['String']>;
+  /** 用户的用户名，不可修改 */
   username: Scalars['String'];
+  /** 用户的工作空间列表 */
+  workspaces: Array<WorkspaceDto>;
+};
+
+/** 用户的工作空间 */
+export type WorkspaceDto = {
+  __typename?: 'WorkspaceDto';
+  /** 显示用名称 */
+  displayName: Scalars['String'];
+  id: Scalars['Int'];
+  /** 全局不重复的key */
+  name: Scalars['String'];
 };
 
 export type CardDtoFieldsFragment = { __typename?: 'CardDto', id: number, content: string, cardType: CardType, leftId?: number | null };
@@ -169,6 +186,11 @@ export type FindTopicsQueryVariables = Exact<{
 
 
 export type FindTopicsQuery = { __typename?: 'Query', topics: Array<{ __typename?: 'TopicDto', id: number, title: string }> };
+
+export type CurrentUserQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type CurrentUserQuery = { __typename?: 'Query', currentUser: { __typename?: 'UserDto', id: number, username: string, phone?: string | null, email?: string | null, workspaces: Array<{ __typename?: 'WorkspaceDto', id: number, name: string, displayName: string }> } };
 
 export type CreateTopicMutationVariables = Exact<{
   title: Scalars['String'];
@@ -276,6 +298,21 @@ export const FindTopicsDocument = gql`
   }
 }
     `;
+export const CurrentUserDocument = gql`
+    query currentUser {
+  currentUser {
+    id
+    username
+    phone
+    email
+    workspaces {
+      id
+      name
+      displayName
+    }
+  }
+}
+    `;
 export const CreateTopicDocument = gql`
     mutation createTopic($title: String!) {
   createTopic(title: $title) {
@@ -327,6 +364,9 @@ export const getSdk = (client: ApolloClient<any>) => ({
       },
 findTopicsQuery(options: Partial<QueryOptions<FindTopicsQueryVariables, FindTopicsQuery>>) {
           return client.query<FindTopicsQuery, FindTopicsQueryVariables>({...options, query: FindTopicsDocument})
+      },
+currentUserQuery(options: Partial<QueryOptions<CurrentUserQueryVariables, CurrentUserQuery>>) {
+          return client.query<CurrentUserQuery, CurrentUserQueryVariables>({...options, query: CurrentUserDocument})
       },
 createTopicMutation(options: Partial<MutationOptions<CreateTopicMutation, CreateTopicMutationVariables>>) {
           return client.mutate<CreateTopicMutation, CreateTopicMutationVariables>({...options, mutation: CreateTopicDocument})

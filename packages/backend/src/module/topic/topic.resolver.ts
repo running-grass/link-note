@@ -15,6 +15,12 @@ export class TopicResolver {
     private cardService: CardService,
   ) {}
 
+
+  @ResolveField(returns => [CardDto!]!)
+  async cards(@Parent() topic: Topic) {
+    return await this.cardService.getCardTree(topic);
+  }
+
   @Query(returns => TopicDto, { nullable: true})
   async topic(@Args('id', { type: () => Int, nullable: true}) id: number
             , @Args('title', { nullable: true}) title: string ) {
@@ -34,10 +40,6 @@ export class TopicResolver {
     return await this.topicService.findAll(args.sort, args.order, args.limit, args.search);
   }
   
-  @ResolveField(returns => [CardDto!]!)
-  async cards(@Parent() topic: Topic) {
-    return await this.cardService.getCardTree(topic);
-  }
 
   @Mutation(returns => TopicDto)
   async createTopic(@Args('title') title: string) {

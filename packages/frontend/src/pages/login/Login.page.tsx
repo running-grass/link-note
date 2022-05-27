@@ -15,7 +15,7 @@ export const LoginPage = () => {
 
   const onFinish = useCallback(async (values: any) => {
     try {
-      const { data, } = await axios.post("/api/auth/login", {
+      const { data } = await axios.post("/api/auth/login", {
         username: values.username,
         password: values.password,
       })
@@ -24,6 +24,7 @@ export const LoginPage = () => {
       // localStorage.setItem('access_token', data.access_token)
       navigate('/')
     } catch {
+      
       console.error('登录失败')
     }
   }, [])

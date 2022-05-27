@@ -29,7 +29,11 @@
 - Apollo GraphQL的前后端框架
 - sqlite 本地开发数据库
 - mobx 前端的状态管理
-
+- docker 发布环境
+- heroku 另一个发布环境
+- make 编译依赖管理，在pnpm scripts之上
+- passport 登录认证管理
+- tailwindcss 前端的css原子化框架
 
 ## 相关文档
 https://docs.nestjs.cn/8/firststeps
@@ -54,7 +58,7 @@ pnpm run -r codegen   # pnpm run -r watch:codegen
 后端使用4000端口
 
 
-## 生产环境不是
+## 生产环境部署
 1. 安装node14+和pnpm
 2. 在项目根目录执行`make build`
 3. 拷贝dist目录至服务器

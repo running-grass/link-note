@@ -4,12 +4,14 @@ import { Link, Outlet, Route, Routes, useNavigate } from "react-router-dom";
 
 import { Topiclist } from './pages/topiclist/Topiclist.page';
 import { TopicDetailPage } from './pages/topic/TopicDetail.page';
-import { AutoComplete, Menu } from "antd";
+import { AutoComplete, Menu, Spin } from "antd";
 import { useCreateTopicMutation, useFindTopicsLazyQuery } from "./generated/graphql";
 import { RegisterPage } from "./pages/register/Register.page";
 import { LoginPage } from "./pages/login/Login.page";
-import { useLocalStorage } from "react-use";
+import { useAsync, useAsyncFn, useEffectOnce, useLocalStorage } from "react-use";
 import { LSK_JWT_TOKEN } from "./cons";
+import { GlobalStore } from "./mobx/Global.store";
+import { observer } from "mobx-react";
 
 
 const Option = AutoComplete.Option;
@@ -38,6 +40,10 @@ function GlobalNav() {
 }
 
 
+function Aside() {
+  return <div className="w-40 flex flex-col bg-pink-200 p-4">asdide</div>
+}
+
 function LoginLayout() {
 
   const [accessToken] = useLocalStorage(LSK_JWT_TOKEN);
@@ -47,19 +53,20 @@ function LoginLayout() {
     if (!accessToken) {
       navigator("/login")
     }
-  }, [accessToken,navigator])
-  
+  }, [accessToken, navigator])
+
 
   if (!accessToken) return null
 
   return (
-    <section className="flex flex-col flex-1">
-      <header>
+    <section className="flex flex-row flex-1 bg-pink-50">
+      <Aside />
+      <section className="flex flex-col flex-1">
         <GlobalNav />
-      </header>
-      <div className="flex-1 mt-4">
-        <Outlet />
-      </div>
+        <main className="flex-1 mt-4 flex flex-col">
+          <Outlet />
+        </main>
+      </section>
     </section>
   );
 }
@@ -140,8 +147,21 @@ function TopicLayout() {
   </div>
 }
 
-export default function App() {
+export const App = observer(() => {
+  const [global, setGlobal] = useState<GlobalStore | null>(null)
 
+  console.log('开始加载全局配置-before')
+
+  useEffectOnce(() => {
+    console.log('开始加载全局配置')
+    GlobalStore.of().then(gs => {
+      setGlobal(gs)
+    })
+  })
+
+  if (!global) {
+    return <Spin />;
+  }
   return (
     <div id="App">
       <Routes>
@@ -157,4 +177,4 @@ export default function App() {
       </Routes>
     </div>
   );
-}
+})

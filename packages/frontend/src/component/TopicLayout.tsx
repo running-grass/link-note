@@ -18,7 +18,6 @@ export const TopicLayout = () => {
 
   let navigate = useNavigate();
 
-
   const onSearch = (keyword: string) => {
     setKeyword(keyword);
     searchTopics({

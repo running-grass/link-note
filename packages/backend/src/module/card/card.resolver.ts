@@ -27,7 +27,7 @@ export class CardResolver {
 
   @Mutation(returns => CardDto)
   async createNewCard(@Args('cardCreateInput') cardCreateInput: CardCreateInput,
-  @CurrentWorkspaceId() wid: number) {
+    @CurrentWorkspaceId() wid: number) {
     const node = await this.topicService.findOneById(wid, cardCreateInput.belongId);
 
     if (!node) {
@@ -39,13 +39,18 @@ export class CardResolver {
       parent = await this.cardService.findOneById(cardCreateInput.parentId);
     }
 
-    return await this.cardService.createOne(node, parent, cardCreateInput.content, cardCreateInput.cardType, cardCreateInput.leftId);
+    return await this.cardService.createOne(
+      node,
+      parent,
+      cardCreateInput.content,
+      cardCreateInput.cardType,
+      cardCreateInput.leftId);
   }
 
   private dtoTreeToEntityTree(cards: CardInputDto[], parent?: Card): Card[] {
     if (!cards.length) return []
 
-    let prevId = null
+    let prevId = 0
 
     let arr: Card[] = []
     for (const card of cards) {
@@ -70,7 +75,7 @@ export class CardResolver {
   @Mutation(returns => Int, {
     description: "传入一个有序的CardDTO树，更新数据库中的leftId和parentId"
   })
-  async updateCards(@Args('cards', { type: () => [CardInputDto]}) cards: [CardInputDto]) {
+  async updateCards(@Args('cards', { type: () => [CardInputDto] }) cards: [CardInputDto]) {
     const cardEntityTree = this.dtoTreeToEntityTree(cards)
 
     await this.cardService.saveCards(cardEntityTree);
@@ -81,7 +86,7 @@ export class CardResolver {
   @Mutation(returns => Int, {
     description: '删除指定的card'
   })
-  async deleteCard(@Args('cardId',{ type: () => Int}) cardId: number) {
+  async deleteCard(@Args('cardId', { type: () => Int }) cardId: number) {
     await this.cardService.deleCard(cardId)
     return 1
   }

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTitle } from "react-use";
 import { useParams } from "react-router-dom";
 import { observer } from "mobx-react"; // Or "mobx-react".
 
@@ -6,7 +7,6 @@ import { TopicStore } from "../../mobx/Topic.store";
 import { CardTree } from "./component/CardTree";
 
 import "./TopicDetail.page.css";
-import { useTitle } from "react-use";
 
 export const TopicDetailPage = observer(() => {
 
@@ -64,7 +64,7 @@ export const TopicDetailPage = observer(() => {
       }
     }
 
-  }, [topicStore]);
+  }, [topicStore?.needFocus]);
 
   if (!title) {
     return null;

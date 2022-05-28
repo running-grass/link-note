@@ -3,6 +3,7 @@ import { EntityManager, TreeRepository } from 'typeorm';
 import { Topic } from '../../entity/topic.entity';
 import { Card } from '../../entity/card.entity';
 
+import { flatten } from 'ramda'
 // import assert from 'node:assert';
 
 import { CardType } from '../../enum/common'
@@ -48,6 +49,8 @@ export class CardService {
     let next = old.findIndex(card => !card.leftId)
 
     if (next === -1) {
+      // console.error('找不到第一个节点')
+      // next = 0
       throw new Error('找不到第一个节点')
     }
 
@@ -72,21 +75,21 @@ export class CardService {
 
   async getCardTree(topic: Topic) {
     // 获取根节点
-    const roots = await this.cardRepository.find({
-      where: {
+    const roots = await this.cardRepository.createQueryBuilder()
+      .where({
         belong: {
           id: topic.id
-        },
-        parent : null
-      }
-    })
+        }
+      })
+      .andWhere(`parentId IS NULL`)
+      .getMany()
     
-    // createQueryBuilder('card')
-    //   .where(`card.belongId = ${topic.id}`)
-    //   .andWhere(`card.parentId IS NULL`)
-    //   .getMany();
-
-    const cards = await Promise.all(roots.map(root => this.cardRepository.findDescendantsTree(root)));
+    const cards = await Promise.all(
+      roots.map(root => this.cardRepository.findDescendantsTree(root))
+    )
+    // .then(xss => { 
+    //   return flatten(xss)
+    // });
 
     return this.sortCardsTreeByLeftId(cards);
   }

@@ -10,7 +10,6 @@ const httpLink = createHttpLink({
 });
 
 const authLink = setContext((_, { headers }) => {
-  // get the authentication token from local storage if it exists
   let token = localStorage.getItem('access_token');
   if (token) {
     token = JSON.parse(token);
@@ -21,23 +20,6 @@ const authLink = setContext((_, { headers }) => {
       ...headers,
       Authorization: token ? `Bearer ${token}` : "",
       'workspace-id': store?.currWorkspaceId
-    }
-  }
-});
-
-
-const workspaceLink = setContext((_, { headers }) => {
-  // get the authentication token from local storage if it exists
-  let token = localStorage.getItem('access_token');
-  if (token) {
-    token = JSON.parse(token);
-  }
-  // console.log(token)
-  // return the headers to the context so httpLink can read them
-  return {
-    headers: {
-      ...headers,
-      Authorization: token ? `Bearer ${token}` : "",
     }
   }
 });

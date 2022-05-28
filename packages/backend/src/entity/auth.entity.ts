@@ -2,9 +2,7 @@ import { Column, Entity, Index, JoinColumn, OneToOne, PrimaryColumn, PrimaryGene
 import { Base } from "./base.entity";
 import { User } from "./user.entity";
 
-@Entity({
-    withoutRowid: true
-})
+@Entity()
 export class Auth extends Base {
     @OneToOne(() => User, user => user.auth, {
         onDelete: "CASCADE"

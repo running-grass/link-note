@@ -6,6 +6,7 @@ import { TopicsArgs } from "./dto/topicsArgs";
 import { TopicService } from "./topic.service";
 import { UseGuards } from "@nestjs/common";
 import { GqlAuthGuard } from "../auth/gql.guard";
+import { CurrentWorkspaceId } from "src/util/decorater";
 
 @Resolver(of => TopicDto)
 @UseGuards(GqlAuthGuard)
@@ -13,7 +14,7 @@ export class TopicResolver {
   constructor(
     private topicService: TopicService,
     private cardService: CardService,
-  ) {}
+  ) { }
 
 
   @ResolveField(returns => [CardDto!]!)
@@ -21,28 +22,37 @@ export class TopicResolver {
     return await this.cardService.getCardTree(topic);
   }
 
-  @Query(returns => TopicDto, { nullable: true})
-  async topic(@Args('id', { type: () => Int, nullable: true}) id: number
-            , @Args('title', { nullable: true}) title: string ) {
+  @Query(returns => TopicDto, { nullable: true })
+  async topic(
+    @Args('id', { type: () => Int, nullable: true }) id: number,
+    @Args('title', { nullable: true }) title: string,
+    @CurrentWorkspaceId() wid: number
+  ) {
     if (id) {
-      return this.topicService.findOneById(id);
+      return this.topicService.findOneById(wid, id);
     } else if (title) {
-      return this.topicService.findOneByTitle(title);
+      return this.topicService.findOneByTitle(wid, title);
     } else {
       throw new Error('id 和 title 必须传一个');
     }
   }
-  
+
   @Query(returns => [TopicDto!]!, {
     description: "查询主题列表"
   })
-  async topics(@Args() args: TopicsArgs) {      
-    return await this.topicService.findAll(args.sort, args.order, args.limit, args.search);
+  async topics(
+    @Args() args: TopicsArgs,
+    @CurrentWorkspaceId() wid: number
+  ) {
+    return await this.topicService.findAll(wid, args.sort, args.order, args.limit, args.search);
   }
-  
 
-  @Mutation(returns => TopicDto)
-  async createTopic(@Args('title') title: string) {
-    return await this.topicService.newOne(title);
+
+  @Mutation(returns => TopicDto,)
+  async createTopic(
+    @Args('title') title: string,
+    @CurrentWorkspaceId() wid: number
+  ) {
+    return await this.topicService.newOne(wid, title);
   }
 }

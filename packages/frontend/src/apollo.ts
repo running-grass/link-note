@@ -3,7 +3,7 @@ import { setContext } from '@apollo/client/link/context';
 
 import { ApolloClient, InMemoryCache, createHttpLink, from } from "@apollo/client";
 import { onError } from "@apollo/client/link/error";
-
+import { store } from './mobx/Global.store'
 
 const httpLink = createHttpLink({
   uri: process.env.REACT_APP_APOLLO_CLIENT_URI,
@@ -15,7 +15,24 @@ const authLink = setContext((_, { headers }) => {
   if (token) {
     token = JSON.parse(token);
   }
-  console.log(token)
+
+  return {
+    headers: {
+      ...headers,
+      Authorization: token ? `Bearer ${token}` : "",
+      'workspace-id': store?.currWorkspaceId
+    }
+  }
+});
+
+
+const workspaceLink = setContext((_, { headers }) => {
+  // get the authentication token from local storage if it exists
+  let token = localStorage.getItem('access_token');
+  if (token) {
+    token = JSON.parse(token);
+  }
+  // console.log(token)
   // return the headers to the context so httpLink can read them
   return {
     headers: {

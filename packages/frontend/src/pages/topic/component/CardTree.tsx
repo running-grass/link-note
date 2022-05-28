@@ -123,7 +123,7 @@ export const CardBody = observer(({ card }: { card: CardStore }) => {
       pos: 10000
     });
     console.log('set current')
-  }, [card, card.belong])
+  }, [card])
 
   console.log('card body', card.belong.currentEditingCard ,card.isEditing)
   return (

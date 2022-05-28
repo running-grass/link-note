@@ -60,5 +60,5 @@ export  const useMultHotkeys = <T extends Element>(
       if (accessToken) {
         navigator("/")
       }
-    }, [accessToken])
+    }, [accessToken, navigator])
   }

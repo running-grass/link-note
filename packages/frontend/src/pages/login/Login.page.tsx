@@ -21,20 +21,18 @@ export const LoginPage = () => {
       })
 
       setToken(data.access_token);
-      // localStorage.setItem('access_token', data.access_token)
       navigate('/')
     } catch {
-      
       console.error('登录失败')
     }
-  }, [])
+  }, [navigate, setToken])
 
   return <Form
     name="basic"
     labelCol={{ span: 8 }}
     wrapperCol={{ span: 8 }}
     onFinish={onFinish}
-    style={{marginTop: 100, padding: 20}}
+    style={{ marginTop: 100, padding: 20 }}
     autoComplete="off"
   >
     <Form.Item
@@ -58,7 +56,7 @@ export const LoginPage = () => {
       <Button type="primary" htmlType="submit">
         登录
       </Button>
-      <Button type="text"  href="/register">
+      <Button type="text" href="/register">
         注册
       </Button>
     </Form.Item>

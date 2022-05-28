@@ -19,7 +19,7 @@ import { WorkspaceModule } from './module/workspace/workspace.module';
 
 const otherConfig = {
   synchronize: true, // TODO 0.1版本的时候关掉
-  // logging: process.env.NODE_ENV === 'development',
+  logging: process.env.NODE_ENV === 'development',
   migrations: [],
   subscribers: [],
   autoLoadEntities: true,

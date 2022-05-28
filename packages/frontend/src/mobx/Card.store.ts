@@ -36,8 +36,6 @@ export class CardStore {
 
     @computed
     get isEditing() {
-        console.log('isEditing', this.belong.currentEditingCard === this)
-
         return this.belong.currentEditingCard === this;
     }
 

@@ -10,7 +10,6 @@ import { TopicLayout } from "./component/TopicLayout";
 import "./App.css";
 
 export const App = () => {
-
   return (
     <div id="App">
       <Routes>

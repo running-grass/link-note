@@ -122,7 +122,7 @@ export const CardBody = observer(({ card }: { card: CardStore }) => {
       card,
       pos: 10000
     });
-  }, [card, card.belong])
+  }, [card])
 
   return (
     card.isEditing ? <CardEditInput card={card} /> : <div

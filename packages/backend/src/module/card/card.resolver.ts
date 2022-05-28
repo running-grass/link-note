@@ -4,6 +4,7 @@ import { Card } from "src/entity/card.entity";
 import { CardDto } from "src/graphql/model";
 import { NodeService } from "src/module/topic/node.service";
 import { TopicService } from "src/module/topic/topic.service";
+import { CurrentWorkspaceId } from "src/util/decorater";
 import { GqlAuthGuard } from "../auth/gql.guard";
 import { CardService } from "./card.service";
 import { CardCreateInput, CardInputDto } from "./dto/cardCreateInput";
@@ -25,8 +26,9 @@ export class CardResolver {
 
 
   @Mutation(returns => CardDto)
-  async createNewCard(@Args('cardCreateInput') cardCreateInput: CardCreateInput) {
-    const node = await this.topicService.findOneById(cardCreateInput.belongId);
+  async createNewCard(@Args('cardCreateInput') cardCreateInput: CardCreateInput,
+  @CurrentWorkspaceId() wid: number) {
+    const node = await this.topicService.findOneById(wid, cardCreateInput.belongId);
 
     if (!node) {
       throw new Error("所属节点不存在");

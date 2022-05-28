@@ -64,7 +64,7 @@ export const TopicDetailPage = observer(() => {
       }
     }
 
-  }, [topicStore?.needFocus]);
+  }, [topicStore]);
 
   if (!title) {
     return null;

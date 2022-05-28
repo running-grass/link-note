@@ -65,6 +65,24 @@ export const QUERY_TOPIC_LIST = gql`
   }
 `;
 
+
+export const QUERY_CURREN_USER = gql`
+  query currentUser {
+    currentUser {
+      id
+      username
+      phone
+      email
+      workspaces {
+        id
+        name
+        displayName
+      }
+    }
+  }
+`
+
+
 export const MUTATION_CREATE_TOPIC = gql`
   mutation createTopic($title: String!){
     createTopic(title: $title) {

@@ -19,7 +19,7 @@ interface NeedFocusInfo {
         pos?: number
     
 }
-export class TopicStore {
+export class TopicStore {   
     id!: number;
 
     @observable
@@ -35,8 +35,9 @@ export class TopicStore {
     currentEditingCard?: CardStore
 
     constructor(_topic: MinTopic) {
-        makeObservable(this)
         this.initState(_topic);
+
+        makeObservable(this)
     }
 
     @action

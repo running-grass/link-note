@@ -1,13 +1,10 @@
-import { Column, Entity, Index, JoinColumn, OneToOne, PrimaryGeneratedColumn, UpdateDateColumn, VersionColumn } from "typeorm";
+import { Column, Entity, Index, JoinColumn, OneToOne, PrimaryColumn, PrimaryGeneratedColumn, UpdateDateColumn, VersionColumn } from "typeorm";
+import { Base } from "./base.entity";
 import { User } from "./user.entity";
 
 @Entity()
-export class Auth {
-    @PrimaryGeneratedColumn({
-    })
-    id: number
-
-    @OneToOne(() => User, {
+export class Auth extends Base {
+    @OneToOne(() => User, user => user.auth, {
         onDelete: "CASCADE"
     })
     @JoinColumn({
@@ -15,13 +12,6 @@ export class Auth {
     })
     @Index({unique: true})
     user: User;
-
-    @UpdateDateColumn()
-    @Index()
-    updatedAt: Date;
-
-    @VersionColumn()
-    version: number
 
     @Column({
         comment: "存储明文密码"

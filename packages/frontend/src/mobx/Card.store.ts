@@ -22,7 +22,6 @@ export class CardStore {
     @observable cardType: CardType
 
     constructor(_card: MinCard, belong: TopicStore, parent?: CardStore) {
-        makeObservable(this)
 
         this.id = _card.id
         this.content = _card.content
@@ -31,6 +30,8 @@ export class CardStore {
         this.parent = parent
         this.belong = belong
         this.cardType = _card.cardType
+
+        makeObservable(this)
     }
 
     @computed

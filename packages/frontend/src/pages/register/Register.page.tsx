@@ -1,4 +1,4 @@
-import { Form, Input, Checkbox, Button } from "antd"
+import { Form, Input, Button } from "antd"
 import { useCallback } from "react"
 import { useNavigate } from "react-router-dom"
 import { sdk } from "../../apollo"
@@ -25,7 +25,7 @@ export const RegisterPage = () => {
     if (data?.registerUser.id) {
       navigate('/login')
     }
-  }, [])
+  }, [navigate])
 
   return <Form
     name="basic"

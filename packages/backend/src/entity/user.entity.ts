@@ -1,25 +1,10 @@
-import { Column, CreateDateColumn, DeleteDateColumn, Entity, Index, PrimaryGeneratedColumn, UpdateDateColumn, VersionColumn } from "typeorm";
+import { Column, Entity, Index, OneToMany, OneToOne } from "typeorm";
+import { Auth } from "./auth.entity";
+import { Base } from "./base.entity";
+import { Workspace } from "./workspace.entity";
 
 @Entity()
-export class User {
-    @PrimaryGeneratedColumn()
-    id: number;
-
-    @CreateDateColumn()
-    @Index()
-    createAt: Date;
-
-    @UpdateDateColumn()
-    @Index()
-    updatedAt: Date;
-
-    @DeleteDateColumn()   
-    @Index()
-    deletedAt: Date
-
-    @VersionColumn()
-    version: number
-
+export class User extends Base{
     // TODO 不能和email、phone的规则重叠
     @Index({ unique: true })
     @Column()
@@ -32,4 +17,10 @@ export class User {
     @Column({ nullable: true})
     @Index({ unique: true})
     phone?: string
+
+    @OneToOne(() => Auth, auth => auth.user)
+    auth: Auth
+
+    @OneToMany(() => Workspace, workspace => workspace.owner)
+    workspaces: Workspace[]
 }

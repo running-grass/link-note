@@ -32,6 +32,7 @@ export type CardCreateInput = {
   parentId?: InputMaybe<Scalars['Int']>;
 };
 
+/** 笔记卡片 */
 export type CardDto = {
   __typename?: 'CardDto';
   cardType: CardType;
@@ -106,6 +107,7 @@ export enum Order {
 
 export type Query = {
   __typename?: 'Query';
+  currentUser: UserDto;
   topic?: Maybe<TopicDto>;
   /** 查询主题列表 */
   topics: Array<TopicDto>;
@@ -145,10 +147,25 @@ export type TopicDto = {
 /** 用户信息 */
 export type UserDto = {
   __typename?: 'UserDto';
+  /** 用户的电子邮箱 */
   email?: Maybe<Scalars['String']>;
   id: Scalars['Float'];
+  /** 用户的手机号，不带国际区号 */
   phone?: Maybe<Scalars['String']>;
+  /** 用户的用户名，不可修改 */
   username: Scalars['String'];
+  /** 用户的工作空间列表 */
+  workspaces: Array<WorkspaceDto>;
+};
+
+/** 用户的工作空间 */
+export type WorkspaceDto = {
+  __typename?: 'WorkspaceDto';
+  /** 显示用名称 */
+  displayName: Scalars['String'];
+  id: Scalars['Int'];
+  /** 全局不重复的key */
+  name: Scalars['String'];
 };
 
 export type CardDtoFieldsFragment = { __typename?: 'CardDto', id: number, content: string, cardType: CardType, leftId?: number | null };
@@ -170,6 +187,11 @@ export type FindTopicsQueryVariables = Exact<{
 
 
 export type FindTopicsQuery = { __typename?: 'Query', topics: Array<{ __typename?: 'TopicDto', id: number, title: string }> };
+
+export type CurrentUserQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type CurrentUserQuery = { __typename?: 'Query', currentUser: { __typename?: 'UserDto', id: number, username: string, phone?: string | null, email?: string | null, workspaces: Array<{ __typename?: 'WorkspaceDto', id: number, name: string, displayName: string }> } };
 
 export type CreateTopicMutationVariables = Exact<{
   title: Scalars['String'];
@@ -335,6 +357,48 @@ export function useFindTopicsLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions
 export type FindTopicsQueryHookResult = ReturnType<typeof useFindTopicsQuery>;
 export type FindTopicsLazyQueryHookResult = ReturnType<typeof useFindTopicsLazyQuery>;
 export type FindTopicsQueryResult = Apollo.QueryResult<FindTopicsQuery, FindTopicsQueryVariables>;
+export const CurrentUserDocument = gql`
+    query currentUser {
+  currentUser {
+    id
+    username
+    phone
+    email
+    workspaces {
+      id
+      name
+      displayName
+    }
+  }
+}
+    `;
+
+/**
+ * __useCurrentUserQuery__
+ *
+ * To run a query within a React component, call `useCurrentUserQuery` and pass it any options that fit your needs.
+ * When your component renders, `useCurrentUserQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useCurrentUserQuery({
+ *   variables: {
+ *   },
+ * });
+ */
+export function useCurrentUserQuery(baseOptions?: Apollo.QueryHookOptions<CurrentUserQuery, CurrentUserQueryVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useQuery<CurrentUserQuery, CurrentUserQueryVariables>(CurrentUserDocument, options);
+      }
+export function useCurrentUserLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<CurrentUserQuery, CurrentUserQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return Apollo.useLazyQuery<CurrentUserQuery, CurrentUserQueryVariables>(CurrentUserDocument, options);
+        }
+export type CurrentUserQueryHookResult = ReturnType<typeof useCurrentUserQuery>;
+export type CurrentUserLazyQueryHookResult = ReturnType<typeof useCurrentUserLazyQuery>;
+export type CurrentUserQueryResult = Apollo.QueryResult<CurrentUserQuery, CurrentUserQueryVariables>;
 export const CreateTopicDocument = gql`
     mutation createTopic($title: String!) {
   createTopic(title: $title) {

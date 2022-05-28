@@ -23,8 +23,9 @@ export class CardService {
     card.content = content;
     card.cardType = cardType;
     card.leftId = leftId;
+    card.workspace = belong.workspace
 
-    return await this.cardRepository.save(card);
+    return  await this.cardRepository.save(card);
   }
 
 
@@ -65,17 +66,25 @@ export class CardService {
       arr = arr.concat(old);
     }
 
-    // assert(cards.length, arr.length, "预期参数数组和返回数组应该同样的长度")
 
     return arr;
   }
 
   async getCardTree(topic: Topic) {
     // 获取根节点
-    const roots = await this.cardRepository.createQueryBuilder('card')
-      .where(`card.belongId = ${topic.id}`)
-      .andWhere(`card.parentId IS NULL`)
-      .getMany();
+    const roots = await this.cardRepository.find({
+      where: {
+        belong: {
+          id: topic.id
+        },
+        parent : null
+      }
+    })
+    
+    // createQueryBuilder('card')
+    //   .where(`card.belongId = ${topic.id}`)
+    //   .andWhere(`card.parentId IS NULL`)
+    //   .getMany();
 
     const cards = await Promise.all(roots.map(root => this.cardRepository.findDescendantsTree(root)));
 

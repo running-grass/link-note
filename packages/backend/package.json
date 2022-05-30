@@ -42,6 +42,7 @@
     "apollo-server-core": "^3.7.0",
     "apollo-server-express": "^3.7.0",
     "class-validator": "^0.13.2",
+    "link-note-common": "workspace:common",
     "cross-env": "^7.0.3",
     "dotenv": "^16.0.1",
     "graphql": "^16.5.0",

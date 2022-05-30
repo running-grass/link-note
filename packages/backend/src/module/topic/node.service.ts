@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { Guid } from 'src/util/type';
 import { Repository } from 'typeorm';
 import { Node } from '../../entity/node.entity';
 
@@ -11,7 +12,7 @@ export class NodeService {
     private nodeRepository: Repository<Node>,
   ) {}
 
-  findOneById(id: number) {
+  findOneById(id: Guid) {
     return this.nodeRepository.findOneBy({id: id});
   }
 

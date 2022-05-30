@@ -1,6 +1,6 @@
 import { createParamDecorator, ExecutionContext } from '@nestjs/common';
 import { GqlExecutionContext } from '@nestjs/graphql';
-import { JwtUser } from 'src/module/auth/dto/jwtUser';
+import { Guid, JwtUser } from './type';
 
 export const CurrentUser = createParamDecorator<any, any, JwtUser>(
   (data: unknown, context: ExecutionContext) => {
@@ -9,10 +9,9 @@ export const CurrentUser = createParamDecorator<any, any, JwtUser>(
   },
 );
 
-
-export const CurrentWorkspaceId = createParamDecorator<any, any, number>(
+export const CurrentWorkspaceId = createParamDecorator<any, any, Guid>(
   (data: unknown, context: ExecutionContext) => {
     const ctx = GqlExecutionContext.create(context);
-    return Number(ctx.getContext().req.headers['workspace-id'])
+    return String(ctx.getContext().req.headers['workspace-id'])
   },
 );

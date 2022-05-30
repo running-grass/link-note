@@ -1,10 +1,12 @@
 import { UseGuards } from "@nestjs/common";
 import { Args, Int, Mutation, Parent, ResolveField, Resolver } from "@nestjs/graphql";
 import { Card } from "src/entity/card.entity";
+import { GUIDScalar } from "src/graphql.scalar";
 import { CardDto } from "src/graphql/model";
 import { NodeService } from "src/module/topic/node.service";
 import { TopicService } from "src/module/topic/topic.service";
 import { CurrentWorkspaceId } from "src/util/decorater";
+import { Guid } from "src/util/type";
 import { GqlAuthGuard } from "../auth/gql.guard";
 import { CardService } from "./card.service";
 import { CardCreateInput, CardInputDto } from "./dto/cardCreateInput";
@@ -14,7 +16,6 @@ import { CardCreateInput, CardInputDto } from "./dto/cardCreateInput";
 export class CardResolver {
   constructor(
     private cardService: CardService,
-    private nodeService: NodeService,
     private topicService: TopicService,
   ) { }
 
@@ -27,7 +28,7 @@ export class CardResolver {
 
   @Mutation(returns => CardDto)
   async createNewCard(@Args('cardCreateInput') cardCreateInput: CardCreateInput,
-    @CurrentWorkspaceId() wid: number) {
+    @CurrentWorkspaceId() wid: Guid) {
     const node = await this.topicService.findOneById(wid, cardCreateInput.belongId);
 
     if (!node) {
@@ -50,7 +51,7 @@ export class CardResolver {
   private dtoTreeToEntityTree(cards: CardInputDto[], parent?: Card): Card[] {
     if (!cards.length) return []
 
-    let prevId = 0
+    let prevId: Guid = null
 
     let arr: Card[] = []
     for (const card of cards) {
@@ -86,7 +87,7 @@ export class CardResolver {
   @Mutation(returns => Int, {
     description: '删除指定的card'
   })
-  async deleteCard(@Args('cardId', { type: () => Int }) cardId: number) {
+  async deleteCard(@Args('cardId', { type: () => GUIDScalar }) cardId: Guid) {
     await this.cardService.deleCard(cardId)
     return 1
   }

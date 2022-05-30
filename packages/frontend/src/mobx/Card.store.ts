@@ -3,9 +3,10 @@ import { TopicStore } from "./Topic.store"
 import { sdk } from '../apollo'
 import { CardType } from "../generated/graphql"
 import { swapItem } from "../utils/array"
+import { Guid } from "link-note-common"
 
 export interface MinCard {
-    id: number
+    id: Guid
     content: string
     childrens?: MinCard[]
     cardType: CardType
@@ -13,7 +14,7 @@ export interface MinCard {
 }
 
 export class CardStore {
-    readonly id: number
+    readonly id: Guid
     @observable content: string
     @observable childrens: CardStore[]
 

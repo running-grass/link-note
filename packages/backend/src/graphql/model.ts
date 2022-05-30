@@ -1,11 +1,12 @@
-import { Field, Int, ObjectType } from "@nestjs/graphql";
+import { Field, ObjectType } from "@nestjs/graphql";
 import { CardType } from "src/enum/common";
-
+import { Guid } from "src/util/type";
+import { GUIDScalar } from '../graphql.scalar'
 
 @ObjectType({description: "笔记卡片"})
 export class CardDto {
-    @Field(() => Int)
-    id: number;
+    @Field((type) => GUIDScalar)
+    id: Guid;
 
     @Field()
     createAt: Date;
@@ -16,8 +17,8 @@ export class CardDto {
     @Field()
     content: string;
 
-    @Field(() => Int, { nullable: true })
-    leftId?: number
+    @Field((type) => GUIDScalar, { nullable: true })
+    leftId?: Guid
 
     @Field(() => CardType)
     cardType: CardType;
@@ -30,8 +31,8 @@ export class CardDto {
 
 @ObjectType({ description: "各个节点的公共字段" })
 export abstract class NodeDto {
-    @Field(() => Int)
-    id: number;
+    @Field((type) => GUIDScalar)
+    id: Guid;
 
     @Field()
     createAt: Date;
@@ -51,8 +52,8 @@ export class TopicDto extends NodeDto {
 
 @ObjectType({ description: "用户的工作空间" })
 export class WorkspaceDto {
-    @Field(() => Int)
-    id: number
+    @Field((type) => GUIDScalar)
+    id: Guid
 
     @Field({ description: "全局不重复的key" })
     name: string
@@ -63,8 +64,8 @@ export class WorkspaceDto {
 
 @ObjectType({ description: "用户信息" })
 export class UserDto {
-    @Field()
-    id: number
+    @Field((type) => GUIDScalar)
+    id: Guid
 
     @Field({ description: "用户的用户名，不可修改" })
     username: string

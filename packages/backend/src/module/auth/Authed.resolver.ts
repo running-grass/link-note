@@ -3,7 +3,7 @@ import { Query } from "@nestjs/graphql";
 import { User } from "src/entity/user.entity";
 import { CurrentUser } from "src/util/decorater";
 import { UserService } from "../user/user.service";
-import { JwtUser } from "./dto/jwtUser";
+import { JwtUser } from "../../util/type";
 
 
 export abstract class AuthedResolver {

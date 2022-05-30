@@ -7,6 +7,8 @@ import { flatten } from 'ramda'
 // import assert from 'node:assert';
 
 import { CardType } from '../../enum/common'
+import { Guid } from 'src/util/type';
+import { guid } from 'src/util/common';
 @Injectable()
 export class CardService {
   private cardRepository: TreeRepository<Card>
@@ -17,8 +19,9 @@ export class CardService {
     this.cardRepository = manager.getTreeRepository(Card);
   }
 
-  async createOne(belong: Topic, parent: Card, content: string = "", cardType: CardType = CardType.INLINE, leftId?: number) {
+  async createOne(belong: Topic, parent: Card, content: string = "", cardType: CardType = CardType.INLINE, leftId?: Guid) {
     const card = new Card();
+    card.id = guid()
     card.belong = belong;
     card.parent = parent;
     card.content = content;
@@ -30,7 +33,7 @@ export class CardService {
   }
 
 
-  async findOneById(id: number) {
+  async findOneById(id: Guid) {
     return await this.cardRepository.findOneBy({ id });
   }
 
@@ -98,7 +101,7 @@ export class CardService {
     return this.cardRepository.save(cards)
   }
 
-  async deleCard(cardId: number) {
+  async deleCard(cardId: Guid) {
     return this.cardRepository.softDelete(cardId)
   }
 

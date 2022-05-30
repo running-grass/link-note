@@ -3,6 +3,7 @@ import { observer } from "mobx-react"
 import { useContext } from "react"
 import { GlobalStoreContext } from "../context/globalStore.context"
 import { PlusOutlined } from '@ant-design/icons';
+import { Guid } from "link-note-common";
 
 
 export const Aside = observer(() => {
@@ -21,7 +22,7 @@ export const Aside = observer(() => {
     // setName('');
   };
 
-  const onSelect = (val : number) => {
+  const onSelect = (val : Guid) => {
     console.log(val)
   }
 

@@ -5,7 +5,8 @@ import { User } from 'src/entity/user.entity';
 import { Repository } from 'typeorm';
 import { UserService } from '../user/user.service';
 import { JwtService } from '@nestjs/jwt'
-import { JwtUser } from './dto/jwtUser';
+import { JwtUser } from '../../util/type';
+import { guid } from 'link-note-common';
 
 @Injectable()
 export class AuthService {
@@ -16,13 +17,33 @@ export class AuthService {
     private userService: UserService,
     private jwtService: JwtService
 
-  ) {}
+  ) { }
 
-  updatePassword(user: User, password: string) {
-    return this.authRepository.save(this.authRepository.create({
-      user,
-      password,
-    }));
+  async updatePassword(user: User, password: string) {
+    // 判断有没有存储密码
+    let auth = await this.authRepository.findOne({
+      where: { user: {id: user.id}}, 
+      select: {
+        id: true,
+        password: true,
+      }})
+
+    if (!auth) {
+      auth = new Auth()
+      auth.id = guid()
+      auth.user = user
+    } else {
+      // 判断是否更改了密码
+
+      if (auth.password === password) {
+        throw new Error("密码不能和旧密码相同")
+      }
+    }
+
+    auth.user = user
+    auth.password = password;
+
+    return this.authRepository.save(auth);
   }
 
   async validateUser(username: string, pass: string) {
@@ -38,18 +59,24 @@ export class AuthService {
     } else {
       throw new Error('密码不对');
     }
-    
+
   }
 
-  async getPassword(user: User) {
-    return this.authRepository.createQueryBuilder('auth').where('uid='+ user.id).getOne();
+  async getPassword(user: User): Promise<Auth | null> {
+    return this.authRepository.findOne({
+      where: {
+        user: {
+          id: user.id
+        }
+      }
+    })
   }
 
   async login(user: User) {
-    const payload : JwtUser= { username: user.username, uid: user.id };
+    const payload: JwtUser = { username: user.username, uid: user.id };
     return {
       access_token: this.jwtService.sign(payload),
     };
   }
-  
+
 }

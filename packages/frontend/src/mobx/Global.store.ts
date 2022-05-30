@@ -2,6 +2,7 @@ import { makeObservable, observable } from "mobx"
 
 import { sdk } from '../apollo';
 import { UserDto } from  '../generated/graphql'
+import { Guid } from 'link-note-common'
 
 export let store : GlobalStore | null = null;
 
@@ -10,7 +11,7 @@ export class GlobalStore {
     currUser: UserDto
 
     @observable
-    currWorkspaceId: number
+    currWorkspaceId: Guid
 
     constructor(user: UserDto) {
         this.currUser = user

@@ -7,6 +7,8 @@ import { TopicService } from "./topic.service";
 import { UseGuards } from "@nestjs/common";
 import { GqlAuthGuard } from "../auth/gql.guard";
 import { CurrentWorkspaceId } from "src/util/decorater";
+import { Guid } from "src/util/type";
+import { GUIDScalar } from "src/graphql.scalar";
 
 @Resolver(of => TopicDto)
 @UseGuards(GqlAuthGuard)
@@ -24,9 +26,9 @@ export class TopicResolver {
 
   @Query(returns => TopicDto, { nullable: true })
   async topic(
-    @Args('id', { type: () => Int, nullable: true }) id: number,
+    @Args('id', { nullable: true , type: () => GUIDScalar}) id: Guid,
     @Args('title', { nullable: true }) title: string,
-    @CurrentWorkspaceId() wid: number
+    @CurrentWorkspaceId() wid: Guid
   ) {
     if (id) {
       return this.topicService.findOneById(wid, id);
@@ -42,7 +44,7 @@ export class TopicResolver {
   })
   async topics(
     @Args() args: TopicsArgs,
-    @CurrentWorkspaceId() wid: number
+    @CurrentWorkspaceId() wid: Guid
   ) {
     return await this.topicService.findAll(wid, args.sort, args.order, args.limit, args.search);
   }
@@ -51,7 +53,7 @@ export class TopicResolver {
   @Mutation(returns => TopicDto,)
   async createTopic(
     @Args('title') title: string,
-    @CurrentWorkspaceId() wid: number
+    @CurrentWorkspaceId() wid: Guid
   ) {
     return await this.topicService.newOne(wid, title);
   }

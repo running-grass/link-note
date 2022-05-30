@@ -2,7 +2,7 @@ import { UseGuards } from "@nestjs/common";
 import { Parent, Query, ResolveField, Resolver } from "@nestjs/graphql";
 import { UserDto, WorkspaceDto } from "src/graphql/model";
 import { CurrentUser } from "src/util/decorater";
-import { JwtUser } from "../auth/dto/jwtUser";
+import { JwtUser } from "src/util/type";
 import { GqlAuthGuard } from "../auth/gql.guard";
 import { WorkspaceService } from "../workspace/workspace.service";
 import { UserService } from "./user.service";

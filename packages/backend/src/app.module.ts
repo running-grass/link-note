@@ -16,6 +16,7 @@ import { configuration } from './configuration'
 import { UserModule } from './module/user/user.module';
 import { AuthModule } from './module/auth/auth.module';
 import { WorkspaceModule } from './module/workspace/workspace.module';
+import { GUIDScalar } from './graphql.scalar';
 
 const otherConfig = {
   synchronize: true, // TODO 0.1版本的时候关掉
@@ -40,7 +41,7 @@ switch (process.env.DB_TYPE) {
     }
     break
   default:
-    throw new Error('您配置的DB_TYPE有误')
+    throw new Error('您配置的DB_TYPE有误:'+process.env.DB_TYPE)
 }
 @Module({
   imports: [
@@ -55,6 +56,12 @@ switch (process.env.DB_TYPE) {
       playground: false,
       plugins: [ApolloServerPluginLandingPageLocalDefault()],
       autoSchemaFile: join(__dirname, 'generated/schema.gql'),
+      buildSchemaOptions: {
+        numberScalarMode: 'integer',
+      },
+      resolvers: { 
+        GUID: GUIDScalar
+      },
     }),
     ServeStaticModule.forRoot({
       rootPath: join(__dirname, '..', 'frontend-root'),

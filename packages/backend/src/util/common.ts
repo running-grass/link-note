@@ -1,0 +1,1 @@
+export { guid, guidLength } from 'link-note-common'

@@ -44,7 +44,7 @@ const CardDtoRecursive = gql`
 `
 
 export const QUERY_TOPIC = gql`
-  query findTopic($title: String, $id: Int){
+  query findTopic($title: String, $id: GUID){
     ${CardDtoRecursive}
     topic(title: $title, id: $id) {
       id
@@ -82,7 +82,6 @@ export const QUERY_CURREN_USER = gql`
   }
 `
 
-
 export const MUTATION_CREATE_TOPIC = gql`
   mutation createTopic($title: String!){
     createTopic(title: $title) {
@@ -93,7 +92,7 @@ export const MUTATION_CREATE_TOPIC = gql`
 `
 
 export const MUTATION_CREATE_CARD = gql`
-  mutation createNewCard($belongId: Int!, $parentId: Int, $content: String, $cardType: CardType, $leftId: Int) {
+  mutation createNewCard($belongId: GUID!, $parentId: GUID, $content: String, $cardType: CardType, $leftId: GUID) {
     createNewCard(cardCreateInput: { 
         belongId: $belongId
         , parentId: $parentId
@@ -114,10 +113,8 @@ export const MUTATION_UPDATE_CARDS = gql`
   }
 `
 
-
-
 export const MUTATION_DELETE_CARD = gql`
-  mutation deleteCard($cardId: Int!) {
+  mutation deleteCard($cardId: GUID!) {
     deleteCard(cardId: $cardId)
   }
 `
@@ -132,12 +129,12 @@ export const MUTATION_REGISTER_USER = gql`
   }
 `
 
-export const MUTATION_LOGIN = gql`
-  mutation login($username: String!, $password: String! ) 
-  {
-    login(username: $username, password: $password) {
-      id
-      username
-    }
-  }
-`
+// export const MUTATION_LOGIN = gql`
+//   mutation login($username: String!, $password: String! ) 
+//   {
+//     login(username: $username, password: $password) {
+//       id
+//       username
+//     }
+//   }
+// `

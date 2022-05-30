@@ -4,9 +4,10 @@ import { CardStore, MinCard } from "./Card.store"
 import { sdk } from '../apollo';
 import { CardType } from '../generated/graphql';
 import { CardInputDto } from "../generated/apollo";
+import { Guid } from "link-note-common";
 
 interface MinTopic {
-    id: number
+    id: Guid
     title: string
     cards: MinCard[]
 
@@ -14,13 +15,13 @@ interface MinTopic {
 }
 
 interface NeedFocusInfo {
-    
-        card: CardStore
-        pos?: number
-    
+
+    card: CardStore
+    pos?: number
+
 }
-export class TopicStore {   
-    id!: number;
+export class TopicStore {
+    id!: Guid;
 
     @observable
     title!: string;
@@ -63,7 +64,7 @@ export class TopicStore {
         this.needFocus = need
     }
 
-    @action 
+    @action
     setCurrentCard(card?: CardStore) {
         this.currentEditingCard = card
     }

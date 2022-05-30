@@ -1,4 +1,5 @@
 import { CardType } from "src/enum/common";
+import { Guid } from "src/util/type";
 import { Column, Entity, Index, JoinColumn, JoinTable, ManyToOne, OneToOne, Tree, TreeChildren, TreeLevelColumn, TreeParent } from "typeorm";
 import { Base } from "./base.entity";
 import { Node } from './node.entity';
@@ -22,7 +23,7 @@ export class Card  extends Base{
     parent: Card
 
     @Column({nullable: true})
-    leftId?: number
+    leftId?: Guid
 
     @TreeChildren()
     childrens: Card[]

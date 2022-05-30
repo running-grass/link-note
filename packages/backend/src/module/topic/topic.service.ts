@@ -1,6 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Workspace } from 'src/entity/workspace.entity';
+import { guid } from 'src/util/common';
+import { Guid } from 'src/util/type';
 import { Repository } from 'typeorm';
 import { Topic } from '../../entity/topic.entity';
 import { BaseSort, Order } from '../../enum/common'
@@ -13,13 +15,14 @@ export class TopicService {
     private topicRepository: Repository<Topic>
   ) { }
 
-  findAll(wid: number
+  findAll(wid: Guid
     , sort: BaseSort = BaseSort.id
     , order: Order = Order.DESC
     , limit: number = 10
     , search: string): Promise<Topic[]> {
 
-    let build = this.topicRepository.createQueryBuilder('topic').where(`topic.wid=${wid}`);
+    let build = this.topicRepository.createQueryBuilder('topic')
+    .where(`topic.wid = "${wid}"`)
 
     // 字符串匹配
     if (search) {
@@ -31,11 +34,12 @@ export class TopicService {
       .getMany();
   }
 
-  newOne(wid: number, title: string): Promise<Topic> {
+  newOne(wid: Guid, title: string): Promise<Topic> {
     const ws = new Workspace()
     ws.id = wid
 
     const t = new Topic();
+    t.id = guid()
     t.title = title
 
     t.workspace = ws
@@ -43,7 +47,7 @@ export class TopicService {
     return this.topicRepository.save(t);
   }
 
-  findOneById(wid: number, id: number) {
+  findOneById(wid: Guid, id: Guid) {
     return this.topicRepository.findOne({
       where: {
         id,
@@ -58,7 +62,7 @@ export class TopicService {
     })
   }
 
-  findOneByTitle(wid: number, title: string) {
+  findOneByTitle(wid: Guid, title: string) {
     return this.topicRepository.findOne({
       where: {
         title,

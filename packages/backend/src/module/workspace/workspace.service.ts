@@ -2,6 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from 'src/entity/user.entity';
 import { Workspace } from 'src/entity/workspace.entity';
+import { guid } from 'src/util/common';
+import { Guid } from 'src/util/type';
 import { Repository } from 'typeorm';
 
 @Injectable()
@@ -14,6 +16,7 @@ export class WorkspaceService {
 
   createWorkspace(user: User, name: string, displayName: string) {
     const ws = new Workspace()
+    ws.id = guid()
     ws.owner = user
     ws.name = name
     ws.displayName = displayName
@@ -21,10 +24,13 @@ export class WorkspaceService {
     return this.workspaceRepository.save(ws)
   }
 
-  getAllByUserId(uid: number) {
-    return this.workspaceRepository
-      .createQueryBuilder('ws')
-      .where(`ws.ownerId=${uid}`)
-      .getMany()
+  getAllByUserId(uid: Guid) {
+    return this.workspaceRepository.find({
+      where: {
+        owner: {
+          id: uid
+        }
+      }
+    })
   }
 }

@@ -38,7 +38,7 @@ docker-build:
 	docker build .
 
 docker-build-dev: 
-	docker build -t ghcr.io/link-note/link-note:dev	 .
+	docker build -t ghcr.io/link-note/link-note:dev	-t leo1992/link-note:dev .
 docker-push-dev: docker-build-dev
 	docker push ghcr.io/link-note/link-note:dev
 	docker push leo1992/link-note:dev

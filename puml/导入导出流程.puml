@@ -1,0 +1,52 @@
+@startuml 导入流程
+
+folder API层 {
+  card 导入API 
+}
+
+
+folder pandoc {
+  card "pandoc-markdown-reader" as pmr
+  card "pandoc-filter-lnml-import" as pfli
+  card "pandoc-lnml-writer" as plw
+}
+
+folder lnml-service {
+  card 写入lnml到数据库
+}
+
+导入API --> pmr: 转为pandoc的ast
+pmr --> pfli: 使用导入过滤器过滤ast
+pfli --> plw: 把ast写入为lnml
+
+plw --> 写入lnml到数据库: 入库
+
+写入lnml到数据库 --> 导入API: 导入成功
+
+@enduml
+
+@startuml 导出流程
+
+folder API层 {
+  card 导出API
+}
+
+
+folder pandoc导入 {
+  card "pandoc-markdown-writer" as pmw
+  card "pandoc-filter-lnml-export" as pfle
+  card "pandoc-lnml-reader" as plr
+}
+
+folder lnml-service {
+  card 导出数据库为lnml
+}
+
+导出API --> 导出数据库为lnml
+
+导出数据库为lnml --> plr: 转为pandoc的ast
+plr --> pfle: 使用导出过滤器过滤ast
+pfle --> pmw: 把ast写为markdown
+pmw -l-> 导出API: 导出成功
+
+@enduml

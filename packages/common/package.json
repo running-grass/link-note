@@ -1,0 +1,18 @@
+{
+  "name": "link-note-common",
+  "main": "./dist/index.js",
+  "typings": "./dist/index.d.ts",
+  "type": "commonjs",
+  "scripts": {
+    "build": "tsc"
+  },
+  "dependencies": {
+    "nanoid": "^3.3.4"
+  },
+  "devDependencies": {
+    "typescript": "^4"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

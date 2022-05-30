@@ -1,16 +1,18 @@
 import { Field, InputType, Int } from '@nestjs/graphql';
 import { CardType } from 'src/enum/common';
+import { GUIDScalar } from 'src/graphql.scalar';
+import { Guid } from 'src/util/type';
 
 @InputType()
 export class CardCreateInput {
-    @Field(type => Int, { nullable: false})
-    belongId: number
+    @Field(() => GUIDScalar, { nullable: false})
+    belongId: Guid
 
-    @Field(type => Int, { nullable: true})
-    parentId?: number
+    @Field(() => GUIDScalar, { nullable: true})
+    parentId?: Guid
 
-    @Field(type => Int, { nullable: true})
-    leftId?: number
+    @Field(() => GUIDScalar, { nullable: true})
+    leftId?: Guid
 
     @Field({ nullable: true})
     content?: string
@@ -21,8 +23,8 @@ export class CardCreateInput {
 
 @InputType()
 export class CardInputDto {
-    @Field(() => Int)
-    id: number;
+    @Field(() => GUIDScalar)
+    id: Guid;
 
     @Field()
     content: string;

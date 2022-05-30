@@ -14,6 +14,8 @@ export type Scalars = {
   Float: number;
   /** A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date-time format. */
   DateTime: any;
+  /** A simple guid parser */
+  GUID: any;
 };
 
 /** 实体查询中的通用排序字段 */
@@ -24,11 +26,11 @@ export enum BaseSort {
 }
 
 export type CardCreateInput = {
-  belongId: Scalars['Int'];
+  belongId: Scalars['GUID'];
   cardType?: InputMaybe<CardType>;
   content?: InputMaybe<Scalars['String']>;
-  leftId?: InputMaybe<Scalars['Int']>;
-  parentId?: InputMaybe<Scalars['Int']>;
+  leftId?: InputMaybe<Scalars['GUID']>;
+  parentId?: InputMaybe<Scalars['GUID']>;
 };
 
 /** 笔记卡片 */
@@ -38,8 +40,8 @@ export type CardDto = {
   childrens: Array<CardDto>;
   content: Scalars['String'];
   createAt: Scalars['DateTime'];
-  id: Scalars['Int'];
-  leftId?: Maybe<Scalars['Int']>;
+  id: Scalars['GUID'];
+  leftId?: Maybe<Scalars['GUID']>;
   updateAt: Scalars['DateTime'];
 };
 
@@ -47,7 +49,7 @@ export type CardInputDto = {
   cardType: CardType;
   childrens: Array<CardInputDto>;
   content: Scalars['String'];
-  id: Scalars['Int'];
+  id: Scalars['GUID'];
 };
 
 /** Card内容的类型 */
@@ -61,7 +63,6 @@ export type Mutation = {
   createTopic: TopicDto;
   /** 删除指定的card */
   deleteCard: Scalars['Int'];
-  login: UserDto;
   registerUser: UserDto;
   /** 传入一个有序的CardDTO树，更新数据库中的leftId和parentId */
   updateCards: Scalars['Int'];
@@ -79,13 +80,7 @@ export type MutationCreateTopicArgs = {
 
 
 export type MutationDeleteCardArgs = {
-  cardId: Scalars['Int'];
-};
-
-
-export type MutationLoginArgs = {
-  password: Scalars['String'];
-  username: Scalars['String'];
+  cardId: Scalars['GUID'];
 };
 
 
@@ -114,7 +109,7 @@ export type Query = {
 
 
 export type QueryTopicArgs = {
-  id?: InputMaybe<Scalars['Int']>;
+  id?: InputMaybe<Scalars['GUID']>;
   title?: InputMaybe<Scalars['String']>;
 };
 
@@ -138,7 +133,7 @@ export type TopicDto = {
   __typename?: 'TopicDto';
   cards: Array<CardDto>;
   createAt: Scalars['DateTime'];
-  id: Scalars['Int'];
+  id: Scalars['GUID'];
   title: Scalars['String'];
   updateAt: Scalars['DateTime'];
 };
@@ -148,7 +143,7 @@ export type UserDto = {
   __typename?: 'UserDto';
   /** 用户的电子邮箱 */
   email?: Maybe<Scalars['String']>;
-  id: Scalars['Float'];
+  id: Scalars['GUID'];
   /** 用户的手机号，不带国际区号 */
   phone?: Maybe<Scalars['String']>;
   /** 用户的用户名，不可修改 */
@@ -162,22 +157,22 @@ export type WorkspaceDto = {
   __typename?: 'WorkspaceDto';
   /** 显示用名称 */
   displayName: Scalars['String'];
-  id: Scalars['Int'];
+  id: Scalars['GUID'];
   /** 全局不重复的key */
   name: Scalars['String'];
 };
 
-export type CardDtoFieldsFragment = { __typename?: 'CardDto', id: number, content: string, cardType: CardType, leftId?: number | null };
+export type CardDtoFieldsFragment = { __typename?: 'CardDto', id: any, content: string, cardType: CardType, leftId?: any | null };
 
-export type CardDtoRecursiveFragment = { __typename?: 'CardDto', id: number, content: string, cardType: CardType, leftId?: number | null, childrens: Array<{ __typename?: 'CardDto', id: number, content: string, cardType: CardType, leftId?: number | null, childrens: Array<{ __typename?: 'CardDto', id: number, content: string, cardType: CardType, leftId?: number | null, childrens: Array<{ __typename?: 'CardDto', id: number, content: string, cardType: CardType, leftId?: number | null, childrens: Array<{ __typename?: 'CardDto', id: number, content: string, cardType: CardType, leftId?: number | null, childrens: Array<{ __typename?: 'CardDto', id: number, content: string, cardType: CardType, leftId?: number | null, childrens: Array<{ __typename?: 'CardDto', id: number, content: string, cardType: CardType, leftId?: number | null, childrens: Array<{ __typename?: 'CardDto', id: number, content: string, cardType: CardType, leftId?: number | null, childrens: Array<{ __typename?: 'CardDto', id: number, content: string, cardType: CardType, leftId?: number | null, childrens: Array<{ __typename?: 'CardDto', id: number, content: string, cardType: CardType, leftId?: number | null }> }> }> }> }> }> }> }> }> };
+export type CardDtoRecursiveFragment = { __typename?: 'CardDto', id: any, content: string, cardType: CardType, leftId?: any | null, childrens: Array<{ __typename?: 'CardDto', id: any, content: string, cardType: CardType, leftId?: any | null, childrens: Array<{ __typename?: 'CardDto', id: any, content: string, cardType: CardType, leftId?: any | null, childrens: Array<{ __typename?: 'CardDto', id: any, content: string, cardType: CardType, leftId?: any | null, childrens: Array<{ __typename?: 'CardDto', id: any, content: string, cardType: CardType, leftId?: any | null, childrens: Array<{ __typename?: 'CardDto', id: any, content: string, cardType: CardType, leftId?: any | null, childrens: Array<{ __typename?: 'CardDto', id: any, content: string, cardType: CardType, leftId?: any | null, childrens: Array<{ __typename?: 'CardDto', id: any, content: string, cardType: CardType, leftId?: any | null, childrens: Array<{ __typename?: 'CardDto', id: any, content: string, cardType: CardType, leftId?: any | null, childrens: Array<{ __typename?: 'CardDto', id: any, content: string, cardType: CardType, leftId?: any | null }> }> }> }> }> }> }> }> }> };
 
 export type FindTopicQueryVariables = Exact<{
   title?: InputMaybe<Scalars['String']>;
-  id?: InputMaybe<Scalars['Int']>;
+  id?: InputMaybe<Scalars['GUID']>;
 }>;
 
 
-export type FindTopicQuery = { __typename?: 'Query', topic?: { __typename?: 'TopicDto', id: number, title: string, cards: Array<{ __typename?: 'CardDto', id: number, content: string, cardType: CardType, leftId?: number | null, childrens: Array<{ __typename?: 'CardDto', id: number, content: string, cardType: CardType, leftId?: number | null, childrens: Array<{ __typename?: 'CardDto', id: number, content: string, cardType: CardType, leftId?: number | null, childrens: Array<{ __typename?: 'CardDto', id: number, content: string, cardType: CardType, leftId?: number | null, childrens: Array<{ __typename?: 'CardDto', id: number, content: string, cardType: CardType, leftId?: number | null, childrens: Array<{ __typename?: 'CardDto', id: number, content: string, cardType: CardType, leftId?: number | null, childrens: Array<{ __typename?: 'CardDto', id: number, content: string, cardType: CardType, leftId?: number | null, childrens: Array<{ __typename?: 'CardDto', id: number, content: string, cardType: CardType, leftId?: number | null, childrens: Array<{ __typename?: 'CardDto', id: number, content: string, cardType: CardType, leftId?: number | null, childrens: Array<{ __typename?: 'CardDto', id: number, content: string, cardType: CardType, leftId?: number | null }> }> }> }> }> }> }> }> }> }> } | null };
+export type FindTopicQuery = { __typename?: 'Query', topic?: { __typename?: 'TopicDto', id: any, title: string, cards: Array<{ __typename?: 'CardDto', id: any, content: string, cardType: CardType, leftId?: any | null, childrens: Array<{ __typename?: 'CardDto', id: any, content: string, cardType: CardType, leftId?: any | null, childrens: Array<{ __typename?: 'CardDto', id: any, content: string, cardType: CardType, leftId?: any | null, childrens: Array<{ __typename?: 'CardDto', id: any, content: string, cardType: CardType, leftId?: any | null, childrens: Array<{ __typename?: 'CardDto', id: any, content: string, cardType: CardType, leftId?: any | null, childrens: Array<{ __typename?: 'CardDto', id: any, content: string, cardType: CardType, leftId?: any | null, childrens: Array<{ __typename?: 'CardDto', id: any, content: string, cardType: CardType, leftId?: any | null, childrens: Array<{ __typename?: 'CardDto', id: any, content: string, cardType: CardType, leftId?: any | null, childrens: Array<{ __typename?: 'CardDto', id: any, content: string, cardType: CardType, leftId?: any | null, childrens: Array<{ __typename?: 'CardDto', id: any, content: string, cardType: CardType, leftId?: any | null }> }> }> }> }> }> }> }> }> }> } | null };
 
 export type FindTopicsQueryVariables = Exact<{
   search?: InputMaybe<Scalars['String']>;
@@ -185,30 +180,30 @@ export type FindTopicsQueryVariables = Exact<{
 }>;
 
 
-export type FindTopicsQuery = { __typename?: 'Query', topics: Array<{ __typename?: 'TopicDto', id: number, title: string }> };
+export type FindTopicsQuery = { __typename?: 'Query', topics: Array<{ __typename?: 'TopicDto', id: any, title: string }> };
 
 export type CurrentUserQueryVariables = Exact<{ [key: string]: never; }>;
 
 
-export type CurrentUserQuery = { __typename?: 'Query', currentUser: { __typename?: 'UserDto', id: number, username: string, phone?: string | null, email?: string | null, workspaces: Array<{ __typename?: 'WorkspaceDto', id: number, name: string, displayName: string }> } };
+export type CurrentUserQuery = { __typename?: 'Query', currentUser: { __typename?: 'UserDto', id: any, username: string, phone?: string | null, email?: string | null, workspaces: Array<{ __typename?: 'WorkspaceDto', id: any, name: string, displayName: string }> } };
 
 export type CreateTopicMutationVariables = Exact<{
   title: Scalars['String'];
 }>;
 
 
-export type CreateTopicMutation = { __typename?: 'Mutation', createTopic: { __typename?: 'TopicDto', id: number, title: string } };
+export type CreateTopicMutation = { __typename?: 'Mutation', createTopic: { __typename?: 'TopicDto', id: any, title: string } };
 
 export type CreateNewCardMutationVariables = Exact<{
-  belongId: Scalars['Int'];
-  parentId?: InputMaybe<Scalars['Int']>;
+  belongId: Scalars['GUID'];
+  parentId?: InputMaybe<Scalars['GUID']>;
   content?: InputMaybe<Scalars['String']>;
   cardType?: InputMaybe<CardType>;
-  leftId?: InputMaybe<Scalars['Int']>;
+  leftId?: InputMaybe<Scalars['GUID']>;
 }>;
 
 
-export type CreateNewCardMutation = { __typename?: 'Mutation', createNewCard: { __typename?: 'CardDto', id: number, content: string, cardType: CardType } };
+export type CreateNewCardMutation = { __typename?: 'Mutation', createNewCard: { __typename?: 'CardDto', id: any, content: string, cardType: CardType } };
 
 export type UpdateCardsMutationVariables = Exact<{
   cards: Array<CardInputDto> | CardInputDto;
@@ -218,7 +213,7 @@ export type UpdateCardsMutationVariables = Exact<{
 export type UpdateCardsMutation = { __typename?: 'Mutation', updateCards: number };
 
 export type DeleteCardMutationVariables = Exact<{
-  cardId: Scalars['Int'];
+  cardId: Scalars['GUID'];
 }>;
 
 
@@ -229,15 +224,7 @@ export type RegisterUserMutationVariables = Exact<{
 }>;
 
 
-export type RegisterUserMutation = { __typename?: 'Mutation', registerUser: { __typename?: 'UserDto', id: number, username: string } };
-
-export type LoginMutationVariables = Exact<{
-  username: Scalars['String'];
-  password: Scalars['String'];
-}>;
-
-
-export type LoginMutation = { __typename?: 'Mutation', login: { __typename?: 'UserDto', id: number, username: string } };
+export type RegisterUserMutation = { __typename?: 'Mutation', registerUser: { __typename?: 'UserDto', id: any, username: string } };
 
 export const CardDtoFieldsFragmentDoc = gql`
     fragment CardDtoFields on CardDto {
@@ -280,7 +267,7 @@ export const CardDtoRecursiveFragmentDoc = gql`
 }
     ${CardDtoFieldsFragmentDoc}`;
 export const FindTopicDocument = gql`
-    query findTopic($title: String, $id: Int) {
+    query findTopic($title: String, $id: GUID) {
   topic(title: $title, id: $id) {
     id
     title
@@ -322,7 +309,7 @@ export const CreateTopicDocument = gql`
 }
     `;
 export const CreateNewCardDocument = gql`
-    mutation createNewCard($belongId: Int!, $parentId: Int, $content: String, $cardType: CardType, $leftId: Int) {
+    mutation createNewCard($belongId: GUID!, $parentId: GUID, $content: String, $cardType: CardType, $leftId: GUID) {
   createNewCard(
     cardCreateInput: {belongId: $belongId, parentId: $parentId, leftId: $leftId, content: $content, cardType: $cardType}
   ) {
@@ -338,21 +325,13 @@ export const UpdateCardsDocument = gql`
 }
     `;
 export const DeleteCardDocument = gql`
-    mutation deleteCard($cardId: Int!) {
+    mutation deleteCard($cardId: GUID!) {
   deleteCard(cardId: $cardId)
 }
     `;
 export const RegisterUserDocument = gql`
     mutation registerUser($registerData: RegisterInput!) {
   registerUser(registerData: $registerData) {
-    id
-    username
-  }
-}
-    `;
-export const LoginDocument = gql`
-    mutation login($username: String!, $password: String!) {
-  login(username: $username, password: $password) {
     id
     username
   }
@@ -382,9 +361,6 @@ deleteCardMutation(options: Partial<MutationOptions<DeleteCardMutation, DeleteCa
       },
 registerUserMutation(options: Partial<MutationOptions<RegisterUserMutation, RegisterUserMutationVariables>>) {
           return client.mutate<RegisterUserMutation, RegisterUserMutationVariables>({...options, mutation: RegisterUserDocument})
-      },
-loginMutation(options: Partial<MutationOptions<LoginMutation, LoginMutationVariables>>) {
-          return client.mutate<LoginMutation, LoginMutationVariables>({...options, mutation: LoginDocument})
       }
     });
     export type SdkType = ReturnType<typeof getSdk>

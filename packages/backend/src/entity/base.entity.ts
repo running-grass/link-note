@@ -1,9 +1,14 @@
-import { CreateDateColumn, DeleteDateColumn, Entity, Index, PrimaryGeneratedColumn, UpdateDateColumn, VersionColumn } from "typeorm";
+import { CreateDateColumn, DeleteDateColumn, Entity, Index, PrimaryColumn, UpdateDateColumn, VersionColumn } from "typeorm";
+
+import { Guid } from "src/util/type";
+import { guidLength } from "src/util/common";
 
 @Entity()
 export abstract class Base {
-    @PrimaryGeneratedColumn()
-    id: number;
+    @PrimaryColumn({
+        length: guidLength
+    })
+    id: Guid;
 
     @CreateDateColumn()
     @Index()

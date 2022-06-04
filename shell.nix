@@ -9,7 +9,8 @@ mkShell {
     direnv
 
     # 部署docker使用
-    gh
-    heroku
+    # gh
+    # heroku
+    # pandoc
   ];
 }
